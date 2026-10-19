@@ -3,7 +3,7 @@ import { tileFinish } from '../game/piecePresentation'
 import Tile from './Tile'
 
 function Board({
-	board, boardRotation = 0, onTileClick, onTileHover, onBoardLeave,
+	board, boardRotation = 0, onTileClick, onBoardPointerMove, onBoardLeave,
 	hoverCells, pendingPlacement, players, currentPlayerId, preview, lastMove,
 }) {
 	const height = board.length
@@ -28,10 +28,28 @@ function Board({
 			default: return { row, col }
 		}
 	}
+	function handlePointerMove(event) {
+		if (!onBoardPointerMove) return
+		const element = event.currentTarget
+		const rect = element.getBoundingClientRect()
+		const tile = element.querySelector('.tile')
+		const cellSize = tile?.getBoundingClientRect().width || rect.width / viewWidth
+		const gap = Number.parseFloat(getComputedStyle(element).columnGap) || 0
+		const stride = cellSize + gap
+		const toBoardCoordinate = (position, count) => {
+			const index = Math.max(0, Math.min(count - 1, Math.floor(position / stride)))
+			const withinCell = Math.max(0, Math.min(1, (position - index * stride) / cellSize))
+			return index + withinCell
+		}
+		onBoardPointerMove(
+			toBoardCoordinate(event.clientY - rect.top, viewHeight),
+			toBoardCoordinate(event.clientX - rect.left, viewWidth),
+		)
+	}
 	return (
 		<div className="boardStage" style={{ '--board-columns': viewWidth, '--board-rows': viewHeight }}>
 			<section className="boardPanel" aria-label="Game board">
-				<div className="board" data-game-board onMouseLeave={onBoardLeave}>
+				<div className="board" data-game-board onClick={onTileClick} onPointerMove={handlePointerMove} onPointerLeave={onBoardLeave}>
 					{Array.from({ length: viewHeight }, (_, viewRow) => Array.from({ length: viewWidth }, (_, viewCol) => {
 						const position = viewToBoard(viewRow, viewCol)
 						const key = `${position.row},${position.col}`
@@ -40,8 +58,7 @@ function Board({
 							? { ...board[position.row][position.col], occupied: true, player: pendingPlacement.playerId, pieceId: pendingPlacement.pieceId, color: pendingPlacement.color }
 							: board[position.row][position.col]
 						const startPlayer = startingPlayers.get(key)
-						return <Tile key={key} value={value} {...position} viewRow={viewRow} viewCol={viewCol}
-							onClick={onTileClick} onHover={onTileHover} isHovered={hovered.has(key)}
+						return <Tile key={key} value={value} {...position} isHovered={hovered.has(key)}
 							startPlayer={startPlayer} isOwnStart={startPlayer?.id === currentPlayerId}
 							ability={pending ? pendingPlacement.ability : abilities.get(value.pieceId)}
 							preview={preview} isPending={pending} isLastMove={Boolean(value.occupied && lastCells.has(key))} />

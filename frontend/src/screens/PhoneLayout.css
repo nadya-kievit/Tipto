@@ -1,0 +1,27 @@
+.phoneRotateOverlay {
+	position: fixed;
+	inset: 0;
+	z-index: 10000;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 18px;
+	padding: 28px;
+	background: #0D0E13;
+	color: #EDEFF5;
+	font-family: 'DM Sans', sans-serif;
+	font-size: 18px;
+	font-weight: 600;
+	text-align: center;
+}
+
+.phoneRotateOverlay svg {
+	width: 54px;
+	height: 54px;
+	fill: none;
+	stroke: #9AA1B5;
+	stroke-width: 1.7;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}

@@ -4,6 +4,7 @@ import test from 'node:test'
 import {
 	canPlacePieceInAnyOrientation,
 	canPlacePieceInOrientation,
+	closestLegalPlacement,
 	isValidPlacement,
 } from '../src/game/placementRules.js'
 
@@ -56,6 +57,25 @@ test('piece remains playable when only another orientation has a placement', () 
 	assert.equal(canPlacePieceInOrientation(board, piece, 0, false, player, 0, true, players), false)
 	assert.equal(canPlacePieceInOrientation(board, piece, 90, false, player, 0, true, players), true)
 	assert.equal(canPlacePieceInAnyOrientation(board, piece, player, 0, true, players), true)
+})
+
+test('closest placement follows the pointer using occupied cells rather than a piece bounding box', () => {
+	const board = makeBoard(6, 6)
+	const player = { id: 'p1', pieces: [{ placed: true }], startPosition: { row: 0, col: 0 } }
+	const piece = { name: 'corner', cells: [[0, 0], [1, 0], [2, 0], [2, 1]], rotation: 0, flipped: false, ability: 'scout' }
+	const cells = closestLegalPlacement(board, piece, player, 0, false, [player], 2.4, 3.4)
+
+	assert.ok(cells.some(cell => cell.row === 2 && cell.col === 3))
+})
+
+test('closest placement updates over a non-playable board hole', () => {
+	const board = makeBoard(5, 5)
+	board[2][2].playable = false
+	const player = { id: 'p1', pieces: [{ placed: true }], startPosition: { row: 0, col: 0 } }
+	const piece = { name: 'single', cells: [[0, 0]], rotation: 0, flipped: false, ability: 'scout' }
+	const cells = closestLegalPlacement(board, piece, player, 0, false, [player], 2.4, 2.8)
+
+	assert.deepEqual(cells, [{ row: 2, col: 3 }])
 })
 
 const layouts = JSON.parse(readFileSync(new URL('../../backend/app/game/board_layouts_15.json', import.meta.url), 'utf8'))

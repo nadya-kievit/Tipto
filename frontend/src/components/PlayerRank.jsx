@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { getPlayerColorHex } from '../playerColors'
 import Piece from './Piece'
 
-function PlayerRank({ currentUserId, game }) {
+function PlayerRank({ currentUserId, game, pieceCellSize = 7 }) {
 	const [expandedPlayerId, setExpandedPlayerId] = useState(null)
 	const playerProgress = useMemo(() => Object.keys(game?.settings?.players || {})
 		.map((playerKey, originalIndex) => {
@@ -40,7 +40,7 @@ function PlayerRank({ currentUserId, game }) {
 							</div>
 							{expanded && <div className="playerRemainingPieces">
 								{player.pieces.map(piece => <Piece key={piece.name} piece={piece} placed={piece.placed}
-									color={player.color} cellSize={7} staticPreview />)}
+									color={player.color} cellSize={pieceCellSize} staticPreview />)}
 							</div>}
 						</div>
 					)

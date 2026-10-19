@@ -423,6 +423,86 @@
 .lobbyScreen .lobbyStart:disabled { background: #2A2E3B; color: #8A91A5; }
 .lobbyScreen .lobbyError { color: #EF4444; font-size: 14px; overflow-wrap: anywhere; }
 
+@media (min-width: 601px) {
+	.lobbyScreen {
+		display: flex;
+		flex-direction: column;
+		height: 100vh;
+		height: 100dvh;
+		font-size: 14px;
+		line-height: 1.3;
+	}
+
+	.lobbyScreen .lobbyTopBar { flex: 0 0 auto; padding: 6px 24px; }
+	.lobbyScreen .lobbyLogo { gap: 8px; font-size: 20px; }
+	.lobbyScreen .lobbyLogoMark {
+		grid-template-columns: repeat(2, 9px);
+		grid-template-rows: repeat(2, 9px);
+	}
+	.lobbyScreen .lobbyLeave { font-size: 13px; }
+	.lobbyScreen .lobbyMain {
+		display: flex;
+		flex: 1 1 auto;
+		min-height: 0;
+		padding: 6px 16px;
+	}
+	.lobbyScreen .lobbyPanel {
+		display: flex;
+		flex-direction: column;
+		height: 100%;
+		max-width: 600px;
+	}
+	.lobbyScreen .lobbyPanel > .lobbySection:not(.lobbyInviteSection):not(.lobbyFooter) {
+		flex: 1 1 auto;
+	}
+	.lobbyScreen .lobbyInviteSection,
+	.lobbyScreen .lobbyFooter { flex: 0 0 auto; }
+	.lobbyScreen .lobbySection { padding: 12px 20px; }
+	.lobbyScreen .lobbySectionLabel {
+		margin-bottom: 8px;
+		font-size: 10px;
+		letter-spacing: 1px;
+	}
+	.lobbyScreen .lobbySectionHeading { margin-bottom: 8px; }
+	.lobbyScreen .lobbyInviteSection { gap: 14px; padding: 10px 20px; }
+	.lobbyScreen .lobbyInviteSection .lobbySectionLabel { margin-bottom: 3px; }
+	.lobbyScreen .lobbyInviteCode { font-size: 24px; letter-spacing: 5px; line-height: 1.2; }
+	.lobbyScreen .lobbyCopy { gap: 6px; height: 32px; padding: 0 10px; font-size: 12px; }
+	.lobbyScreen .lobbyCopy svg { width: 14px; height: 14px; }
+	.lobbyScreen .lobbyFieldLabel { margin-bottom: 4px; font-size: 12px; }
+	.lobbyScreen .lobbyName { height: 34px; padding: 0 10px; font-size: 14px; }
+	.lobbyScreen .lobbyColourLabel { margin-top: 9px; }
+	.lobbyScreen .lobbySwatches { grid-template-columns: repeat(8, 32px); gap: 10px; padding: 2px 0; }
+	.lobbyScreen .lobbySwatch { width: 32px; height: 32px; }
+	.lobbyScreen .lobbySwatchTaken span { font-size: 19px; }
+	.lobbyScreen .lobbyJoinedCount { font-size: 12px; }
+	.lobbyScreen .lobbySeats { gap: 6px; }
+	.lobbyScreen .lobbySeat { gap: 8px; height: 36px; padding: 0 9px; font-size: 13px; }
+	.lobbyScreen .lobbySeatColour { width: 18px; height: 18px; flex-basis: 18px; }
+	.lobbyScreen .lobbySeatTag { padding: 1px 4px; font-size: 9px; }
+	.lobbyScreen .lobbyRosterActions { gap: 8px; }
+	.lobbyScreen .lobbyAddBot,
+	.lobbyScreen .lobbyFillBots { height: 26px; padding: 0 8px; font-size: 11px; }
+	.lobbyScreen .lobbyFillBots { gap: 5px; }
+	.lobbyScreen .lobbyFillBots svg { width: 13px; height: 13px; }
+	.lobbyScreen .lobbyRemovePlayer { width: 26px; height: 26px; flex-basis: 26px; font-size: 18px; }
+	.lobbyScreen .lobbyHostNote,
+	.lobbyScreen .lobbySetBy { font-size: 11px; }
+	.lobbyScreen .lobbyBoardOptions { gap: 8px; margin-bottom: 10px; }
+	.lobbyScreen .lobbyBoardOption { gap: 5px; padding: 6px 4px; font-size: 12px; }
+	.lobbyScreen .lobbyBoardShape { --lobby-icon-cell: 6px; }
+	.lobbyScreen .lobbyBoardShapeSmall { --lobby-icon-cell: 3px; }
+	.lobbyScreen .lobbySettingsRow { gap: 14px; }
+	.lobbyScreen .lobbySegments { height: 30px; }
+	.lobbyScreen .lobbySegments button { font-size: 12px; }
+	.lobbyScreen .lobbyReadOnlySettings { gap: 8px; padding: 8px; font-size: 12px; }
+	.lobbyScreen .lobbySetBy { margin-top: 6px; }
+	.lobbyScreen .lobbyFooter { gap: 12px; }
+	.lobbyScreen .lobbyStatus { font-size: 12px; }
+	.lobbyScreen .lobbyStart { height: 38px; padding: 0 18px; font-size: 13px; }
+	.lobbyScreen .lobbyError { font-size: 12px; }
+}
+
 @media (max-width: 600px) {
 	.lobbyScreen .lobbyTopBar { padding: 16px; }
 	.lobbyScreen .lobbySection { padding: 24px 16px; }
@@ -434,4 +514,72 @@
 	.lobbyScreen .lobbyStart { width: 100%; }
 	.lobbyScreen .lobbyPlayersHeading { flex-wrap: wrap; }
 	.lobbyScreen .lobbyRosterActions { width: 100%; justify-content: space-between; gap: 8px; }
+}
+
+@media (pointer: coarse) and (orientation: landscape) and (max-height: 500px) {
+	.lobbyScreen.phoneLandscape {
+		position: fixed;
+		inset: 0;
+		display: flex;
+		width: 100%;
+		height: 100dvh;
+		min-height: 0;
+		overflow: hidden;
+		font-size: 11px;
+		line-height: 1.2;
+		overscroll-behavior: none;
+		touch-action: manipulation;
+	}
+
+	.lobbyScreen.phoneLandscape button { min-width: 0; border-radius: 3px; }
+	.lobbyScreen.phoneLandscape .phoneLobbyBar {
+		display: flex;
+		flex: 0 0 36px;
+		align-items: center;
+		justify-content: space-between;
+		padding: 0 max(10px, env(safe-area-inset-right)) 0 max(10px, env(safe-area-inset-left));
+		border-bottom: 1px solid #272B38;
+	}
+	.lobbyScreen.phoneLandscape .phoneLobbyBar > div { display: flex; align-items: center; gap: 8px; color: #9AA1B5; }
+	.lobbyScreen.phoneLandscape .phoneLobbyBar strong { color: #EDEFF5; font-family: 'JetBrains Mono', monospace; font-size: 14px; letter-spacing: 2px; }
+	.lobbyScreen.phoneLandscape .phoneLobbyBar button { display: inline-flex; align-items: center; gap: 4px; height: 26px; padding: 0 8px; font-size: 11px; }
+	.lobbyScreen.phoneLandscape .phoneLobbyBar svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 1.5; }
+	.lobbyScreen.phoneLandscape .phoneLobbyLeave { border: 0; background: transparent; color: #F2A3A3; }
+
+	.lobbyScreen.phoneLandscape .phoneLobbyMain { position: relative; display: grid; grid-template-columns: 45% 55%; flex: 1 1 0; min-height: 0; padding: 0 max(8px, env(safe-area-inset-right)) 0 max(8px, env(safe-area-inset-left)); }
+	.lobbyScreen.phoneLandscape .phoneLobbyLeft,
+	.lobbyScreen.phoneLandscape .phoneLobbyRight { min-width: 0; min-height: 0; padding: 10px 12px; }
+	.lobbyScreen.phoneLandscape .phoneLobbyLeft { overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+	.lobbyScreen.phoneLandscape .phoneLobbyRight { display: flex; flex-direction: column; border-left: 1px solid #272B38; }
+	.lobbyScreen.phoneLandscape h2 { margin: 0 0 5px; color: #9AA1B5; font-size: 10px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; }
+	.lobbyScreen.phoneLandscape label { display: block; margin-bottom: 3px; color: #C9CDD9; }
+	.lobbyScreen.phoneLandscape #phone-lobby-name { width: 100%; height: 32px; padding: 0 8px; border: 1px solid #2E3343; border-radius: 3px; background: #0F1117; font-size: 13px; }
+	.lobbyScreen.phoneLandscape .phoneLobbySwatches { display: flex; gap: 7px; margin: 7px 0 10px; }
+	.lobbyScreen.phoneLandscape .phoneLobbySwatches button { width: 26px; height: 26px; flex: 0 0 26px; padding: 0; border: 0; background: var(--lobby-swatch); }
+	.lobbyScreen.phoneLandscape .phoneLobbySwatches .selected { outline: 2px solid #EDEFF5; outline-offset: 1px; }
+	.lobbyScreen.phoneLandscape .phoneLobbySwatches .taken { opacity: 0.25; }
+	.lobbyScreen.phoneLandscape .phoneLobbyPlayersHeading { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+	.lobbyScreen.phoneLandscape .phoneLobbyPlayersHeading h2 span { color: #EDEFF5; font-family: 'JetBrains Mono', monospace; }
+	.lobbyScreen.phoneLandscape .phoneLobbyPlayersHeading button { display: flex; align-items: center; gap: 4px; height: 24px; padding: 0 6px; font-size: 10px; }
+	.lobbyScreen.phoneLandscape .phoneLobbyPlayersHeading svg { width: 12px; height: 12px; fill: none; stroke: currentColor; }
+	.lobbyScreen.phoneLandscape .phoneLobbySeats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; }
+	.lobbyScreen.phoneLandscape .phoneLobbySeats > div { display: flex; align-items: center; gap: 5px; height: 30px; min-width: 0; padding: 0 6px; border: 1px solid #2E3343; border-radius: 3px; }
+	.lobbyScreen.phoneLandscape .phoneLobbySeats > .empty { border-style: dashed; color: #9AA1B5; }
+	.lobbyScreen.phoneLandscape .phoneLobbySeats i { width: 13px; height: 13px; flex: 0 0 13px; }
+	.lobbyScreen.phoneLandscape .phoneLobbySeats span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.lobbyScreen.phoneLandscape .phoneLobbySeats button { height: 22px; padding: 0 5px; border: 0; background: transparent; font-size: 10px; }
+
+	.lobbyScreen.phoneLandscape .phoneLobbyBoards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+	.lobbyScreen.phoneLandscape .phoneLobbyBoards button { display: flex; align-items: center; justify-content: center; gap: 8px; height: 76px; padding: 5px; color: #C9CDD9; font-size: 11px; }
+	.lobbyScreen.phoneLandscape .phoneLobbyBoards button[aria-pressed='true'] { border-color: #EDEFF5; background: #1C1F2A; color: #EDEFF5; }
+	.lobbyScreen.phoneLandscape .lobbyBoardShape { --lobby-icon-cell: 5px; }
+	.lobbyScreen.phoneLandscape .phoneLobbySettingGroups { margin-top: 10px; }
+	.lobbyScreen.phoneLandscape .phoneLobbySettingGroups > div { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 9px; }
+	.lobbyScreen.phoneLandscape .lobbySegments { height: 32px; }
+	.lobbyScreen.phoneLandscape .lobbySegments button { padding: 0 2px; font-size: 10px; }
+	.lobbyScreen.phoneLandscape .phoneLobbyRight footer { display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: auto; padding-top: 8px; color: #9AA1B5; }
+	.lobbyScreen.phoneLandscape .phoneLobbyRight footer button { height: 36px; padding: 0 14px; border: 0; background: #EDEFF5; color: #0D0E13; font-weight: 700; }
+	.lobbyScreen.phoneLandscape .phoneLobbyRight footer button:disabled { background: #2A2E3B; color: #8A91A5; }
+	.lobbyScreen.phoneLandscape .phoneLobbyError { position: absolute; inset: auto 10px 5px; padding: 5px 8px; background: #351A20; color: #F2A3A3; text-align: center; }
+	.lobbyScreen.phoneLandscape .phoneLobbyLoading { display: grid; flex: 1; place-items: center; color: #9AA1B5; }
 }

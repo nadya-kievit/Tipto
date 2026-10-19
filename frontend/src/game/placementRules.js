@@ -92,6 +92,71 @@ export function viewToBoard(row, col, rotation, height, width) {
 }
 
 
+function distanceToCell(pointerRow, pointerCol, row, col) {
+	const nearestRow = Math.max(row, Math.min(pointerRow, row + 1))
+	const nearestCol = Math.max(col, Math.min(pointerCol, col + 1))
+	return (pointerRow - nearestRow) ** 2 + (pointerCol - nearestCol) ** 2
+}
+
+
+export function closestLegalPlacement(
+	board,
+	piece,
+	player,
+	boardRotation,
+	isFirstMove,
+	players,
+	pointerRow,
+	pointerCol,
+) {
+	if (!board.length || !piece || !player) return []
+
+	const boardHeight = board.length
+	const boardWidth = board[0]?.length || 0
+	const viewHeight = boardRotation % 180 === 0 ? boardHeight : boardWidth
+	const viewWidth = boardRotation % 180 === 0 ? boardWidth : boardHeight
+	const rotatedCells = rotationForCells(piece.cells, piece.rotation, piece.flipped)
+	const minRow = Math.min(...rotatedCells.map(cell => cell[0]))
+	const minCol = Math.min(...rotatedCells.map(cell => cell[1]))
+	const normalizedCells = rotatedCells.map(([row, col]) => [row - minRow, col - minCol])
+	const pieceRows = Math.max(...normalizedCells.map(cell => cell[0])) + 1
+	const pieceCols = Math.max(...normalizedCells.map(cell => cell[1])) + 1
+	let nearestCells = []
+	let nearestCellDistance = Infinity
+	let nearestCentreDistance = Infinity
+
+	for (let anchorRow = 0; anchorRow <= viewHeight - pieceRows; anchorRow += 1) {
+		for (let anchorCol = 0; anchorCol <= viewWidth - pieceCols; anchorCol += 1) {
+			const viewCells = normalizedCells.map(([row, col]) => ({ row: anchorRow + row, col: anchorCol + col }))
+			const cells = viewCells.map(cell => viewToBoard(
+				cell.row,
+				cell.col,
+				boardRotation,
+				boardHeight,
+				boardWidth,
+			))
+
+			if (!isValidPlacement(board, cells, player, isFirstMove, players, piece.ability)) continue
+
+			const cellDistance = Math.min(...viewCells.map(cell =>
+				distanceToCell(pointerRow, pointerCol, cell.row, cell.col)))
+			const centreRow = viewCells.reduce((total, cell) => total + cell.row + 0.5, 0) / viewCells.length
+			const centreCol = viewCells.reduce((total, cell) => total + cell.col + 0.5, 0) / viewCells.length
+			const centreDistance = (centreRow - pointerRow) ** 2 + (centreCol - pointerCol) ** 2
+
+			if (cellDistance < nearestCellDistance ||
+				(cellDistance === nearestCellDistance && centreDistance < nearestCentreDistance)) {
+				nearestCellDistance = cellDistance
+				nearestCentreDistance = centreDistance
+				nearestCells = cells
+			}
+		}
+	}
+
+	return nearestCells
+}
+
+
 export function canPlacePieceInOrientation(
 	board,
 	piece,

@@ -15,7 +15,7 @@ function MouseIcon({ action }) {
 
 function PiecePanel({
 	canMove, isWaitingForPlayers, onPieceClick, pieces, playablePieceNames,
-	player, selectedPieceName, totalPieceCount, selectedPiece,
+	player, selectedPieceName, totalPieceCount, selectedPiece, pieceCellSize = 13,
 }) {
 	const left = pieces.filter(piece => !piece.placed).length
 	const ability = selectedPiece?.ability
@@ -30,7 +30,7 @@ function PiecePanel({
 				{pieces.map(piece => <Piece key={piece.name} piece={piece} isWaitingForPlayers={isWaitingForPlayers}
 					color={player?.color} isSelected={selectedPieceName === piece.name}
 					isPlayable={playablePieceNames.has(piece.name)} disabled={!canMove}
-					onClick={event => onPieceClick(piece, event)} rotation={piece.rotation} flipped={piece.flipped} cellSize={12} />)}
+					onClick={event => onPieceClick(piece, event)} rotation={piece.rotation} flipped={piece.flipped} cellSize={pieceCellSize} />)}
 			</div>
 			{firstMove ? <div className="pieceAbilityCard firstMoveCard" data-game-piece>
 				<div className="firstMoveSwatch" style={{ '--start-color': getPlayerColorHex(player?.color) }} aria-hidden="true"><i /></div>

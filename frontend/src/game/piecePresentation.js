@@ -9,14 +9,14 @@ export function tileFinish(color, ability, context = 'board', isLastMove = false
 	let background = color
 	let boxShadow = 'inset 0 2px 0 rgba(255,255,255,0.22), inset 0 -2px 0 rgba(0,0,0,0.2)'
 	if (ability === 'scout') {
-		background = `color-mix(in srgb, ${color} 16%, transparent)`
+		background = `color-mix(in srgb, ${color} 16%, var(--cell))`
 		boxShadow = `inset 0 0 0 ${size.outline}px ${color}`
 	} else if (ability === 'connector') {
-		background = `repeating-linear-gradient(135deg, rgba(13,14,19,0.55) 0 ${size.stripe}px, transparent ${size.stripe}px ${size.repeat}px), ${color}`
+		background = `repeating-linear-gradient(135deg, var(--stripe) 0 ${size.stripe}px, transparent ${size.stripe}px ${size.repeat}px), ${color}`
 		boxShadow = 'none'
 	}
 	if (isLastMove) {
-		boxShadow = `${boxShadow === 'none' ? '' : `${boxShadow}, `}inset 0 0 0 2px #EDEFF5`
+		boxShadow = `${boxShadow === 'none' ? '' : `${boxShadow}, `}inset 0 0 0 2px var(--tile-outline)`
 	}
 	return { background, boxShadow }
 }

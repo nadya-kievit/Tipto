@@ -4,6 +4,8 @@ import LobbyScreen from './screens/LobbyScreen'
 import GameScreen from './screens/GameScreen'
 import { createGame } from './services/api'
 import { enterLobby } from './services/roomSession'
+import usePhoneLayout from './hooks/usePhoneLayout'
+import './screens/PhoneLayout.css'
 
 function getRouteFromPath(pathname) {
 	const roomMatch = pathname.match(/^\/(lobby|game)\/([^/]+)$/)
@@ -12,12 +14,27 @@ function getRouteFromPath(pathname) {
 		: { screen: 'home', gameId: null }
 }
 
+function PhoneRotateOverlay({ orientation }) {
+	const isLandscape = orientation === 'landscape'
+	return <div className={`phoneRotateOverlay phoneRotate${isLandscape ? 'Landscape' : 'Portrait'}`} role="status">
+		<svg viewBox="0 0 64 64" aria-hidden="true">
+			<rect x={isLandscape ? 10 : 20} y={isLandscape ? 20 : 10} width={isLandscape ? 44 : 24} height={isLandscape ? 24 : 44} rx="4" />
+			<path d="M11 24A23 23 0 0 1 31 4M11 24l-5-7m5 7 8-3" />
+		</svg>
+		<span>Rotate your phone {isLandscape ? 'to play' : 'upright to continue'}</span>
+	</div>
+}
+
 function App() {
+	const phoneMode = usePhoneLayout()
 	const [path, setPath] = useState(window.location.pathname)
 	const [entryError, setEntryError] = useState('')
 	const [isEntering, setIsEntering] = useState(false)
 	const enteringRef = useRef(false)
 	const route = getRouteFromPath(path)
+	const hasGameSession = route.screen === 'game' && Boolean(localStorage.getItem(`tipto-player-${route.gameId}`))
+
+	const isPhoneLandscape = phoneMode === 'landscape'
 
 	useEffect(() => {
 		const handlePopState = () => setPath(window.location.pathname)
@@ -64,9 +81,13 @@ function App() {
 		}
 	}
 
+	if (hasGameSession && phoneMode === 'portrait') return <PhoneRotateOverlay orientation="landscape" />
+	if (!hasGameSession && phoneMode === 'landscape') return <PhoneRotateOverlay orientation="portrait" />
+
 	if (route.screen === 'home') {
 		return (
 			<CreateGameScreen
+				isPhoneLandscape={isPhoneLandscape}
 				onEnterGame={handleEnterRoom}
 				onConfigureGame={() => handleEnterRoom()}
 				actionError={entryError}
@@ -75,13 +96,14 @@ function App() {
 		)
 	}
 
-	if (route.screen === 'game' && localStorage.getItem(`tipto-player-${route.gameId}`)) {
+	if (hasGameSession) {
 		return (
 			<GameScreen
 				key={route.gameId}
 				gameId={route.gameId}
 				onLeaveGame={handleLeaveRoom}
 				onNeedsColor={handleNeedsSession}
+				isPhoneLandscape={isPhoneLandscape}
 			/>
 		)
 	}
@@ -93,6 +115,7 @@ function App() {
 			onLeave={handleLeaveRoom}
 			onStarted={handleStartPlaying}
 			onRemoved={handleRemoved}
+			isPhoneLandscape={isPhoneLandscape}
 		/>
 	)
 }

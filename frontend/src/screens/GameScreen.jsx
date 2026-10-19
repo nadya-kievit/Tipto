@@ -9,20 +9,25 @@ import PlayerRank from '../components/PlayerRank'
 import TurnBanner from '../components/TurnBanner'
 import WaitingOverlay from '../components/WaitingOverlay'
 import WinnerModal from '../components/WinnerModal'
+import PhoneGameLayout from '../components/PhoneGameLayout'
 import { PLAYER_COLOR_HEX, getPlayerColorHex } from '../playerColors'
 import {
 	canPlacePieceInAnyOrientation,
-	isValidPlacement,
-	rotationForCells,
-	viewToBoard,
+	closestLegalPlacement,
 } from '../game/placementRules'
 import { horizontalFlip, wheelRotation } from '../game/piecePresentation'
+import useTheme from '../hooks/useTheme'
+import useUiScale from '../hooks/useUiScale'
 import './GameScreen.css'
+import './GameDesktop.css'
+import './PhoneGame.css'
 
 const EMPTY_BOARD = []
 
 
-function GameScreen({ gameId, onLeaveGame, onNeedsColor }) {
+function GameScreen({ gameId, onLeaveGame, onNeedsColor, isPhoneLandscape = false }) {
+	useTheme()
+	const { uiScale, style: uiScaleStyle } = useUiScale()
 
 	const storageKey = `tipto-player-${gameId}`
 	const socketRef = useRef(null)
@@ -105,15 +110,18 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor }) {
 		pieces.find(piece =>
 			piece.name === selectedPieceName &&
 			!piece.placed &&
-			playablePieceNames.has(piece.name)
+			(isPhoneLandscape || playablePieceNames.has(piece.name))
 		) || null,
-		[pieces, playablePieceNames, selectedPieceName]
+		[isPhoneLandscape, pieces, playablePieceNames, selectedPieceName]
 	)
 	const availablePieces = useMemo(() => pieces.map(piece =>
 		piece.name === pendingPlacement?.pieceName ? { ...piece, placed: true } : piece
 	),
 		[pendingPlacement?.pieceName, pieces]
 	)
+	const phoneSelectedPiece = isPhoneLandscape
+		? selectedPiece || availablePieces.find(piece => !piece.placed) || null
+		: null
 	const winners = useMemo(() => {
 		const winnerIds = game?.winnerIds?.length
 			? game.winnerIds
@@ -208,6 +216,7 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor }) {
 
 
 	useEffect(() => {
+		if (isPhoneLandscape) return undefined
 		const handleKeyDown = event => {
 			if (!selectedPiece) return
 
@@ -247,10 +256,10 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor }) {
 		return () => {
 			window.removeEventListener('keydown', handleKeyDown)
 		}
-	}, [canMove, selectedPiece])
+	}, [canMove, isPhoneLandscape, selectedPiece])
 
 	useEffect(() => {
-		if (!canMove || !selectedPiece) return
+		if (isPhoneLandscape || !canMove || !selectedPiece) return
 		const handleWheel = event => {
 			event.preventDefault()
 			if (!event.deltaY) return
@@ -275,7 +284,7 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor }) {
 			window.removeEventListener('wheel', handleWheel)
 			window.removeEventListener('contextmenu', handleContextMenu)
 		}
-	}, [canMove, selectedPiece])
+	}, [canMove, isPhoneLandscape, selectedPiece])
 
 	useEffect(() => {
 		const boardElement = document.querySelector('[data-game-board]')
@@ -290,6 +299,7 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor }) {
 
 
 	useLayoutEffect(() => {
+		if (isPhoneLandscape) return
 		const element = cursorPieceRef.current
 
 		if (!element || !selectedPiece) return
@@ -299,11 +309,11 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor }) {
 
 		element.style.transform =
 			`translate3d(${x - width / 2}px, ${y - height / 2}px, 0)`
-	}, [selectedPiece, cursorCellSize])
+	}, [isPhoneLandscape, selectedPiece, cursorCellSize])
 
 
 	useEffect(() => {
-		if (!selectedPiece) return
+		if (isPhoneLandscape || !selectedPiece) return
 
 		const handlePointerMove = event => {
 			cursorPositionRef.current = { x: event.clientX, y: event.clientY }
@@ -328,11 +338,11 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor }) {
 			cancelAnimationFrame(cursorFrameRef.current)
 			cursorFrameRef.current = null
 		}
-	}, [selectedPiece])
+	}, [isPhoneLandscape, selectedPiece])
 
 
 	useEffect(() => {
-		if (!selectedPiece) return
+		if (isPhoneLandscape || !selectedPiece) return
 
 		const handleOutsidePointerDown = event => {
 			if (event.button !== 0) return
@@ -349,7 +359,7 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor }) {
 		return () => {
 			document.removeEventListener('pointerdown', handleOutsidePointerDown, true)
 		}
-	}, [selectedPiece])
+	}, [isPhoneLandscape, selectedPiece])
 
 
 	const handleCopyInvite = async () => {
@@ -430,28 +440,47 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor }) {
 	}
 
 
-	const handleTileClick = () => {
-		if (!canMove || !selectedPiece || hoverCells.length === 0 || pendingPlacement) {
+	const submitPlacement = (cells, piece) => {
+		if (!canMove || !piece || cells.length === 0 || pendingPlacement) {
 			return
 		}
 
 		setPendingPlacement({
-			cells: hoverCells,
+			cells,
 			color: me.color,
-			pieceId: `${me.id}-${selectedPiece.name}`,
-			pieceName: selectedPiece.name,
+			pieceId: `${me.id}-${piece.name}`,
+			pieceName: piece.name,
 			playerId: me.id,
-			ability: selectedPiece.ability,
+			ability: piece.ability,
 		})
 
 		socketRef.current?.send(JSON.stringify({
 			type: 'place_piece',
-			pieceName: selectedPiece.name,
-			cells: hoverCells,
+			pieceName: piece.name,
+			cells,
 		}))
 
 		setSelectedPieceName(null)
 		setHoverCells([])
+	}
+
+
+	const handleTileClick = () => {
+		submitPlacement(hoverCells, selectedPiece)
+	}
+
+
+	const handlePhoneRotate = change => {
+		if (!phoneSelectedPiece) return
+		setPieceRotations(current => ({ ...current, [phoneSelectedPiece.name]: (phoneSelectedPiece.rotation + change) % 360 }))
+	}
+
+
+	const handlePhoneFlip = () => {
+		if (!phoneSelectedPiece) return
+		const orientation = horizontalFlip(phoneSelectedPiece.rotation, phoneSelectedPiece.flipped)
+		setPieceRotations(current => ({ ...current, [phoneSelectedPiece.name]: orientation.rotation }))
+		setPieceFlips(current => ({ ...current, [phoneSelectedPiece.name]: orientation.flipped }))
 	}
 
 
@@ -461,57 +490,23 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor }) {
 	}, [])
 
 
-	const handleTileHover = useCallback((row, col, viewRow, viewCol, offsetX = 0.5, offsetY = 0.5) => {
-		lastHoverTargetRef.current = { row, col, viewRow, viewCol, offsetX, offsetY }
+	const handleBoardPointerMove = useCallback((pointerRow, pointerCol) => {
+		lastHoverTargetRef.current = { pointerRow, pointerCol }
 
 		if (!canMove || !selectedPiece || !me) {
 			setHoverCells([])
 			return
 		}
 
-		const rotatedCells = rotationForCells(
-			selectedPiece.cells,
-			selectedPiece.rotation,
-			selectedPiece.flipped
-		)
-		const minRow = Math.min(...rotatedCells.map(cell => cell[0]))
-		const minCol = Math.min(...rotatedCells.map(cell => cell[1]))
-		const pieceRows = Math.max(...rotatedCells.map(cell => cell[0])) - minRow + 1
-		const pieceCols = Math.max(...rotatedCells.map(cell => cell[1])) - minCol + 1
-		const pointerRow = viewRow + offsetY
-		const pointerCol = viewCol + offsetX
 		const isFirstMove = !me.pieces.some(piece => piece.placed)
-		const boardHeight = board.length
-		const boardWidth = board[0]?.length || 0
-		const viewHeight = boardRotation % 180 === 0 ? boardHeight : boardWidth
-		const viewWidth = boardRotation % 180 === 0 ? boardWidth : boardHeight
-		let nearestCells = []
-		let nearestDistance = Infinity
-
-		for (let anchorRow = 0; anchorRow <= viewHeight - pieceRows; anchorRow += 1) {
-			for (let anchorCol = 0; anchorCol <= viewWidth - pieceCols; anchorCol += 1) {
-				const cells = rotatedCells.map(cell => viewToBoard(
-					anchorRow + cell[0] - minRow,
-					anchorCol + cell[1] - minCol,
-					boardRotation,
-					boardHeight,
-					boardWidth,
-				))
-
-				if (!isValidPlacement(board, cells, me, isFirstMove, game?.players || [], selectedPiece.ability)) continue
-
-				const rowDistance = anchorRow + pieceRows / 2 - pointerRow
-				const colDistance = anchorCol + pieceCols / 2 - pointerCol
-				const distance = rowDistance ** 2 + colDistance ** 2
-
-				if (distance < nearestDistance) {
-					nearestDistance = distance
-					nearestCells = cells
-				}
-			}
-		}
-
-		setHoverCells(nearestCells)
+		const nearestCells = closestLegalPlacement(
+			board, selectedPiece, me, boardRotation, isFirstMove,
+			game?.players || [], pointerRow, pointerCol,
+		)
+		setHoverCells(current => current.length === nearestCells.length &&
+			current.every((cell, index) => cell.row === nearestCells[index].row && cell.col === nearestCells[index].col)
+			? current
+			: nearestCells)
 	}, [board, boardRotation, canMove, game?.players, me, selectedPiece])
 
 
@@ -520,20 +515,13 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor }) {
 
 		if (!hoverTarget || !selectedPiece) return
 
-		handleTileHover(
-			hoverTarget.row,
-			hoverTarget.col,
-			hoverTarget.viewRow,
-			hoverTarget.viewCol,
-			hoverTarget.offsetX,
-			hoverTarget.offsetY
-		)
-	}, [handleTileHover, selectedPiece])
+		handleBoardPointerMove(hoverTarget.pointerRow, hoverTarget.pointerCol)
+	}, [handleBoardPointerMove, selectedPiece])
 
 
 	if (!game) {
 		return (
-			<div className="gamePage gameLoading">
+			<div className="gamePage gameLoading" style={uiScaleStyle}>
 				<h1 className="gameHeaderTitle">Tipto</h1>
 
 				<div className="startPanel">
@@ -553,8 +541,37 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor }) {
 		return null
 	}
 
+	if (isPhoneLandscape) {
+		return <>
+			<PhoneGameLayout
+				game={game}
+				me={me}
+				board={board}
+				canMove={canMove}
+				pieces={availablePieces}
+				selectedPiece={phoneSelectedPiece}
+				selectedPieceName={phoneSelectedPiece?.name || null}
+				pendingPlacement={pendingPlacement}
+				onStage={setSelectedPieceName}
+				onRotate={handlePhoneRotate}
+				onFlip={handlePhoneFlip}
+				onPlace={submitPlacement}
+				onQuit={handleQuit}
+				lastMove={game.moveHistory.at(-1)}
+			/>
+			<WinnerModal
+				isOpen={isFinished && !isWinnerModalClosed}
+				isTie={isTie}
+				leaderboard={leaderboard}
+				onClose={handleCloseWinnerModal}
+				resultColor={resultColor}
+				winner={winner}
+			/>
+		</>
+	}
+
 	return (
-		<div className="gamePage">
+		<div className="gamePage" style={uiScaleStyle}>
 
 			{selectedPiece && createPortal(
 				<CursorPiece
@@ -592,13 +609,14 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor }) {
 				<PlayerRank
 					currentUserId={me?.id}
 					game={game}
+					pieceCellSize={8 * uiScale}
 				/>
 
 				<Board
 					board={board}
 					boardRotation={boardRotation}
 					onTileClick={handleTileClick}
-					onTileHover={handleTileHover}
+					onBoardPointerMove={handleBoardPointerMove}
 					onBoardLeave={handleBoardLeave}
 					hoverCells={hoverCells}
 					pendingPlacement={pendingPlacement}
@@ -618,6 +636,7 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor }) {
 					selectedPieceName={selectedPieceName}
 					totalPieceCount={pieces.length}
 					selectedPiece={selectedPiece}
+					pieceCellSize={14.5 * uiScale}
 				/>
 			</div>
 

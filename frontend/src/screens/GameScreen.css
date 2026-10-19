@@ -8,15 +8,15 @@
 	padding: 0;
 	gap: 0;
 	overflow: hidden;
-	background: #0D0E13;
-	color: #EDEFF5;
+	background: var(--page);
+	color: var(--text);
 	font-family: 'DM Sans', sans-serif;
 	font-size: 14px;
 }
 
 .gamePage *, .gamePage *::before, .gamePage *::after { box-sizing: border-box; }
-.gamePage button { font: inherit; border-radius: 4px; background: #1C1F2A; border: 1px solid #2E3343; box-shadow: none; }
-.gamePage button:focus-visible { outline: 2px solid #EDEFF5; outline-offset: 3px; }
+.gamePage button { font: inherit; border-radius: 4px; background: var(--surface-raised); border: 1px solid var(--border-strong); box-shadow: none; }
+.gamePage button:focus-visible { outline: 2px solid var(--tile-outline); outline-offset: 3px; }
 .gamePage .gamePanelTitle { margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 17px; font-weight: 700; }
 
 .gamePage .gameHeader {
@@ -28,9 +28,9 @@
 	padding: 12px 28px;
 	margin: 0;
 	border: 0;
-	border-bottom: 1px solid #1F2230;
+	border-bottom: 1px solid var(--border);
 	border-radius: 0;
-	background: #0D0E13;
+	background: var(--page);
 	box-shadow: none;
 	backdrop-filter: none;
 	-webkit-backdrop-filter: none;
@@ -49,7 +49,7 @@
 	font-weight: 700;
 	line-height: 1.2;
 	letter-spacing: 0;
-	color: #EDEFF5;
+	color: var(--text);
 	text-shadow: none;
 }
 
@@ -57,25 +57,25 @@
 .gamePage .gameLogoMark i {
 	grid-column: 2;
 	grid-row: 2;
-	background: #8B5CF6;
+	background: var(--logo-purple);
 	border-radius: 1px;
 }
 .gamePage .gameLogoMark i:nth-child(2) {
 	grid-column: 2;
 	grid-row: 1;
-	background: #F97316;
+	background: var(--logo-orange);
 }
 .gamePage .gameLogoMark i:nth-child(3) {
 	grid-column: 1;
 	grid-row: 2;
-	background: #14B8A6;
+	background: var(--logo-teal);
 }
 .gamePage .gameActions { grid-column: 3; grid-row: 1; justify-self: end; display: flex; align-items: center; gap: 10px; }
-.gamePage .headerCode { display: flex; align-items: center; gap: 8px; padding: 0; color: #9AA1B5; font-size: 12px; }
-.gamePage .headerCode strong { color: #EDEFF5; font-family: 'JetBrains Mono', monospace; font-size: 14px; letter-spacing: 1px; font-weight: 500; }
+.gamePage .headerCode { display: flex; align-items: center; gap: 8px; padding: 0; color: var(--muted); font-size: 12px; }
+.gamePage .headerCode strong { color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 14px; letter-spacing: 1px; font-weight: 500; }
 .gamePage .gameCopyButton { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; padding: 0; }
 .gamePage .gameCopyButton svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; }
-.gamePage .gameLeaveButton { height: 36px; padding: 0 12px; border-color: #3A2A30; color: #F2A3A3; font-weight: 600; }
+.gamePage .gameLeaveButton { height: 36px; padding: 0 12px; border-color: var(--leave-border); color: var(--leave-text); font-weight: 600; }
 
 .gamePage .turnBanner {
 	grid-column: 2;
@@ -90,20 +90,20 @@
 	padding: 10px 14px 10px 18px;
 	border: 1px solid var(--turn-color);
 	border-radius: 4px;
-	background: #15171F;
+	background: var(--surface);
 	box-shadow: none;
 	backdrop-filter: none;
 	-webkit-backdrop-filter: none;
-	color: #EDEFF5;
+	color: var(--text);
 	overflow: hidden;
 }
 
 .gamePage .turnBanner::before { content: ''; position: absolute; inset: 0 auto 0 0; width: 6px; background: var(--turn-color); }
-.gamePage .turnTitle { color: #EDEFF5; font-size: 15px; font-weight: 700; line-height: 1.3; }
-.gamePage .turnTimerTrack { width: 110px; height: 4px; flex-shrink: 0; background: #272B38; }
+.gamePage .turnTitle { color: var(--text); font-size: 15px; font-weight: 700; line-height: 1.3; }
+.gamePage .turnTimerTrack { width: 110px; height: 4px; flex-shrink: 0; background: var(--track); }
 .gamePage .turnTimerTrack > span { display: block; height: 100%; background: var(--turn-color); transition: width 250ms linear; }
-.gamePage .turnTimer { margin: 0; color: #C9CDD9; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 400; line-height: 1; white-space: nowrap; }
-.gamePage .restartButton { display: block; min-height: 28px; padding: 4px 8px; border-radius: 4px; color: #EDEFF5; font-size: 12px; }
+.gamePage .turnTimer { margin: 0; color: var(--text-soft); font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 400; line-height: 1; white-space: nowrap; }
+.gamePage .restartButton { display: block; min-height: 28px; padding: 4px 8px; border-radius: 4px; color: var(--text); font-size: 12px; }
 
 .gamePage .gameMain {
 	flex: 1 1 0;
@@ -130,26 +130,26 @@
 	margin: 0;
 	padding: 16px;
 	gap: 16px;
-	border: 1px solid #272B38;
+	border: 1px solid var(--border);
 	border-radius: 6px;
-	background: #15171F;
+	background: var(--surface);
 	overflow: auto;
 }
 
 .gamePage .playerPanelGrid { display: grid; gap: 10px; }
-.gamePage .playerStatusCard { display: block; min-height: 0; padding: 12px 10px; border: 1px solid #272B38; border-radius: 4px; background: #15171F; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
-.gamePage .playerStatusActive { background: #1C1F2A; border-color: var(--player-color); }
+.gamePage .playerStatusCard { display: block; min-height: 0; padding: 12px 10px; border: 1px solid var(--border); border-radius: 4px; background: var(--surface); box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+.gamePage .playerStatusActive { background: var(--surface-raised); border-color: var(--player-color); }
 .gamePage .playerStatusHeader { display: flex; align-items: center; justify-content: flex-start; gap: 8px; }
 .gamePage .playerStatusColor { flex: 0 0 18px; width: 18px; height: 18px; background: var(--player-color); border-radius: 1px; box-shadow: none; }
-.gamePage .playerStatusName { display: block; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #EDEFF5; font-size: 15px; font-weight: 600; line-height: 1.3; }
-.gamePage .playerStatusBlocks { color: #EDEFF5; font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 500; }
-.gamePage .playerPiecesProgress { height: 3px; margin-top: 12px; background: #272B38; }
+.gamePage .playerStatusName { display: block; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); font-size: 15px; font-weight: 600; line-height: 1.3; }
+.gamePage .playerStatusBlocks { color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 500; }
+.gamePage .playerPiecesProgress { height: 3px; margin-top: 12px; background: var(--track); }
 .gamePage .playerPiecesProgress span { display: block; height: 100%; background: var(--player-color); }
 .gamePage .playerStatusBody { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 26px; margin-top: 8px; }
-.gamePage .playerPiecesLeft { color: #9AA1B5; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+.gamePage .playerPiecesLeft { color: var(--muted); font-family: 'JetBrains Mono', monospace; font-size: 12px; }
 .gamePage .viewPiecesButton { height: 26px; padding: 0 8px; font-size: 12px; }
-.gamePage .playerRemainingPieces { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; max-height: none; padding-top: 12px; margin-top: 12px; border-top: 1px solid #272B38; overflow: visible; }
-.gamePage .playerRemainingPieces .pieceCard { height: 40px; border: 0; border-radius: 1px; background: #121319; }
+.gamePage .playerRemainingPieces { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; max-height: none; padding-top: 12px; margin-top: 12px; border-top: 1px solid var(--border); overflow: visible; }
+.gamePage .playerRemainingPieces .pieceCard { height: 40px; border: 0; border-radius: 1px; background: var(--surface-raised); }
 .gamePage .playerRemainingPieces .pieceCard.placed { opacity: 0.2; }
 
 .gamePage .boardStage {
@@ -161,7 +161,7 @@
 	min-width: 0;
 	min-height: 0;
 }
-.gamePage .boardPanel { width: max-content; max-width: 100%; min-width: 0; padding: 24px; border: 1px solid #272B38; border-radius: 6px; background: #15171F; }
+.gamePage .boardPanel { width: max-content; max-width: 100%; min-width: 0; padding: 24px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); }
 .gamePage .board {
 	--board-cell-size: max(4px, min(
 		calc((100cqw - 690px - (var(--board-columns) - 1) * 1px) / var(--board-columns)),
@@ -184,55 +184,55 @@
 .gamePage .ownStartingTile { z-index: 1; }
 .gamePage .startPositionMarker { width: 10px; height: 10px; max-width: 50%; max-height: 50%; border: 0; border-radius: 0; background: var(--start-color); box-shadow: none; }
 .gamePage .ownStartingTile .startPositionMarker { box-shadow: none; }
-.gamePage .boardLegend { display: flex; justify-content: center; flex-wrap: wrap; gap: 12px; margin-top: 18px; font-size: 13px; color: #9AA1B5; }
+.gamePage .boardLegend { display: flex; justify-content: center; flex-wrap: wrap; gap: 12px; margin-top: 18px; font-size: 13px; color: var(--muted); }
 .gamePage .boardLegend > span { display: flex; align-items: center; gap: 6px; }
 .gamePage .boardLegend i { width: 12px; height: 12px; border-radius: 1px; }
-.gamePage .lastMoveLegend { background: #1F2230; box-shadow: inset 0 0 0 2px #EDEFF5; }
+.gamePage .lastMoveLegend { background: var(--cell); box-shadow: inset 0 0 0 2px var(--tile-outline); }
 .gamePage .startingSquareLegend { position: relative; border-radius: 0; background: color-mix(in srgb, var(--start-color) 16%, transparent); }
 .gamePage .startingSquareLegend::after { content: ''; position: absolute; width: 4px; height: 4px; top: 4px; left: 4px; background: var(--start-color); }
-.gamePage .ownStartingSquareLegend { background: color-mix(in srgb, var(--start-color) 22%, transparent); box-shadow: inset 0 0 0 2px #EDEFF5, 0 0 0 3px color-mix(in srgb, var(--start-color) 35%, transparent); }
+.gamePage .ownStartingSquareLegend { background: color-mix(in srgb, var(--start-color) 22%, transparent); box-shadow: inset 0 0 0 2px var(--tile-outline), 0 0 0 3px color-mix(in srgb, var(--start-color) 35%, transparent); }
 
-.gamePage .piecesRight { width: 320px; max-width: 100%; max-height: 100%; min-width: 0; margin: 0; padding: 20px; border: 1px solid #272B38; border-radius: 6px; background: #15171F; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; overflow: auto; }
+.gamePage .piecesRight { width: 320px; max-width: 100%; max-height: 100%; min-width: 0; margin: 0; padding: 20px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; overflow: auto; }
 .gamePage .piecePanelHeader { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 16px; }
-.gamePage .pieceCount { color: #9AA1B5; font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+.gamePage .pieceCount { color: var(--muted); font-family: 'JetBrains Mono', monospace; font-size: 13px; }
 .gamePage .pieceCardGrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
-.gamePage .pieceCard { display: flex; align-items: center; justify-content: center; position: relative; width: 100%; height: 66px; padding: 0; border: 1px solid #272B38; border-radius: 2px; background: #1A1C25; box-shadow: none; transition: background-color 100ms ease, border-color 100ms ease; }
+.gamePage .pieceCard { display: flex; align-items: center; justify-content: center; position: relative; width: 100%; height: 66px; padding: 0; border: 1px solid var(--border); border-radius: 2px; background: var(--surface-raised); box-shadow: none; transition: background-color 100ms ease, border-color 100ms ease; }
 .gamePage .pieceCard:hover { transform: none; box-shadow: none; }
 .gamePage .pieceCard:disabled { opacity: 1; }
-.gamePage .pieceCard.selected { background: #262A38; border-color: #EDEFF5; box-shadow: none; }
+.gamePage .pieceCard.selected { background: var(--surface-raised); border-color: var(--text); box-shadow: none; }
 .gamePage .pieceCard.placed { opacity: 0.22; }
 .gamePage .pieceShape { position: relative; display: block; flex-shrink: 0; pointer-events: none; }
 .gamePage .pieceFinishTile { position: absolute; display: block; border-radius: 1px; }
-.gamePage .pieceAbilityCard { display: flex; align-items: flex-start; gap: 12px; margin-top: 16px; padding: 14px; border: 1px solid #2E3343; border-radius: 4px; background: #0F1117; }
+.gamePage .pieceAbilityCard { display: flex; align-items: flex-start; gap: 12px; margin-top: 16px; padding: 14px; border: 1px solid var(--border-strong); border-radius: 4px; background: var(--page); }
 .gamePage .abilitySwatch { display: grid; grid-template-columns: repeat(2, 18px); grid-template-rows: repeat(2, 18px); gap: 1px; flex-shrink: 0; margin-top: 3px; }
 .gamePage .abilitySwatch i { border-radius: 1px; }
 .gamePage .abilityTitle { font-size: 15px; font-weight: 700; }
-.gamePage .abilityLabel { margin-top: 3px; color: #9AA1B5; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; }
-.gamePage .pieceAbilityCard p { margin: 8px 0 0; color: #C9CDD9; font-size: 13px; line-height: 1.5; }
-.gamePage .firstMoveSwatch { flex-shrink: 0; width: 28px; height: 28px; margin: 4px 3px 0; display: flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--start-color) 22%, transparent); box-shadow: inset 0 0 0 2px #EDEFF5, 0 0 0 3px color-mix(in srgb, var(--start-color) 35%, transparent); }
+.gamePage .abilityLabel { margin-top: 3px; color: var(--muted); font-size: 10px; letter-spacing: 1px; text-transform: uppercase; }
+.gamePage .pieceAbilityCard p { margin: 8px 0 0; color: var(--text-soft); font-size: 13px; line-height: 1.5; }
+.gamePage .firstMoveSwatch { flex-shrink: 0; width: 28px; height: 28px; margin: 4px 3px 0; display: flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--start-color) 22%, transparent); box-shadow: inset 0 0 0 2px var(--tile-outline), 0 0 0 3px color-mix(in srgb, var(--start-color) 35%, transparent); }
 .gamePage .firstMoveSwatch i { width: 10px; height: 10px; background: var(--start-color); }
 .gamePage .pieceControls { margin-top: 20px; }
-.gamePage .pieceControls h3 { margin: 0 0 8px; font-size: 11px; font-weight: 600; letter-spacing: 1.2px; color: #9AA1B5; text-transform: uppercase; }
+.gamePage .pieceControls h3 { margin: 0 0 8px; font-size: 11px; font-weight: 600; letter-spacing: 1.2px; color: var(--muted); text-transform: uppercase; }
 .gamePage .pieceControlRow { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 0; font-size: 13px; }
-.gamePage .pieceControlRow + .pieceControlRow { border-top: 1px solid #1F2230; }
+.gamePage .pieceControlRow + .pieceControlRow { border-top: 1px solid var(--border); }
 .gamePage .pieceControlRow > span { display: flex; align-items: center; gap: 7px; }
-.gamePage .pieceControlRow svg { width: 20px; height: 20px; flex-shrink: 0; fill: none; stroke: #9AA1B5; stroke-width: 1.5; }
-.gamePage .pieceControlRow .controlHighlight { fill: #C9CDD9; stroke: #EDEFF5; }
-.gamePage .pieceControlRow .controlKeys { gap: 5px; color: #9AA1B5; }
-.gamePage kbd { padding: 3px 5px; border: 1px solid #2E3343; border-radius: 2px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #C9CDD9; white-space: nowrap; }
+.gamePage .pieceControlRow svg { width: 20px; height: 20px; flex-shrink: 0; fill: none; stroke: var(--muted); stroke-width: 1.5; }
+.gamePage .pieceControlRow .controlHighlight { fill: var(--text-soft); stroke: var(--text); }
+.gamePage .pieceControlRow .controlKeys { gap: 5px; color: var(--muted); }
+.gamePage kbd { padding: 3px 5px; border: 1px solid var(--border-strong); border-radius: 2px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-soft); white-space: nowrap; }
 
 .gamePage.gameLoading { align-items: center; justify-content: center; gap: 24px; padding: 24px 16px; }
-.gamePage .startPanel { max-width: 100%; border-color: #272B38; border-radius: 6px; background: #15171F; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+.gamePage .startPanel { max-width: 100%; border-color: var(--border); border-radius: 6px; background: var(--surface); box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
 .gamePage .startPanel h2 { font-family: 'Space Grotesk', sans-serif; }
-.gamePage .modalBackdrop { background: rgba(13,14,19,0.75); backdrop-filter: none; }
-.gamePage .winnerModal { border: 1px solid #272B38; border-radius: 6px; background: #15171F; box-shadow: none; }
+.gamePage .modalBackdrop { background: var(--backdrop); backdrop-filter: none; }
+.gamePage .winnerModal { border: 1px solid var(--border); border-radius: 6px; background: var(--surface); box-shadow: none; }
 .gamePage .winnerBadge { border-radius: 4px; box-shadow: none; }
 .gamePage .winnerTitle { font-family: 'Space Grotesk', sans-serif; }
-.gamePage .leaderboardRow { border: 1px solid #272B38; border-radius: 4px; background: #1A1C25; }
-.gamePage .leaderboardTiedLeader { border-color: #2E3343; background: #1C1F2A; box-shadow: none; }
+.gamePage .leaderboardRow { border: 1px solid var(--border); border-radius: 4px; background: var(--surface-raised); }
+.gamePage .leaderboardTiedLeader { border-color: var(--border-strong); background: var(--surface-raised); box-shadow: none; }
 .gamePage .leaderboardRank { border-radius: 1px; box-shadow: none; font-family: 'JetBrains Mono', monospace; }
 .gamePage .leaderboardBlocks { font-family: 'JetBrains Mono', monospace; }
-.gamePage .tieLabel { border-radius: 2px; background: #262A38; color: #C9CDD9; }
+.gamePage .tieLabel { border-radius: 2px; background: var(--surface-raised); color: var(--text-soft); }
 .gamePage .modalCloseButton { border-radius: 4px; }
 
 @media (max-width: 1100px) {

@@ -11,7 +11,7 @@ const BACKGROUND_PIECES = [
 	{ left: 66, top: 82, color: '#EAB308', shape: ['#..', '###'] },
 ]
 
-function CreateGameScreen({ onEnterGame, onConfigureGame, actionError = '', isEntering = false }) {
+function CreateGameScreen({ onEnterGame, onConfigureGame, actionError = '', isEntering = false, isPhoneLandscape = false }) {
 	const [inviteCode, setInviteCode] = useState('')
 	const [error, setError] = useState('')
 	const codeInputRefs = useRef([])
@@ -155,7 +155,7 @@ function CreateGameScreen({ onEnterGame, onConfigureGame, actionError = '', isEn
 
 	
 	return (
-		<div ref={pageRef} className="startPage createGamePage homeScreen">
+		<div ref={pageRef} className={`startPage createGamePage homeScreen${isPhoneLandscape ? ' phoneLandscape' : ''}`}>
 			<div className="homeBackground" aria-hidden="true">
 				{BACKGROUND_PIECES.map((piece, pieceIndex) => (
 					<span
@@ -180,14 +180,13 @@ function CreateGameScreen({ onEnterGame, onConfigureGame, actionError = '', isEn
 				))}
 			</div>
 
-			<h1 className="gameTitle homeLogo">
-				<span className="homeLogoMark" aria-hidden="true">
-					<i />
-					<i />
-					<i />
-				</span>
-				<span>Tipto</span>
-			</h1>
+			<div className="homeBrand">
+				<h1 className="gameTitle homeLogo">
+					<span className="homeLogoMark" aria-hidden="true"><i /><i /><i /></span>
+					<span>Tipto</span>
+				</h1>
+				<p className="homeTagline">Claim the board, one corner at a time.</p>
+			</div>
 
 			<div className="startPanel createGamePanel homeCard">
 				<button className="homeCreateButton" onClick={onConfigureGame} disabled={isEntering}>
@@ -208,6 +207,8 @@ function CreateGameScreen({ onEnterGame, onConfigureGame, actionError = '', isEn
 								}}
 								aria-label={`Invite code digit ${index + 1}`}
 								inputMode="numeric"
+								autoComplete="one-time-code"
+								pattern="[0-9]*"
 								maxLength="6"
 								value={inviteCode[index] || ''}
 								onChange={event => updateInviteCode(index, event.target.value)}
