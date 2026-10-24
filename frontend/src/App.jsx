@@ -139,7 +139,6 @@ function App() {
 			onLeave={handleLeaveRoom}
 			onStarted={handleStartPlaying}
 			onRemoved={handleRemoved}
-			isPhoneLandscape={isPhoneLandscape}
 		/>
 	)
 }

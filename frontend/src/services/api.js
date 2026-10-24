@@ -115,6 +115,9 @@ export const updateLobbySettings = (gameId, credentials, settings) =>
 export const startLobbyGame = (gameId, credentials) =>
 	lobbyRequest(gameId, 'start', credentials)
 
+export const startLobbyGameWithBots = (gameId, credentials) =>
+	lobbyRequest(gameId, 'start-with-bots', credentials)
+
 export const leaveLobby = (gameId, credentials) =>
 	lobbyRequest(gameId, 'leave-room', credentials)
 

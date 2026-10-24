@@ -1068,6 +1068,13 @@ def make_lobby_bot(game, seat_key):
     reseat_lobby_players(game)
 
 
+def fill_empty_lobby_seats(game):
+    occupied_keys = {player["settingsPlayerKey"] for player in game["players"]}
+    for seat_key in game["settings"]["players"]:
+        if seat_key not in occupied_keys:
+            make_lobby_bot(game, seat_key)
+
+
 @app.post("/games/{game_id}/bots")
 async def add_lobby_bot(game_id: str, request: AddLobbyBotRequest):
     game = get_game_or_404(game_id)
@@ -1086,10 +1093,7 @@ async def add_lobby_bot(game_id: str, request: AddLobbyBotRequest):
 async def fill_lobby_bots(game_id: str, request: QuitRequest):
     game = get_game_or_404(game_id)
     host = authenticate_lobby_host(game, request)
-    occupied_keys = {player["settingsPlayerKey"] for player in game["players"]}
-    for seat_key in game["settings"]["players"]:
-        if seat_key not in occupied_keys:
-            make_lobby_bot(game, seat_key)
+    fill_empty_lobby_seats(game)
     await broadcast_game(game_id)
     return game_snapshot(game, host["id"])
 
@@ -1171,6 +1175,17 @@ async def start_lobby_game(game_id: str, request: QuitRequest):
     host = authenticate_lobby_host(game, request)
     if len(game["players"]) != game["settings"]["playerCount"]:
         raise HTTPException(status_code=409, detail="Wait until every player has joined.")
+    start_game_if_ready(game, manual=True)
+    await broadcast_game(game_id)
+    schedule_turn(game_id)
+    return game_snapshot(game, host["id"])
+
+
+@app.post("/games/{game_id}/start-with-bots")
+async def start_lobby_game_with_bots(game_id: str, request: QuitRequest):
+    game = get_game_or_404(game_id)
+    host = authenticate_lobby_host(game, request)
+    fill_empty_lobby_seats(game)
     start_game_if_ready(game, manual=True)
     await broadcast_game(game_id)
     schedule_turn(game_id)

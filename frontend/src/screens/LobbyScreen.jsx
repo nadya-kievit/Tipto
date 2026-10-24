@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
-	gameSocketUrl, getGame, leaveLobby, startLobbyGame,
+	gameSocketUrl, getGame, leaveLobby, startLobbyGame, startLobbyGameWithBots,
 	updateLobbyProfile, updateLobbySettings,
-	addLobbyBot, fillLobbyBots, removeLobbyPlayer,
+	addLobbyBot, removeLobbyPlayer,
 } from '../services/api'
 import { enterLobby } from '../services/roomSession'
 import './LobbyScreen.css'
@@ -22,13 +22,12 @@ const BOARDS = [
 	{ id: 'irregular', label: 'Irregular', shape: ['..###..', '.#####.', '#######', '#######', '.#####.', '..####.', '...##..'] },
 	{ id: 'rooms', label: 'Rooms', shape: ['###.###', '###.###', '.#...#.', '.#####.', '...#...', '..###..', '..###..'] },
 ]
-const PLAYER_COUNTS = [2, 3, 4, 5, 6]
 const TIMES = [null, 30, 60, 90]
 
-function BoardShape({ layout, small = false }) {
+function BoardShape({ layout }) {
 	const board = BOARDS.find(board => board.id === layout) || BOARDS[1]
 	return (
-		<span className={`lobbyBoardShape${small ? ' lobbyBoardShapeSmall' : ''}`} aria-hidden="true">
+		<span className="lobbyBoardShape" aria-hidden="true">
 			{board.shape.flatMap((row, rowIndex) => [...row].map((cell, columnIndex) => (
 				<i
 					key={`${rowIndex}-${columnIndex}`}
@@ -43,54 +42,15 @@ function CopyIcon() {
 	return <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="1" /><path d="M16 8V4H4v12h4" /></svg>
 }
 
-function RobotIcon() {
-	return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v3M8 16h8" /><rect x="5" y="6" width="14" height="14" rx="1" /><path d="M3 10v6M21 10v6M9 10v2M15 10v2" /></svg>
+function PencilIcon() {
+	return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 20 4.5-1 10-10-3.5-3.5-10 10L4 20Z" /><path d="m13.5 7 3.5 3.5" /></svg>
 }
 
-function PhoneLobby({
-	gameId, game, me, name, onNameChange, onNameBlur, saveProfile, changeSettings,
-	leaveRoom, copyInvite, copied, isHost, joined, target, remaining, busy,
-	savingProfile, savingSettings, starting, startGame, connected, waitingText,
-	manageSeats, session, error,
-}) {
-	return <div className="lobbyScreen phoneLandscape">
-		<header className="phoneLobbyBar">
-			<div><span>Invite</span><strong>{gameId}</strong><button type="button" onClick={copyInvite}><CopyIcon />{copied ? 'Copied' : 'Copy'}</button></div>
-			<button type="button" className="phoneLobbyLeave" onClick={leaveRoom} disabled={busy}>Leave</button>
-		</header>
-		{game && me ? <main className="phoneLobbyMain">
-			<section className="phoneLobbyLeft">
-				<h2>You</h2>
-				<label htmlFor="phone-lobby-name">Name</label>
-				<input id="phone-lobby-name" value={name} maxLength={24} onChange={onNameChange} onBlur={onNameBlur} disabled={busy} autoComplete="nickname" />
-				<div className="phoneLobbySwatches" role="group" aria-label="Colour">
-					{COLOURS.map(colour => {
-						const takenBy = game.players.find(player => player.id !== me.id && player.color === colour.name)
-						return <button key={colour.name} type="button" style={{ '--lobby-swatch': colour.hex }} className={`${me.color === colour.name ? 'selected ' : ''}${takenBy ? 'taken' : ''}`} disabled={Boolean(takenBy) || busy || savingProfile} aria-label={colour.label || colour.name} onClick={() => saveProfile({ color: colour.name })} />
-					})}
-				</div>
-				<div className="phoneLobbyPlayersHeading"><h2>Players <span>{joined}/{target}</span></h2>{isHost && remaining > 0 && <button type="button" disabled={busy || savingSettings} onClick={() => manageSeats(() => fillLobbyBots(gameId, session))}><RobotIcon />Fill with bots</button>}</div>
-				<div className="phoneLobbySeats">
-					{Array.from({ length: target }, (_, index) => {
-						const player = game.players.find(player => player.settingsPlayerKey === `Player ${index + 1}`)
-						const isYou = player?.id === me.id
-						return <div key={player?.id || `empty-${index}`} className={player ? '' : 'empty'}>
-							{player ? <><i style={{ background: COLOURS.find(colour => colour.name === player.color)?.hex }} /><span title={player.name}>{isYou ? `${player.name} (you)` : player.name}</span>{isHost && !isYou && <button type="button" aria-label={`Remove ${player.name}`} disabled={busy || savingSettings} onClick={() => manageSeats(() => removeLobbyPlayer(gameId, session, player.id))}>×</button>}</> : <><span>Waiting…</span>{isHost && <button type="button" disabled={busy || savingSettings} onClick={() => manageSeats(() => addLobbyBot(gameId, session, index + 1))}>+ Bot</button>}</>}
-						</div>
-					})}
-				</div>
-			</section>
-			<section className="phoneLobbyRight">
-				<div><h2>Board</h2><div className="phoneLobbyBoards" role="group" aria-label="Board layout">{BOARDS.map(board => <button type="button" key={board.id} aria-pressed={game.settings.boardLayout === board.id} disabled={!isHost || busy || savingSettings} onClick={() => changeSettings({ boardLayout: board.id })}><BoardShape layout={board.id} /><span>{board.label}</span></button>)}</div></div>
-				<div className="phoneLobbySettingGroups"><h2>Players · time per move</h2><div><div className="lobbySegments">{PLAYER_COUNTS.map(count => <button type="button" key={count} aria-pressed={target === count} disabled={!isHost || count < joined || busy || savingSettings} onClick={() => changeSettings({ playerCount: count })}>{count}</button>)}</div><div className="lobbySegments">{TIMES.map(time => <button type="button" key={time ?? 'none'} aria-pressed={game.settings.moveTimeLimitSeconds === time} disabled={!isHost || busy || savingSettings} onClick={() => changeSettings({ moveTimeLimitSeconds: time })}>{time === null ? 'None' : `${time}s`}</button>)}</div></div></div>
-				<footer><span role="status">{connected ? waitingText : 'Reconnecting…'}</span>{isHost && <button type="button" onClick={startGame} disabled={joined !== target || busy || savingSettings || savingProfile}>{starting ? 'Starting…' : 'Start game'}</button>}</footer>
-			</section>
-			{error && <div className="phoneLobbyError" role="alert">{error}</div>}
-		</main> : <div className="phoneLobbyLoading" role="status">Joining room…</div>}
-	</div>
+function formatInviteCode(code) {
+	return `${code.slice(0, 3)} ${code.slice(3)}`.trim()
 }
 
-function LobbyScreen({ gameId, onLeave, onStarted, onRemoved, isPhoneLandscape = false }) {
+function LobbyScreen({ gameId, onLeave, onStarted, onRemoved }) {
 	const [game, setGame] = useState(null)
 	const [session, setSession] = useState(null)
 	const [name, setName] = useState('')
@@ -104,6 +64,7 @@ function LobbyScreen({ gameId, onLeave, onStarted, onRemoved, isPhoneLandscape =
 	const [copied, setCopied] = useState(false)
 	const entryRef = useRef(null)
 	const nameTimerRef = useRef(null)
+	const copyTimerRef = useRef(null)
 	const nameDirtyRef = useRef(false)
 	const latestNameRef = useRef('')
 	const profileQueueRef = useRef(Promise.resolve())
@@ -112,7 +73,6 @@ function LobbyScreen({ gameId, onLeave, onStarted, onRemoved, isPhoneLandscape =
 	const leavingRef = useRef(false)
 	const removedRef = useRef(false)
 	const me = game?.players.find(player => player.id === session?.playerId)
-	const host = game?.players.find(player => player.id === game.adminPlayerId)
 	const isHost = Boolean(me && me.id === game.adminPlayerId)
 	const joined = game?.players.length || 0
 	const target = game?.settings.playerCount || 4
@@ -211,7 +171,10 @@ function LobbyScreen({ gameId, onLeave, onStarted, onRemoved, isPhoneLandscape =
 		}
 	}, [gameId, session, receiveGame, removedFromRoom])
 
-	useEffect(() => () => clearTimeout(nameTimerRef.current), [])
+	useEffect(() => () => {
+		clearTimeout(nameTimerRef.current)
+		clearTimeout(copyTimerRef.current)
+	}, [])
 
 	const saveProfile = changes => {
 		profilePendingRef.current += 1
@@ -269,11 +232,14 @@ function LobbyScreen({ gameId, onLeave, onStarted, onRemoved, isPhoneLandscape =
 	}
 
 	const startGame = async () => {
+		if (starting) return
 		setStarting(true)
 		setError('')
 		try {
 			await flushName()
-			const snapshot = await startLobbyGame(gameId, session)
+			const snapshot = await (remaining > 0
+				? startLobbyGameWithBots(gameId, session)
+				: startLobbyGame(gameId, session))
 			receiveGame(snapshot, session)
 		} catch (error) {
 			setError(error.message)
@@ -319,14 +285,16 @@ function LobbyScreen({ gameId, onLeave, onStarted, onRemoved, isPhoneLandscape =
 		try {
 			await navigator.clipboard.writeText(gameId)
 			setCopied(true)
+			clearTimeout(copyTimerRef.current)
+			copyTimerRef.current = setTimeout(() => setCopied(false), 1200)
 		} catch {
 			setError('Could not copy the invite code. Select and copy it manually.')
 		}
 	}
 
 	const waitingText = remaining > 0
-		? `Waiting for ${remaining} more player${remaining === 1 ? '' : 's'}`
-		: isHost ? "Everyone’s here" : `Everyone’s here. Waiting for ${host?.name || 'the host'} to start the game.`
+		? `Waiting for ${remaining} more`
+		: "Everyone’s in"
 	const handleNameBlur = () => {
 		if (!latestNameRef.current.trim()) {
 			nameDirtyRef.current = false
@@ -335,88 +303,113 @@ function LobbyScreen({ gameId, onLeave, onStarted, onRemoved, isPhoneLandscape =
 		} else flushName()
 	}
 
-	if (isPhoneLandscape) return <PhoneLobby {...{
-		gameId, game, me, name, saveProfile, changeSettings, leaveRoom, copyInvite, copied,
-		isHost, joined, target, remaining, busy, savingProfile, savingSettings, starting,
-		startGame, connected, waitingText, manageSeats, session, error,
-	}} onNameChange={changeName} onNameBlur={handleNameBlur} />
-
 	return (
 		<div className="lobbyScreen">
 			<header className="lobbyTopBar">
 				<div className="lobbyLogo"><span className="lobbyLogoMark" aria-hidden="true"><i /><i /><i /></span>Tipto</div>
 				<button type="button" className="lobbyLeave" onClick={leaveRoom} disabled={leaving || starting}>Leave room</button>
 			</header>
-			<main className="lobbyMain">
-				<div className="lobbyPanel">
-					<section className="lobbySection lobbyInviteSection">
-						<div><h1 className="lobbySectionLabel">Invite code</h1><div className="lobbyInviteCode">{gameId}</div></div>
-						<button type="button" className="lobbyCopy" onClick={copyInvite}><CopyIcon />{copied ? 'Copied' : 'Copy invite'}</button>
-					</section>
-					{game && me ? <>
-						<section className="lobbySection">
-							<h2 className="lobbySectionLabel">You</h2>
-							<label className="lobbyFieldLabel" htmlFor="lobby-name">Name</label>
-							<input id="lobby-name" className="lobbyName" value={name} maxLength={24} onChange={changeName} onBlur={handleNameBlur} disabled={busy} autoComplete="nickname" />
-							<div className="lobbyFieldLabel lobbyColourLabel" id="lobby-colour-label">Colour</div>
-							<div className="lobbySwatches" role="group" aria-labelledby="lobby-colour-label">
+
+			<main className="lobbyPanel">
+				<header className="lobbyHeader">
+					<h1>Lobby</h1>
+					<button type="button" className="lobbyCode" onClick={copyInvite} aria-label="Copy invite link">
+						<strong>{formatInviteCode(gameId)}</strong>
+						<span aria-hidden="true" />
+						<CopyIcon />
+						<em className={copied ? 'copied' : ''}>{copied ? 'Copied' : 'Copy'}</em>
+					</button>
+				</header>
+
+				{game && me ?
+					<>
+					<section className="lobbyPlayers">
+						<div className="lobbySectionHeading">
+							<h2>Players</h2>
+							<span className="lobbyCount">{joined} / {target}</span>
+						</div>
+						<div className="lobbySeats">
+							{Array.from({ length: target }, (_, index) => {
+								const player = game.players.find(player => player.settingsPlayerKey === `Player ${index + 1}`)
+								const isYou = player?.id === me.id
+								const isSeatHost = player?.id === game.adminPlayerId
+								const colour = COLOURS.find(option => option.name === player?.color)?.hex
+								const contents = player && <>
+									<span className={`lobbySeatColour${player.color ? '' : ' lobbySeatColourUnassigned'}`} style={{ background: colour }} aria-hidden="true" />
+									<span className="lobbySeatName" title={player.name}>{player.name}</span>
+									{player.isBot && <span className="lobbySeatTag">Bot</span>}
+									{isYou && <span className="lobbySeatTag">You</span>}
+									{isYou && <PencilIcon />}
+									{!isYou && isSeatHost && <span className="lobbySeatTag">Host</span>}
+								</>
+
+								if (isYou)
+									return <div key={player.id} className="lobbySeat lobbyOwnSeat">
+									{contents}
+									{isHost && player.isBot && <button type="button" className="lobbyGhostButton" aria-label={`Remove ${player.name}`} disabled={busy} onClick={() => manageSeats(() => removeLobbyPlayer(gameId, session, player.id))}>×</button>}
+								</div>
+
+								if (player) return <div key={player.id} className="lobbySeat">
+									{contents}
+									{isHost && player.isBot && <button type="button" className="lobbyGhostButton" aria-label={`Remove ${player.name}`} disabled={busy} onClick={() => manageSeats(() => removeLobbyPlayer(gameId, session, player.id))}>×</button>}
+								</div>
+
+								return <div key={`empty-${index}`} className="lobbySeat lobbySeatEmpty">
+									<span className="lobbySeatName">Waiting…</span>
+									{isHost && <div className="lobbySeatActions">
+										<button type="button" className="lobbyGhostButton" disabled={busy} onClick={() => manageSeats(() => addLobbyBot(gameId, session, index + 1))}>+ Bot</button>
+										{target > 2 && <button type="button" className="lobbyGhostButton" aria-label={`Remove empty slot ${index + 1}`} disabled={busy || savingSettings} onClick={() => changeSettings({ playerCount: target - 1 })}>×</button>}
+									</div>}
+								</div>
+							})}
+							{isHost && target < 6 && <button type="button" className="lobbySeat lobbyAddSlot" disabled={busy || savingSettings} onClick={() => changeSettings({ playerCount: target + 1 })}>+ Add slot</button>}
+						</div>
+
+						<div className="lobbyProfileEditor">
+							<label htmlFor="lobby-name">Name</label>
+							<input id="lobby-name" value={name} maxLength={24} onChange={changeName} onBlur={handleNameBlur} disabled={busy} autoComplete="nickname" />
+							<div className="lobbySwatches" role="group" aria-label="Colour">
 								{COLOURS.map(colour => {
 									const takenBy = game.players.find(player => player.id !== me.id && player.color === colour.name)
-									return <button key={colour.name} type="button" className={`lobbySwatch${me.color === colour.name ? ' lobbySwatchSelected' : ''}${takenBy ? ' lobbySwatchTaken' : ''}`} style={{ '--lobby-swatch': colour.hex }} disabled={Boolean(takenBy) || busy || savingProfile} aria-pressed={me.color === colour.name} aria-label={`${colour.label || colour.name}${takenBy ? ` — taken by ${takenBy.name}` : ''}`} title={takenBy ? `Taken by ${takenBy.name}` : colour.label || colour.name} onClick={() => saveProfile({ color: colour.name })}>{takenBy && <span aria-hidden="true">✕</span>}</button>
+									return <button key={colour.name} type="button" className="lobbySwatch" style={{ '--lobby-swatch': colour.hex }} data-taken={takenBy ? '' : undefined} disabled={Boolean(takenBy) || busy || savingProfile} aria-pressed={me.color === colour.name} aria-label={`${colour.label || colour.name}${takenBy ? ` — taken by ${takenBy.name}` : ''}`} title={takenBy ? `Taken by ${takenBy.name}` : colour.label || colour.name} onClick={() => saveProfile({ color: colour.name })} />
 								})}
 							</div>
-						</section>
-						<section className="lobbySection">
-							<div className="lobbySectionHeading lobbyPlayersHeading">
-								<h2 className="lobbySectionLabel">Players</h2>
-								<div className="lobbyRosterActions">
-									<span className="lobbyJoinedCount">{joined} / {target} joined</span>
-									{isHost && remaining > 0 && <button type="button" className="lobbyFillBots" disabled={busy || savingSettings} onClick={() => manageSeats(() => fillLobbyBots(gameId, session))}><RobotIcon />Fill with bots</button>}
+						</div>
+					</section>
+
+					<section className="lobbySettings">
+						<h2>Game settings</h2>
+						{isHost ? <>
+							<div className="lobbySettingRow">
+								<span>Board</span>
+								<div className="lobbySegments lobbyBoardSegments" role="group" aria-label="Board layout">
+									{BOARDS.map(board => <button type="button" key={board.id} aria-pressed={game.settings.boardLayout === board.id} disabled={busy || savingSettings} onClick={() => changeSettings({ boardLayout: board.id })}><BoardShape layout={board.id} /><span>{board.label}</span></button>)}
 								</div>
 							</div>
-							<div className="lobbySeats">
-								{Array.from({ length: target }, (_, index) => {
-									const player = game.players.find(player => player.settingsPlayerKey === `Player ${index + 1}`)
-									const isYou = player?.id === me.id
-									const isSeatHost = player?.id === game.adminPlayerId
-									const tag = player?.isBot ? 'Bot' : isYou && isSeatHost ? 'You · Host' : isYou ? 'You' : isSeatHost ? 'Host' : null
-									return <div key={player?.id || `empty-${index}`} className={`lobbySeat${player ? '' : ' lobbySeatEmpty'}`}>
-										{player ? <>
-											<span className={`lobbySeatColour${player.color ? '' : ' lobbySeatColourUnassigned'}`} style={{ background: COLOURS.find(colour => colour.name === player.color)?.hex }} title={player.color ? undefined : 'Colour assigned when the game starts'} aria-hidden="true" />
-											<span className="lobbySeatName" title={player.name}>{player.name}</span>
-											{tag && <span className="lobbySeatTag">{tag}</span>}
-											{isHost && !isYou && <button type="button" className="lobbyRemovePlayer" aria-label={`Remove ${player.name}`} disabled={busy || savingSettings} onClick={() => manageSeats(() => removeLobbyPlayer(gameId, session, player.id))}>×</button>}
-										</> : <>
-											<span className="lobbySeatName">Waiting…</span>
-											{isHost && <button type="button" className="lobbyAddBot" disabled={busy || savingSettings} onClick={() => manageSeats(() => addLobbyBot(gameId, session, index + 1))}>Add bot</button>}
-										</>}
-									</div>
-								})}
+							<div className="lobbySettingRow">
+								<span>Timer</span>
+								<div className="lobbySegments" role="group" aria-label="Time per move">
+									{TIMES.map(time => <button type="button" key={time ?? 'none'} aria-pressed={game.settings.moveTimeLimitSeconds === time} disabled={busy || savingSettings} onClick={() => changeSettings({ moveTimeLimitSeconds: time })}>{time === null ? 'None' : `${time}s`}</button>)}
+								</div>
 							</div>
-						</section>
-						<section className="lobbySection">
-							<div className="lobbySectionHeading"><h2 className="lobbySectionLabel">Game settings</h2>{isHost && <span className="lobbyHostNote">Host only</span>}</div>
-							{isHost ? <>
-								<div className="lobbyFieldLabel">Board</div>
-								<div className="lobbyBoardOptions" role="group" aria-label="Board layout">
-									{BOARDS.map(board => <button type="button" key={board.id} aria-pressed={game.settings.boardLayout === board.id} disabled={busy || savingSettings} className={`lobbyBoardOption${game.settings.boardLayout === board.id ? ' lobbyBoardOptionSelected' : ''}`} onClick={() => changeSettings({ boardLayout: board.id })}><BoardShape layout={board.id} /><span>{board.label}</span></button>)}
-								</div>
-								<div className="lobbySettingsRow">
-									<div><div className="lobbyFieldLabel">Players</div><div className="lobbySegments" role="group" aria-label="Number of players">{PLAYER_COUNTS.map(count => <button type="button" key={count} aria-pressed={target === count} disabled={count < joined || busy || savingSettings} title={count < joined ? 'Cannot be below the number already joined' : undefined} onClick={() => changeSettings({ playerCount: count })}>{count}</button>)}</div></div>
-									<div><div className="lobbyFieldLabel">Time per move</div><div className="lobbySegments" role="group" aria-label="Time per move">{TIMES.map(time => <button type="button" key={time ?? 'none'} aria-pressed={game.settings.moveTimeLimitSeconds === time} disabled={busy || savingSettings} onClick={() => changeSettings({ moveTimeLimitSeconds: time })}>{time === null ? 'None' : `${time}s`}</button>)}</div></div>
-								</div>
-							</> : <>
-								<div className="lobbyReadOnlySettings"><BoardShape layout={game.settings.boardLayout} small /><span>{BOARDS.find(board => board.id === game.settings.boardLayout)?.label} board · <span className="lobbyNumber">{target}</span> players · {game.settings.moveTimeLimitSeconds === null ? 'No time limit' : <><span className="lobbyNumber">{game.settings.moveTimeLimitSeconds}s</span> per move</>}</span></div>
-								<div className="lobbySetBy">Set by {host?.name || 'the host'} (host)</div>
-							</>}
-						</section>
-						<footer className="lobbySection lobbyFooter">
-							<span className="lobbyStatus" role="status">{connected ? waitingText : 'Reconnecting…'}</span>
-							{isHost && <button type="button" className="lobbyStart" onClick={startGame} disabled={joined !== target || busy || savingSettings || savingProfile}>{starting ? 'Starting…' : 'Start game'}</button>}
-						</footer>
-					</> : !error && <div className="lobbySection lobbyStatus" role="status">Joining room…</div>}
-					{error && <div className="lobbySection lobbyError" role="alert">{error}</div>}
-				</div>
+						</> : <>
+							<div className="lobbyPills">
+								<span><BoardShape layout={game.settings.boardLayout} />{BOARDS.find(board => board.id === game.settings.boardLayout)?.label}</span>
+								<span>Players <b>{target}</b></span>
+								<span>Timer <b>{game.settings.moveTimeLimitSeconds === null ? 'None' : `${game.settings.moveTimeLimitSeconds}s`}</b></span>
+							</div>
+						</>}
+					</section>
+
+					<footer className="lobbyFooter">
+						<span role="status">{connected ? (isHost ? waitingText : 'Waiting for host to start…') : 'Reconnecting…'}</span>
+						{isHost && <button type="button" className="lobbyStart" onClick={startGame} aria-busy={starting}>{starting ? 'Starting…' : remaining > 0 ? `Start with ${remaining} bot${remaining === 1 ? '' : 's'}` : 'Start game'}</button>}
+					</footer>
+					</>
+				:
+					!error && <div className="lobbyLoading" role="status">Joining room…</div>
+				}
+				{error && <div className="lobbyError" role="alert">{error}</div>}
 			</main>
 		</div>
 	)

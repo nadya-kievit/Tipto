@@ -301,6 +301,7 @@ def test_fill_bots_keeps_humans_and_existing_bots_and_waits_for_manual_start(cli
 def test_guests_cannot_manage_any_seats_or_impersonate_host(client):
     room_id, host = new_lobby(client)
     guest = join(client, room_id)
+    assert client.post(f"/games/{room_id}/start-with-bots", json=guest).status_code == 403
     for credentials in [guest, {**host, "playerToken": guest["playerToken"]}]:
         for endpoint, data in [("bots", {"seat": 3}), ("fill-bots", {}), ("remove-player", {"targetPlayerId": host["playerId"]})]:
             assert client.post(f"/games/{room_id}/{endpoint}", json={**credentials, **data}).status_code == 403
@@ -393,3 +394,44 @@ def test_host_departure_transfers_to_human_not_bot_or_closes_bot_only_room(clien
     client.post(f"/games/{room_id}/leave-room", json=guest)
     assert state(client, room_id)["status"] == "closed"
     assert state(client, room_id)["players"] == []
+
+
+@pytest.mark.parametrize("player_count", [1, 7])
+def test_lobby_slot_count_must_stay_between_two_and_six(client, player_count):
+    response = client.post("/games", json={"settings": {
+        "lobbyMode": True,
+        "boardLayout": "irregular",
+        "playerCount": player_count,
+        "moveTimeLimitSeconds": 60,
+    }})
+    assert response.status_code == 422
+
+
+def test_only_empty_slots_can_be_removed(client):
+    room_id, host = new_lobby(client, 3)
+    join(client, room_id)
+    join(client, room_id)
+    assert change_settings(client, room_id, host, playerCount=2).status_code == 409
+    assert state(client, room_id)["settings"]["playerCount"] == 3
+
+
+def test_start_with_bots_fills_empty_slots_and_starts_atomically(client):
+    room_id, host = new_lobby(client, 4)
+    guest = join(client, room_id)
+    response = client.post(f"/games/{room_id}/start-with-bots", json=host)
+    assert response.status_code == 200
+    snapshot = response.json()
+    assert snapshot["status"] == "playing"
+    assert len(snapshot["players"]) == 4
+    assert sum(player["isBot"] for player in snapshot["players"]) == 2
+    assert len({player["color"] for player in snapshot["players"]}) == 4
+    assert client.post(f"/games/{room_id}/start-with-bots", json=guest).status_code == 409
+
+
+def test_bots_do_not_reserve_colours_before_the_game_starts(client):
+    room_id, host = new_lobby(client)
+    snapshot = client.post(f"/games/{room_id}/bots", json={**host, "seat": 2}).json()
+    bot = next(player for player in snapshot["players"] if player["isBot"])
+    assert bot["color"] is None
+    assert client.patch(f"/games/{room_id}/profile", json={**host, "color": "Orange"}).status_code == 200
+    assert "Orange" not in {option["color"] for option in state(client, room_id)["availableColors"]}
