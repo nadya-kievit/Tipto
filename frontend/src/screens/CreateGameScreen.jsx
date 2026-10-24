@@ -11,7 +11,7 @@ const BACKGROUND_PIECES = [
 	{ left: 66, top: 82, color: '#EAB308', shape: ['#..', '###'] },
 ]
 
-function CreateGameScreen({ onEnterGame, onConfigureGame, actionError = '', isEntering = false, isPhoneLandscape = false }) {
+function CreateGameScreen({ onEnterGame, onConfigureGame, actionError = '', isEntering = false, enteringAction = null, isPhoneLandscape = false }) {
 	const [inviteCode, setInviteCode] = useState('')
 	const [error, setError] = useState('')
 	const codeInputRefs = useRef([])
@@ -189,8 +189,14 @@ function CreateGameScreen({ onEnterGame, onConfigureGame, actionError = '', isEn
 			</div>
 
 			<div className="startPanel createGamePanel homeCard">
-				<button className="homeCreateButton" onClick={onConfigureGame} disabled={isEntering}>
-					Create game
+				<button
+					className="homeCreateButton"
+					onClick={onConfigureGame}
+					disabled={isEntering}
+					aria-busy={isEntering && enteringAction === 'create'}
+				>
+					{isEntering && enteringAction === 'create' ? 'Creating game…' : 'Create game'}
+					{isEntering && enteringAction === 'create' && <span className="homeButtonLoadingBar" aria-hidden="true" />}
 				</button>
 
 				<div className="startDivider homeDivider">
@@ -219,8 +225,14 @@ function CreateGameScreen({ onEnterGame, onConfigureGame, actionError = '', isEn
 						))}
 					</div>
 
-					<button className="homeJoinButton" type="submit" disabled={inviteCode.length !== 6 || isEntering}>
-						Join game
+					<button
+						className="homeJoinButton"
+						type="submit"
+						disabled={inviteCode.length !== 6 || isEntering}
+						aria-busy={isEntering && enteringAction === 'join'}
+					>
+						{isEntering && enteringAction === 'join' ? 'Joining game…' : 'Join game'}
+						{isEntering && enteringAction === 'join' && <span className="homeButtonLoadingBar" aria-hidden="true" />}
 					</button>
 				</form>
 

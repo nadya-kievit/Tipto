@@ -14,6 +14,25 @@ function getRouteFromPath(pathname) {
 		: { screen: 'home', gameId: null }
 }
 
+function getEntryErrorMessage(error, action) {
+	if (!navigator.onLine) return 'You’re offline. Reconnect to the internet and try again.'
+
+	const isNetworkError = error instanceof TypeError
+		|| /failed to fetch|load failed|network request failed|networkerror/i.test(error?.message || '')
+
+	if (isNetworkError) {
+		return action === 'create'
+			? 'Couldn’t start the game. Check your connection and try again.'
+			: 'Couldn’t join the game. Check your connection and try again.'
+	}
+
+	if (action === 'join' && error?.status === 404) {
+		return 'We couldn’t find a game with that code.'
+	}
+
+	return error?.message || 'Something went wrong. Please try again.'
+}
+
 function PhoneRotateOverlay({ orientation }) {
 	const isLandscape = orientation === 'landscape'
 	return <div className={`phoneRotateOverlay phoneRotate${isLandscape ? 'Landscape' : 'Portrait'}`} role="status">
@@ -30,6 +49,7 @@ function App() {
 	const [path, setPath] = useState(window.location.pathname)
 	const [entryError, setEntryError] = useState('')
 	const [isEntering, setIsEntering] = useState(false)
+	const [enteringAction, setEnteringAction] = useState(null)
 	const enteringRef = useRef(false)
 	const route = getRouteFromPath(path)
 	const hasGameSession = route.screen === 'game' && Boolean(localStorage.getItem(`tipto-player-${route.gameId}`))
@@ -56,8 +76,10 @@ function App() {
 
 	const handleEnterRoom = async gameId => {
 		if (enteringRef.current) return
+		const action = gameId ? 'join' : 'create'
 		enteringRef.current = true
 		setIsEntering(true)
+		setEnteringAction(action)
 		setEntryError('')
 		try {
 			let roomId = gameId
@@ -74,10 +96,11 @@ function App() {
 			const { game } = await enterLobby(roomId)
 			navigateTo(`/${game.status === 'waiting' ? 'lobby' : 'game'}/${roomId}`)
 		} catch (error) {
-			setEntryError(error.message)
+			setEntryError(getEntryErrorMessage(error, action))
 		} finally {
 			enteringRef.current = false
 			setIsEntering(false)
+			setEnteringAction(null)
 		}
 	}
 
@@ -92,6 +115,7 @@ function App() {
 				onConfigureGame={() => handleEnterRoom()}
 				actionError={entryError}
 				isEntering={isEntering}
+				enteringAction={enteringAction}
 			/>
 		)
 	}
