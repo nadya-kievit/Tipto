@@ -1,0 +1,44 @@
+.pregameShell {
+	position: relative;
+	isolation: isolate;
+	min-height: 100dvh;
+	background: #0D0E13;
+}
+
+.pregameShell > .pregameBackground { position: fixed; }
+
+.pregameShell > .createGamePage.homeScreen,
+.pregameShell > .lobbyScreen { background: transparent; }
+
+.backgroundPieces {
+	--background-piece-page: #0D0E13;
+	--background-piece-cell: var(--background-piece-size);
+	position: absolute;
+	inset: 0;
+	z-index: -1;
+	overflow: hidden;
+	pointer-events: none;
+}
+
+.backgroundPiece {
+	position: absolute;
+	left: 0;
+	top: 0;
+	will-change: transform;
+	display: grid;
+	grid-template-columns: repeat(var(--background-piece-columns), var(--background-piece-cell));
+	grid-auto-rows: var(--background-piece-cell);
+	gap: 1px;
+}
+
+.backgroundPiece i {
+	border-radius: 1px;
+	background: color-mix(in srgb, var(--background-piece-color) calc(var(--background-piece-opacity) * 100%), var(--background-piece-page));
+	box-shadow: inset 0 2px 0 rgb(255 255 255 / calc(0.22 * var(--background-piece-opacity)));
+}
+
+.backgroundPiecesCompact {
+	--background-piece-cell: calc(var(--background-piece-size) * 0.62);
+}
+
+.backgroundPiecesCompact .backgroundPiece:nth-child(n + 5) { display: none; }

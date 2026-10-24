@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import CreateGameScreen from './screens/CreateGameScreen'
 import LobbyScreen from './screens/LobbyScreen'
 import GameScreen from './screens/GameScreen'
+import BackgroundPieces from './components/BackgroundPieces'
 import { createGame } from './services/api'
 import { enterLobby } from './services/roomSession'
 import usePhoneLayout from './hooks/usePhoneLayout'
@@ -107,38 +108,39 @@ function App() {
 	if (hasGameSession && phoneMode === 'portrait') return <PhoneRotateOverlay orientation="landscape" />
 	if (!hasGameSession && phoneMode === 'landscape') return <PhoneRotateOverlay orientation="portrait" />
 
-	if (route.screen === 'home') {
+	if (!hasGameSession) {
 		return (
-			<CreateGameScreen
-				isPhoneLandscape={isPhoneLandscape}
-				onEnterGame={handleEnterRoom}
-				onConfigureGame={() => handleEnterRoom()}
-				actionError={entryError}
-				isEntering={isEntering}
-				enteringAction={enteringAction}
-			/>
-		)
-	}
-
-	if (hasGameSession) {
-		return (
-			<GameScreen
-				key={route.gameId}
-				gameId={route.gameId}
-				onLeaveGame={handleLeaveRoom}
-				onNeedsColor={handleNeedsSession}
-				isPhoneLandscape={isPhoneLandscape}
-			/>
+			<div className="pregameShell">
+				<BackgroundPieces className="pregameBackground" />
+				{route.screen === 'home' ? (
+					<CreateGameScreen
+						isPhoneLandscape={isPhoneLandscape}
+						onEnterGame={handleEnterRoom}
+						onConfigureGame={() => handleEnterRoom()}
+						actionError={entryError}
+						isEntering={isEntering}
+						enteringAction={enteringAction}
+					/>
+				) : (
+					<LobbyScreen
+						key={route.gameId}
+						gameId={route.gameId}
+						onLeave={handleLeaveRoom}
+						onStarted={handleStartPlaying}
+						onRemoved={handleRemoved}
+					/>
+				)}
+			</div>
 		)
 	}
 
 	return (
-		<LobbyScreen
+		<GameScreen
 			key={route.gameId}
 			gameId={route.gameId}
-			onLeave={handleLeaveRoom}
-			onStarted={handleStartPlaying}
-			onRemoved={handleRemoved}
+			onLeaveGame={handleLeaveRoom}
+			onNeedsColor={handleNeedsSession}
+			isPhoneLandscape={isPhoneLandscape}
 		/>
 	)
 }

@@ -20,6 +20,8 @@
 	background: var(--page);
 	color: var(--text);
 	font: 15px/1.4 'DM Sans', sans-serif;
+	position: relative;
+	isolation: isolate;
 }
 
 .lobbyScreen * { box-sizing: border-box; }
@@ -40,6 +42,9 @@
 }
 
 .lobbyTopBar {
+	position: relative;
+	z-index: 1;
+	background: var(--page);
 	display: flex;
 	align-items: center;
 	justify-content: space-between;

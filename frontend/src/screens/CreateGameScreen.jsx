@@ -2,15 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import { wakeGameServer } from '../services/api'
 import './HomeScreen.css'
 
-const BACKGROUND_PIECES = [
-	{ left: 9, top: 12, color: '#8B5CF6', shape: ['##.', '.##', '..#'] },
-	{ left: 80, top: 16, color: '#F97316', shape: ['####', '#...'] },
-	{ left: 6, top: 66, color: '#14B8A6', shape: ['.#', '##', '.#'] },
-	{ left: 84, top: 68, color: '#3B82F6', shape: ['##', '##'] },
-	{ left: 22, top: 84, color: '#EC4899', shape: ['#####'] },
-	{ left: 66, top: 82, color: '#EAB308', shape: ['#..', '###'] },
-]
-
 function CreateGameScreen({ onEnterGame, onConfigureGame, actionError = '', isEntering = false, enteringAction = null, isPhoneLandscape = false }) {
 	const [inviteCode, setInviteCode] = useState('')
 	const [error, setError] = useState('')
@@ -156,29 +147,6 @@ function CreateGameScreen({ onEnterGame, onConfigureGame, actionError = '', isEn
 	
 	return (
 		<div ref={pageRef} className={`startPage createGamePage homeScreen${isPhoneLandscape ? ' phoneLandscape' : ''}`}>
-			<div className="homeBackground" aria-hidden="true">
-				{BACKGROUND_PIECES.map((piece, pieceIndex) => (
-					<span
-						key={pieceIndex}
-						className="homeDecorationPiece"
-						style={{
-							left: `${piece.left}%`,
-							top: `${piece.top}%`,
-							'--home-piece-color': piece.color,
-							'--home-piece-columns': piece.shape[0].length,
-						}}
-					>
-						{piece.shape.flatMap((row, rowIndex) =>
-							[...row].map((cell, columnIndex) => cell === '#' && (
-								<i
-									key={`${rowIndex}-${columnIndex}`}
-									style={{ gridRow: rowIndex + 1, gridColumn: columnIndex + 1 }}
-								/>
-							))
-						)}
-					</span>
-				))}
-			</div>
 
 			<div className="homeBrand">
 				<h1 className="gameTitle homeLogo">

@@ -305,12 +305,14 @@ function LobbyScreen({ gameId, onLeave, onStarted, onRemoved }) {
 
 	return (
 		<div className="lobbyScreen">
+
 			<header className="lobbyTopBar">
 				<div className="lobbyLogo"><span className="lobbyLogoMark" aria-hidden="true"><i /><i /><i /></span>Tipto</div>
 				<button type="button" className="lobbyLeave" onClick={leaveRoom} disabled={leaving || starting}>Leave room</button>
 			</header>
 
 			<main className="lobbyPanel">
+
 				<header className="lobbyHeader">
 					<h1>Lobby</h1>
 					<button type="button" className="lobbyCode" onClick={copyInvite} aria-label="Copy invite link">
