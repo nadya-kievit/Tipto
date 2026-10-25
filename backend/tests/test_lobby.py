@@ -95,16 +95,13 @@ def test_only_host_can_change_settings_and_start(client):
     assert state(client, room_id)["status"] == "waiting"
 
 
-def test_host_cannot_start_until_full_or_reduce_count_below_roster(client):
+def test_host_can_start_once_two_players_have_joined(client):
     room_id, host = new_lobby(client)
     assert client.post(f"/games/{room_id}/start", json=host).status_code == 409
     join(client, room_id)
-    join(client, room_id)
-    assert change_settings(client, room_id, host, playerCount=2).status_code == 409
-    assert state(client, room_id)["settings"]["playerCount"] == 4
-    assert change_settings(client, room_id, host, playerCount=3).status_code == 200
     assert state(client, room_id)["status"] == "waiting"
     assert client.post(f"/games/{room_id}/start", json=host).status_code == 200
+    assert state(client, room_id)["settings"]["playerCount"] == 2
     assert client.post(f"/games/{room_id}/start", json=host).status_code == 409
     assert client.post(f"/games/{room_id}/join", json={}).status_code == 409
     assert client.patch(f"/games/{room_id}/profile", json={**host, "name": "Too late"}).status_code == 409
@@ -115,11 +112,11 @@ def test_host_cannot_start_until_full_or_reduce_count_below_roster(client):
 def test_settings_load_exact_geometry_and_start_assignments(client, layout, player_count):
     room_id, host = new_lobby(client)
     before_assignments = [piece.get("ability") for piece in main.games[room_id]["players"][0]["pieces"]]
-    response = change_settings(client, room_id, host, boardLayout=layout, playerCount=player_count, moveTimeLimitSeconds=30)
-    assert response.status_code == 200
-    assert response.json()["boardConfig"]["id"] == f"{layout}-{player_count}"
     for _ in range(player_count - 1):
         join(client, room_id)
+    response = change_settings(client, room_id, host, boardLayout=layout, moveTimeLimitSeconds=30)
+    assert response.status_code == 200
+    assert response.json()["boardConfig"]["id"] == f"{layout}-{player_count}"
     assert client.post(f"/games/{room_id}/start", json=host).status_code == 200
     snapshot = state(client, room_id)
     config = BOARD_CONFIGS[(layout, player_count)]
@@ -252,77 +249,58 @@ def test_closed_socket_does_not_interrupt_lobby_updates(client):
     assert response.status_code == 200
 
 
-def test_host_adds_uncoloured_bot_to_exact_seat(client):
+def test_host_adds_coloured_bots_to_the_dynamic_roster(client):
     room_id, host = new_lobby(client)
-    response = client.post(f"/games/{room_id}/bots", json={**host, "seat": 4})
+    response = client.post(f"/games/{room_id}/bots", json=host)
     assert response.status_code == 200
     bot = response.json()["players"][1]
     assert bot["isBot"] and bot["name"] == "Bot 1"
-    assert bot["settingsPlayerKey"] == "Player 4"
-    assert bot["color"] is None
+    assert bot["settingsPlayerKey"] == "Player 2"
+    assert bot["color"] is not None
     assert all("ability" not in piece for piece in bot["pieces"])
     guest = join(client, room_id)
-    assert state(client, room_id)["players"][2]["settingsPlayerKey"] == "Player 2"
-    assert guest["color"] == "Orange"
-    assert client.post(f"/games/{room_id}/bots", json={**host, "seat": 4}).status_code == 409
-    assert client.post(f"/games/{room_id}/bots", json={**host, "seat": 5}).status_code == 422
+    assert state(client, room_id)["players"][2]["settingsPlayerKey"] == "Player 3"
+    assert guest["color"] is not None
 
 
-def test_fill_bots_keeps_humans_and_existing_bots_and_waits_for_manual_start(client):
-    room_id, host = new_lobby(client, 6)
-    guest = join(client, room_id)
-    client.post(f"/games/{room_id}/bots", json={**host, "seat": 6})
-    response = client.post(f"/games/{room_id}/fill-bots", json=host)
-    assert response.status_code == 200
-    snapshot = response.json()
-    assert len(snapshot["players"]) == 6
-    assert len({player["settingsPlayerKey"] for player in snapshot["players"]}) == 6
-    assert {player["id"] for player in snapshot["players"] if not player["isBot"]} == {host["playerId"], guest["playerId"]}
-    bots = [player for player in snapshot["players"] if player["isBot"]]
-    assert [bot["name"] for bot in bots] == ["Bot 1", "Bot 2", "Bot 3", "Bot 4"]
-    assert all(bot["color"] is None for bot in bots)
-    assert {option["color"] for option in snapshot["availableColors"]}.isdisjoint(
-        {player["color"] for player in snapshot["players"] if not player["isBot"]}
-    )
-    assert snapshot["status"] == "waiting"
-    assert change_settings(client, room_id, host, playerCount=5).status_code == 409
-    again = client.post(f"/games/{room_id}/fill-bots", json=host).json()
-    assert [player["id"] for player in again["players"]] == [player["id"] for player in snapshot["players"]]
-    full = client.post(f"/games/{room_id}/join", json={})
+def test_roster_rejects_a_seventh_human_or_bot(client):
+    human_room, _ = new_lobby(client)
+    for _ in range(5):
+        join(client, human_room)
+    full = client.post(f"/games/{human_room}/join", json={})
     assert full.status_code == 409 and full.json()["detail"] == "Room is full"
-    assert client.post(f"/games/{room_id}/start", json=host).status_code == 200
-    started = state(client, room_id)
-    assert len(started["players"]) == 6
-    assert len({player["color"] for player in started["players"]}) == 6
-    assert all(player["color"] is not None for player in started["players"])
-    assert client.post(f"/games/{room_id}/bots", json={**host, "seat": 3}).status_code == 409
+
+    bot_room, host = new_lobby(client)
+    for _ in range(5):
+        assert client.post(f"/games/{bot_room}/bots", json=host).status_code == 200
+    assert client.post(f"/games/{bot_room}/bots", json=host).status_code == 409
 
 
 def test_guests_cannot_manage_any_seats_or_impersonate_host(client):
     room_id, host = new_lobby(client)
     guest = join(client, room_id)
-    assert client.post(f"/games/{room_id}/start-with-bots", json=guest).status_code == 403
     for credentials in [guest, {**host, "playerToken": guest["playerToken"]}]:
-        for endpoint, data in [("bots", {"seat": 3}), ("fill-bots", {}), ("remove-player", {"targetPlayerId": host["playerId"]})]:
+        for endpoint, data in [("bots", {}), ("remove-player", {"targetPlayerId": host["playerId"]})]:
             assert client.post(f"/games/{room_id}/{endpoint}", json={**credentials, **data}).status_code == 403
     assert client.post(f"/games/{room_id}/remove-player", json={**host, "targetPlayerId": host["playerId"]}).status_code == 409
     assert len(state(client, room_id)["players"]) == 2
 
 
-def test_remove_uncoloured_bot_frees_exact_seat_without_renumbering(client):
+def test_removed_bot_can_be_replaced(client):
     room_id, host = new_lobby(client)
-    snapshot = client.post(f"/games/{room_id}/fill-bots", json=host).json()
+    snapshot = client.post(f"/games/{room_id}/bots", json=host).json()
+    snapshot = client.post(f"/games/{room_id}/bots", json=host).json()
     bot = snapshot["players"][1]
     remaining_ids = [p["id"] for p in snapshot["players"] if p["id"] != bot["id"]]
     response = client.post(f"/games/{room_id}/remove-player", json={**host, "targetPlayerId": bot["id"]})
     assert response.status_code == 200
     assert [p["id"] for p in response.json()["players"]] == remaining_ids
-    assert bot["color"] is None
-    snapshot = client.post(f"/games/{room_id}/bots", json={**host, "seat": 2}).json()
+    assert bot["color"] is not None
+    snapshot = client.post(f"/games/{room_id}/bots", json=host).json()
     replacement = snapshot["players"][-1]
-    assert replacement["name"] == "Bot 4"
-    assert replacement["color"] is None
-    assert replacement["settingsPlayerKey"] == "Player 2"
+    assert replacement["name"] == "Bot 3"
+    assert replacement["color"] is not None
+    assert replacement["settingsPlayerKey"] == "Player 4"
     assert replacement["id"] != bot["id"]
 
 
@@ -353,22 +331,19 @@ def test_removed_human_is_notified_and_old_credentials_cannot_reconnect(client):
     assert replacement["color"] == guest["color"]
 
 
-def test_seats_survive_bot_changes_and_player_count_resize(client):
+def test_settings_changes_do_not_change_the_roster(client):
     room_id, host = new_lobby(client, 6)
-    snapshot = client.post(f"/games/{room_id}/bots", json={**host, "seat": 6}).json()
-    bot_id = snapshot["players"][1]["id"]
-    response = change_settings(client, room_id, host, playerCount=2)
+    bot = client.post(f"/games/{room_id}/bots", json=host).json()["players"][1]
+    response = change_settings(client, room_id, host, boardLayout="rooms")
     assert response.status_code == 200
-    assert {p["settingsPlayerKey"] for p in response.json()["players"]} == {"Player 1", "Player 2"}
-    assert response.json()["players"][1]["id"] == bot_id
-    assert response.json()["settings"]["players"]["Player 2"]["isBot"]
-    assert change_settings(client, room_id, host, playerCount=4).status_code == 200
-    assert client.post(f"/games/{room_id}/start", json=host).status_code == 409
+    assert [player["id"] for player in response.json()["players"]] == [host["playerId"], bot["id"]]
+    assert client.post(f"/games/{room_id}/start", json=host).status_code == 200
+    assert state(client, room_id)["settings"]["playerCount"] == 2
 
 
 def test_lobby_bot_uses_existing_bot_turn_and_covers_assigned_start(client, monkeypatch):
     room_id, host = new_lobby(client, 2)
-    client.post(f"/games/{room_id}/fill-bots", json=host)
+    client.post(f"/games/{room_id}/bots", json=host)
     monkeypatch.setattr(main, "choose_starting_player_index", lambda _count: 1)
     assert client.post(f"/games/{room_id}/start", json=host).status_code == 200
     game = main.games[room_id]
@@ -386,11 +361,11 @@ def test_lobby_bot_uses_existing_bot_turn_and_covers_assigned_start(client, monk
 
 def test_host_departure_transfers_to_human_not_bot_or_closes_bot_only_room(client):
     room_id, host = new_lobby(client)
-    client.post(f"/games/{room_id}/bots", json={**host, "seat": 2})
+    client.post(f"/games/{room_id}/bots", json=host)
     guest = join(client, room_id)
     client.post(f"/games/{room_id}/leave-room", json=host)
     assert state(client, room_id)["adminPlayerId"] == guest["playerId"]
-    assert client.post(f"/games/{room_id}/fill-bots", json=guest).status_code == 200
+    assert client.post(f"/games/{room_id}/bots", json=guest).status_code == 200
     client.post(f"/games/{room_id}/leave-room", json=guest)
     assert state(client, room_id)["status"] == "closed"
     assert state(client, room_id)["players"] == []
@@ -407,31 +382,35 @@ def test_lobby_slot_count_must_stay_between_two_and_six(client, player_count):
     assert response.status_code == 422
 
 
-def test_only_empty_slots_can_be_removed(client):
-    room_id, host = new_lobby(client, 3)
-    join(client, room_id)
-    join(client, room_id)
-    assert change_settings(client, room_id, host, playerCount=2).status_code == 409
-    assert state(client, room_id)["settings"]["playerCount"] == 3
-
-
-def test_start_with_bots_fills_empty_slots_and_starts_atomically(client):
-    room_id, host = new_lobby(client, 4)
-    guest = join(client, room_id)
-    response = client.post(f"/games/{room_id}/start-with-bots", json=host)
-    assert response.status_code == 200
-    snapshot = response.json()
-    assert snapshot["status"] == "playing"
-    assert len(snapshot["players"]) == 4
-    assert sum(player["isBot"] for player in snapshot["players"]) == 2
-    assert len({player["color"] for player in snapshot["players"]}) == 4
-    assert client.post(f"/games/{room_id}/start-with-bots", json=guest).status_code == 409
-
-
-def test_bots_do_not_reserve_colours_before_the_game_starts(client):
+@pytest.mark.parametrize("seconds", [35, 85])
+def test_timer_accepts_five_second_steps(client, seconds):
     room_id, host = new_lobby(client)
-    snapshot = client.post(f"/games/{room_id}/bots", json={**host, "seat": 2}).json()
+    response = change_settings(client, room_id, host, moveTimeLimitSeconds=seconds)
+    assert response.status_code == 200
+    assert response.json()["settings"]["moveTimeLimitSeconds"] == seconds
+
+
+@pytest.mark.parametrize("seconds", [25, 42, 95])
+def test_timer_rejects_out_of_range_or_non_step_values(client, seconds):
+    room_id, host = new_lobby(client)
+    assert change_settings(client, room_id, host, moveTimeLimitSeconds=seconds).status_code == 422
+
+
+def test_start_with_bots_endpoint_is_not_available(client):
+    room_id, host = new_lobby(client, 4)
+    response = client.post(f"/games/{room_id}/start-with-bots", json=host)
+    assert response.status_code == 404
+
+
+def test_human_can_take_a_bot_colour_and_the_bot_is_reassigned(client):
+    room_id, host = new_lobby(client)
+    snapshot = client.post(f"/games/{room_id}/bots", json=host).json()
     bot = next(player for player in snapshot["players"] if player["isBot"])
-    assert bot["color"] is None
-    assert client.patch(f"/games/{room_id}/profile", json={**host, "color": "Orange"}).status_code == 200
-    assert "Orange" not in {option["color"] for option in state(client, room_id)["availableColors"]}
+    bot_colour = bot["color"]
+    assert bot_colour is not None
+    assert client.patch(f"/games/{room_id}/profile", json={**host, "color": bot_colour}).status_code == 200
+    snapshot = state(client, room_id)
+    updated_bot = next(player for player in snapshot["players"] if player["isBot"])
+    assert updated_bot["color"] != bot_colour
+    assert len({player["color"] for player in snapshot["players"]}) == 2
+    assert bot_colour not in {option["color"] for option in snapshot["availableColors"]}

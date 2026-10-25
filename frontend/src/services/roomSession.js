@@ -20,7 +20,7 @@ export function enterLobby(gameId) {
 		}
 
 		const room = await getGame(gameId)
-		if (room.players.length >= room.settings.playerCount) throw new Error('Room is full')
+		if (room.players.length >= 6) throw new Error('Room is full')
 		if (!room.lobbyMode || room.status !== 'waiting') {
 			throw new Error('This room is no longer accepting players.')
 		}

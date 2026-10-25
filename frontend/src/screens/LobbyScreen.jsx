@@ -1,420 +1,127 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import {
-	gameSocketUrl, getGame, leaveLobby, startLobbyGame, startLobbyGameWithBots,
-	updateLobbyProfile, updateLobbySettings,
-	addLobbyBot, removeLobbyPlayer,
-} from '../services/api'
+import { addLobbyBot, gameSocketUrl, getGame, leaveLobby, removeLobbyPlayer, startLobbyGame, updateLobbyProfile, updateLobbySettings } from '../services/api'
 import { enterLobby } from '../services/roomSession'
+import { getPlayerColorHex, PLAYER_COLORS } from '../playerColors'
 import './LobbyScreen.css'
 
-const COLOURS = [
-	{ name: 'Purple', hex: '#8B5CF6' },
-	{ name: 'Orange', hex: '#F97316' },
-	{ name: 'Red', hex: '#EF4444' },
-	{ name: 'Cyan', label: 'Teal', hex: '#14B8A6' },
-	{ name: 'Blue', hex: '#3B82F6' },
-	{ name: 'Yellow', hex: '#EAB308' },
-	{ name: 'Pink', hex: '#EC4899' },
-	{ name: 'Green', hex: '#22C55E' },
-]
 const BOARDS = [
 	{ id: 'square', label: 'Classic', shape: ['#######', '#######', '#######', '#######', '#######', '#######', '#######'] },
 	{ id: 'irregular', label: 'Irregular', shape: ['..###..', '.#####.', '#######', '#######', '.#####.', '..####.', '...##..'] },
 	{ id: 'rooms', label: 'Rooms', shape: ['###.###', '###.###', '.#...#.', '.#####.', '...#...', '..###..', '..###..'] },
 ]
-const TIMES = [null, 30, 60, 90]
+const L_SHAPES = [[[0, 0], [1, 0], [1, 1]], [[0, 0], [0, 1], [1, 0]], [[0, 0], [0, 1], [1, 1]], [[0, 1], [1, 0], [1, 1]]]
+const MAX_PLAYERS = 6
+const TIMER_MIN = 30
+const TIMER_MAX = 90
+const DIAL_CX = 110
+const DIAL_CY = 110
+const DIAL_RADIUS = 70
+const DIAL_START = 135
+const DIAL_SWEEP = 270
 
-function BoardShape({ layout }) {
-	const board = BOARDS.find(board => board.id === layout) || BOARDS[1]
-	return (
-		<span className="lobbyBoardShape" aria-hidden="true">
-			{board.shape.flatMap((row, rowIndex) => [...row].map((cell, columnIndex) => (
-				<i
-					key={`${rowIndex}-${columnIndex}`}
-					className={cell === '#' ? 'lobbyBoardShapeCell' : undefined}
-				/>
-			)))}
-		</span>
-	)
+function CopyIcon({ copied }) {
+	return <span className="lobbyCopyIcons" aria-hidden="true"><svg className={copied ? 'hidden' : ''} viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="1" /><path d="M16 8V4H4v12h4" /></svg><svg className={copied ? '' : 'hidden'} viewBox="0 0 24 24"><path d="m5 12 4 4 10-10" /></svg></span>
+}
+function GridIcon() { return <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6" /><rect x="14" y="4" width="6" height="6" /><rect x="4" y="14" width="6" height="6" /><rect x="14" y="14" width="6" height="6" /></svg> }
+function ClockIcon() { return <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" /><path d="M12 7v5l3 2" /></svg> }
+function RobotIcon() {
+	return <svg viewBox="0 0 24 24" aria-hidden="true">
+		<path d="M12 7V4M10 2h4" />
+		<rect x="4" y="7" width="16" height="13" rx="3" />
+		<path d="M4 11H2v5h2M20 11h2v5h-2M9 17h6" />
+		<circle className="robotEye" cx="9" cy="13" r="1.25" />
+		<circle className="robotEye" cx="15" cy="13" r="1.25" />
+	</svg>
 }
 
-function CopyIcon() {
-	return <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="1" /><path d="M16 8V4H4v12h4" /></svg>
+function previewPieces(board, players) {
+	const occupied = new Set(), result = new Map()
+	for (const player of players) {
+		let best = null
+		for (const shape of L_SHAPES) for (let row = 0; row < 7; row++) for (let col = 0; col < 7; col++) {
+			const cells = shape.map(([dr, dc]) => [row + dr, col + dc])
+			if (cells.some(([r, c]) => r > 6 || c > 6 || board.shape[r][c] !== '#' || occupied.has(`${r}-${c}`))) continue
+			const centre = cells.reduce((sum, [r, c]) => sum + (r - 3) ** 2 + (c - 3) ** 2, 0)
+			const distances = cells.flatMap(([r, c]) => [...occupied].map(key => { const [or, oc] = key.split('-').map(Number); return (r - or) ** 2 + (c - oc) ** 2 }))
+			const nearest = distances.length ? Math.min(...distances) : centre
+			const total = distances.length ? distances.reduce((sum, distance) => sum + distance, 0) : centre
+			if (!best || nearest > best.nearest || (nearest === best.nearest && total > best.total)) best = { cells, nearest, total }
+		}
+		if (best) for (const [row, col] of best.cells) { const key = `${row}-${col}`; occupied.add(key); result.set(key, getPlayerColorHex(player.color)) }
+	}
+	return result
 }
 
-function PencilIcon() {
-	return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 20 4.5-1 10-10-3.5-3.5-10 10L4 20Z" /><path d="m13.5 7 3.5 3.5" /></svg>
+function BoardPreview({ board, players, selected }) {
+	const pieces = selected ? previewPieces(board, players) : new Map()
+	return <span className="lobbyBoardPreview" aria-hidden="true">{board.shape.flatMap((row, r) => [...row].map((cell, c) => { const color = pieces.get(`${r}-${c}`); return <i key={`${r}-${c}`} className={cell === '#' ? 'playable' : ''} style={color ? { '--preview-player': color } : undefined} data-sample={color ? '' : undefined} /> }))}</span>
 }
 
-function formatInviteCode(code) {
-	return `${code.slice(0, 3)} ${code.slice(3)}`.trim()
+function polar(angle, radius = DIAL_RADIUS) { const radians = angle * Math.PI / 180; return { x: DIAL_CX + Math.cos(radians) * radius, y: DIAL_CY + Math.sin(radians) * radius } }
+function timerAngle(value) { return DIAL_START + (value - TIMER_MIN) / (TIMER_MAX - TIMER_MIN) * DIAL_SWEEP }
+function arcPath(endAngle) { const start = polar(DIAL_START), end = polar(endAngle), sweep = endAngle - DIAL_START; return `M ${start.x} ${start.y} A ${DIAL_RADIUS} ${DIAL_RADIUS} 0 ${sweep > 180 ? 1 : 0} 1 ${end.x} ${end.y}` }
+function timerFromPointer(event, element, requireRing = true) {
+	const bounds = element.getBoundingClientRect(), x = (event.clientX - bounds.left) * 220 / bounds.width, y = (event.clientY - bounds.top) * 205 / bounds.height
+	const dx = x - DIAL_CX, dy = y - DIAL_CY
+	if (requireRing && Math.abs(Math.hypot(dx, dy) - DIAL_RADIUS) > 24) return null
+	let angle = Math.atan2(dy, dx) * 180 / Math.PI
+	if (angle < 0) angle += 360
+	let progress
+	if (angle > 45 && angle < 135) progress = angle < 90 ? 1 : 0
+	else { if (angle < DIAL_START) angle += 360; progress = Math.max(0, Math.min(1, (angle - DIAL_START) / DIAL_SWEEP)) }
+	return Math.round((TIMER_MIN + progress * (TIMER_MAX - TIMER_MIN)) / 5) * 5
+}
+
+function TimerDial({ value, readOnly, disabled, onChange }) {
+	const [draft, setDraft] = useState(null), [dragging, setDragging] = useState(false), [ghostValue, setGhostValue] = useState(null), [lastValue, setLastValue] = useState(value ?? 60)
+	const faceRef = useRef(null), shown = draft ?? value ?? lastValue, noLimit = value === null, inactive = readOnly || disabled || noLimit
+	const commit = event => { if (!dragging) return; const next = timerFromPointer(event, faceRef.current, false); setDragging(false); setDraft(null); if (next !== null) { setLastValue(next); onChange(next) } }
+	const keyDown = event => {
+		if (inactive) return
+		const changes = { ArrowLeft: -5, ArrowDown: -5, ArrowRight: 5, ArrowUp: 5, PageDown: -15, PageUp: 15 }
+		let next = shown
+		if (event.key === 'Home') next = 30; else if (event.key === 'End') next = 90; else if (changes[event.key]) next += changes[event.key]; else return
+		event.preventDefault(); next = Math.max(30, Math.min(90, next)); setLastValue(next); onChange(next)
+	}
+	const knob = polar(timerAngle(shown)), ghost = ghostValue === null ? null : polar(timerAngle(ghostValue))
+	return <div className="lobbyTimerControls"><div className={`lobbyTimerDial${noLimit ? ' noLimit' : ''}${readOnly ? ' readOnly' : ''}`}><div ref={faceRef} className="lobbyDialFace" role="slider" tabIndex={inactive ? -1 : 0} aria-label="Turn timer" aria-valuemin="30" aria-valuemax="90" aria-valuenow={noLimit ? undefined : shown} aria-valuetext={noLimit ? 'No limit' : `${shown} seconds`} aria-disabled={inactive} onKeyDown={keyDown}
+		onPointerDown={event => { if (inactive) return; const next = timerFromPointer(event, faceRef.current); if (next === null) return; faceRef.current.setPointerCapture(event.pointerId); setDragging(true); setDraft(next) }}
+		onPointerMove={event => { if (inactive) return; const next = timerFromPointer(event, faceRef.current, !dragging); setGhostValue(next); if (dragging && next !== null) setDraft(next) }} onPointerUp={commit} onPointerCancel={() => { setDragging(false); setDraft(null) }} onPointerLeave={() => !dragging && setGhostValue(null)}>
+		<svg viewBox="0 0 220 205" aria-hidden="true"><path className="dialTrack" d={arcPath(405)} /><path className="dialFill" d={arcPath(timerAngle(shown))} />{Array.from({ length: 13 }, (_, index) => { const tick = 30 + index * 5, angle = timerAngle(tick), inside = polar(angle, 80), outside = polar(angle, index % 6 === 0 ? 91 : 86); return <line key={tick} className={index % 6 === 0 ? 'major' : ''} x1={inside.x} y1={inside.y} x2={outside.x} y2={outside.y} /> })}{ghost && <circle className="dialGhost" cx={ghost.x} cy={ghost.y} r="10" />}<circle className="dialKnob" cx={knob.x} cy={knob.y} r="10" /></svg>
+		{[30, 60, 90].map(timer => { const point = polar(timerAngle(timer), 102); return <span key={timer} className="dialLabel" style={{ left: Math.round(point.x), top: Math.round(point.y) }}>{timer}</span> })}<div className="dialValue"><strong>{noLimit ? '∞' : shown}</strong><span>{noLimit ? 'no limit' : 'sec'}</span></div></div></div>
+		<label className="lobbyNoLimit"><span>No limit</span><input type="checkbox" checked={noLimit} disabled={readOnly || disabled} onChange={event => { if (event.target.checked && value !== null) setLastValue(value); onChange(event.target.checked ? null : lastValue) }} /><i aria-hidden="true"><b /></i></label></div>
+}
+
+function PlayerRow({ player, isYou, isHost, players, name, busy, savingProfile, onNameChange, onNameBlur, onColour, onRemove }) {
+	return <div className={`lobbyPlayerRow${isYou ? ' own' : ''}`} style={{ '--player-colour': getPlayerColorHex(player.color) }}><span className={`lobbyPlayerTile${player.isBot ? ' bot' : ''}`} aria-hidden="true">{player.isBot && <RobotIcon />}</span>{isYou ? <div className="lobbyOwnProfile"><input aria-label="Name" value={name} maxLength={24} onChange={onNameChange} onBlur={onNameBlur} disabled={busy} autoComplete="nickname" /><div className="lobbySwatches" role="group" aria-label="Colour">{PLAYER_COLORS.map(option => { const takenBy = players.find(other => other.id !== player.id && !other.isBot && other.color === option.name), selected = player.color === option.name; return <button key={option.name} type="button" className="lobbySwatch" style={{ '--swatch': option.hex }} disabled={Boolean(takenBy) || busy || savingProfile} data-taken={takenBy ? '' : undefined} aria-pressed={selected} aria-label={`${option.name}${takenBy ? ` — taken by ${takenBy.name}` : ''}`} title={takenBy ? `Taken by ${takenBy.name}` : option.name} onClick={() => onColour(option.name)}>{selected ? <span aria-hidden="true">✓</span> : takenBy ? <span aria-hidden="true">{takenBy.name.charAt(0).toUpperCase()}</span> : null}</button> })}</div></div> : <span className="lobbyPlayerName" title={player.name}>{player.name}</span>}{player.isBot && isHost && <button type="button" className="lobbyRemoveBot" aria-label={`Remove ${player.name}`} disabled={busy} onClick={onRemove}>×</button>}</div>
 }
 
 function LobbyScreen({ gameId, onLeave, onStarted, onRemoved }) {
-	const [game, setGame] = useState(null)
-	const [session, setSession] = useState(null)
-	const [name, setName] = useState('')
-	const [error, setError] = useState('')
-	const [connected, setConnected] = useState(false)
-	const [savingProfile, setSavingProfile] = useState(false)
-	const [savingSettings, setSavingSettings] = useState(false)
-	const [managingSeats, setManagingSeats] = useState(false)
-	const [starting, setStarting] = useState(false)
-	const [leaving, setLeaving] = useState(false)
-	const [copied, setCopied] = useState(false)
-	const entryRef = useRef(null)
-	const nameTimerRef = useRef(null)
-	const copyTimerRef = useRef(null)
-	const nameDirtyRef = useRef(false)
-	const latestNameRef = useRef('')
-	const profileQueueRef = useRef(Promise.resolve())
-	const profilePendingRef = useRef(0)
-	const revisionRef = useRef(-1)
-	const leavingRef = useRef(false)
-	const removedRef = useRef(false)
-	const me = game?.players.find(player => player.id === session?.playerId)
-	const isHost = Boolean(me && me.id === game.adminPlayerId)
-	const joined = game?.players.length || 0
-	const target = game?.settings.playerCount || 4
-	const remaining = target - joined
-	const busy = !connected || leaving || starting || managingSeats
+	const [game, setGame] = useState(null), [session, setSession] = useState(null), [name, setName] = useState(''), [error, setError] = useState(''), [connected, setConnected] = useState(false)
+	const [savingProfile, setSavingProfile] = useState(false), [savingSettings, setSavingSettings] = useState(false), [managingPlayers, setManagingPlayers] = useState(false), [starting, setStarting] = useState(false), [leaving, setLeaving] = useState(false), [copied, setCopied] = useState(false)
+	const entryRef = useRef(null), nameTimerRef = useRef(null), copyTimerRef = useRef(null), nameDirtyRef = useRef(false), latestNameRef = useRef(''), profileQueueRef = useRef(Promise.resolve()), profilePendingRef = useRef(0), revisionRef = useRef(-1), leavingRef = useRef(false), removedRef = useRef(false)
+	const me = game?.players.find(player => player.id === session?.playerId), isHost = Boolean(me && me.id === game.adminPlayerId), busy = !connected || leaving || starting || managingPlayers
+	const removedFromRoom = useCallback(() => { if (removedRef.current || leavingRef.current) return; removedRef.current = true; clearTimeout(nameTimerRef.current); localStorage.removeItem(`tipto-player-${gameId}`); localStorage.removeItem(`tipto-admin-${gameId}`); onRemoved() }, [gameId, onRemoved])
+	const receiveGame = useCallback((snapshot, credentials) => { if (snapshot.revision < revisionRef.current) return; revisionRef.current = snapshot.revision; const own = snapshot.players.find(player => player.id === credentials.playerId); if (!own) return removedFromRoom(); setGame(snapshot); if (!nameDirtyRef.current) { setName(own.name); latestNameRef.current = own.name } if (snapshot.status === 'playing' || snapshot.status === 'finished') onStarted(gameId) }, [gameId, onStarted, removedFromRoom])
 
-	const removedFromRoom = useCallback(() => {
-		if (removedRef.current || leavingRef.current) return
-		removedRef.current = true
-		clearTimeout(nameTimerRef.current)
-		localStorage.removeItem(`tipto-player-${gameId}`)
-		localStorage.removeItem(`tipto-admin-${gameId}`)
-		onRemoved()
-	}, [gameId, onRemoved])
+	useEffect(() => { let active = true; if (!entryRef.current) entryRef.current = enterLobby(gameId); entryRef.current.then(({ game: snapshot, credentials }) => { if (!active) return; setSession(credentials); receiveGame(snapshot, credentials) }).catch(nextError => { if (!active) return; if (nextError.message === 'You were removed from the room') removedFromRoom(); else setError(nextError.message) }); return () => { active = false } }, [gameId, receiveGame, removedFromRoom])
+	useEffect(() => { if (!session) return; let active = true, socket, retryTimer; const connect = () => { socket = new WebSocket(gameSocketUrl(gameId, session)); socket.onopen = () => { if (!active) return; setConnected(true); socket.send(JSON.stringify({ type: 'request_state' })) }; socket.onmessage = event => { const message = JSON.parse(event.data); if (message.type === 'game_state') receiveGame(message.game, session); if (message.type === 'room_removed') removedFromRoom(); if (message.type === 'error') setError(message.reason) }; socket.onclose = async event => { if (!active || removedRef.current) return; setConnected(false); if (event.reason === 'You were removed from the room') return removedFromRoom(); if (event.code === 1008) return setError('Your room session has ended. Leave and join again.'); try { const snapshot = await getGame(gameId, session); if (active) receiveGame(snapshot, session) } catch (nextError) { if (nextError.message === 'You were removed from the room') return removedFromRoom() } if (active && !removedRef.current) retryTimer = setTimeout(connect, 1500) } }; connect(); return () => { active = false; clearTimeout(retryTimer); socket.close() } }, [gameId, session, receiveGame, removedFromRoom])
+	useEffect(() => () => { clearTimeout(nameTimerRef.current); clearTimeout(copyTimerRef.current) }, [])
 
-	const receiveGame = useCallback((snapshot, credentials) => {
-		if (snapshot.revision < revisionRef.current) return
-		revisionRef.current = snapshot.revision
-		const ownPlayer = snapshot.players.find(player => player.id === credentials.playerId)
-		if (!ownPlayer) {
-			removedFromRoom()
-			return
-		}
-		setGame(snapshot)
-		if (!nameDirtyRef.current) {
-			setName(ownPlayer.name)
-			latestNameRef.current = ownPlayer.name
-		}
-		if (snapshot.status === 'playing' || snapshot.status === 'finished') onStarted(gameId)
-	}, [gameId, onStarted, removedFromRoom])
+	const saveProfile = changes => { profilePendingRef.current += 1; setSavingProfile(true); setError(''); const update = profileQueueRef.current.then(async () => { try { const snapshot = await updateLobbyProfile(gameId, session, changes); if (changes.name === latestNameRef.current.trim()) nameDirtyRef.current = false; receiveGame(snapshot, session) } catch (nextError) { setError(nextError.message); const snapshot = await getGame(gameId, session).catch(() => null); if (snapshot) receiveGame(snapshot, session) } finally { profilePendingRef.current -= 1; setSavingProfile(profilePendingRef.current > 0) } }); profileQueueRef.current = update.catch(() => {}); return update }
+	const changeName = event => { const next = event.target.value; setName(next); latestNameRef.current = next; nameDirtyRef.current = true; clearTimeout(nameTimerRef.current); if (next.trim()) nameTimerRef.current = setTimeout(() => saveProfile({ name: next.trim() }), 250) }
+	const flushName = async () => { clearTimeout(nameTimerRef.current); if (nameDirtyRef.current && latestNameRef.current.trim()) await saveProfile({ name: latestNameRef.current.trim() }); else await profileQueueRef.current }
+	const changeSettings = async changes => { setSavingSettings(true); setError(''); try { receiveGame(await updateLobbySettings(gameId, session, { boardLayout: changes.boardLayout ?? game.settings.boardLayout, moveTimeLimitSeconds: Object.hasOwn(changes, 'moveTimeLimitSeconds') ? changes.moveTimeLimitSeconds : game.settings.moveTimeLimitSeconds }), session) } catch (nextError) { setError(nextError.message) } finally { setSavingSettings(false) } }
+	const managePlayers = async action => { setManagingPlayers(true); setError(''); try { receiveGame(await action(), session) } catch (nextError) { setError(nextError.message) } finally { setManagingPlayers(false) } }
+	const startGame = async () => { if (starting || !game || game.players.length < 2) return; setStarting(true); setError(''); try { await flushName(); receiveGame(await startLobbyGame(gameId, session), session) } catch (nextError) { setError(nextError.message); setStarting(false) } }
+	const leaveRoom = async () => { leavingRef.current = true; setLeaving(true); clearTimeout(nameTimerRef.current); try { if (session && me) await leaveLobby(gameId, session); localStorage.removeItem(`tipto-player-${gameId}`); localStorage.removeItem(`tipto-admin-${gameId}`); onLeave() } catch (nextError) { if (nextError.status === 403 || nextError.status === 404) { localStorage.removeItem(`tipto-player-${gameId}`); localStorage.removeItem(`tipto-admin-${gameId}`); return onLeave() } setError(nextError.message); setLeaving(false); leavingRef.current = false } }
+	const copyInvite = async () => { try { await navigator.clipboard.writeText(window.location.href); setCopied(true); clearTimeout(copyTimerRef.current); copyTimerRef.current = setTimeout(() => setCopied(false), 1800) } catch { setError('Could not copy the invite link.') } }
+	const handleNameBlur = () => { if (!latestNameRef.current.trim()) { nameDirtyRef.current = false; setName(me.name); latestNameRef.current = me.name } else flushName() }
 
-	useEffect(() => {
-		let active = true
-		if (!entryRef.current) entryRef.current = enterLobby(gameId)
-		entryRef.current.then(({ game, credentials }) => {
-			if (!active) return
-			setSession(credentials)
-			receiveGame(game, credentials)
-		}).catch(error => {
-			if (!active) return
-			if (error.message === 'You were removed from the room') removedFromRoom()
-			else setError(error.message)
-		})
-		return () => { active = false }
-	}, [gameId, receiveGame, removedFromRoom])
-
-	useEffect(() => {
-		if (!session) return
-		let active = true
-		let socket
-		let retryTimer
-		const connect = () => {
-			socket = new WebSocket(gameSocketUrl(gameId, session))
-			socket.onopen = () => {
-				if (!active) return
-				setConnected(true)
-				socket.send(JSON.stringify({ type: 'request_state' }))
-			}
-			socket.onmessage = event => {
-				if (!active) return
-				const message = JSON.parse(event.data)
-				if (message.type === 'game_state') receiveGame(message.game, session)
-				if (message.type === 'room_removed') removedFromRoom()
-				if (message.type === 'error') setError(message.reason)
-			}
-			socket.onclose = async event => {
-				if (!active) return
-				if (removedRef.current) return
-				setConnected(false)
-				if (event.reason === 'You were removed from the room') {
-					removedFromRoom()
-					return
-				}
-				if (event.code === 1008) {
-					setError('Your room session has ended. Leave and join again.')
-					return
-				}
-				try {
-					const snapshot = await getGame(gameId, session)
-					if (active) receiveGame(snapshot, session)
-				} catch (error) {
-					if (!active) return
-					if (error.message === 'You were removed from the room') {
-						removedFromRoom()
-						return
-					}
-				}
-				if (active && !removedRef.current) retryTimer = setTimeout(connect, 1500)
-			}
-		}
-		connect()
-		return () => {
-			active = false
-			clearTimeout(retryTimer)
-			socket.close()
-		}
-	}, [gameId, session, receiveGame, removedFromRoom])
-
-	useEffect(() => () => {
-		clearTimeout(nameTimerRef.current)
-		clearTimeout(copyTimerRef.current)
-	}, [])
-
-	const saveProfile = changes => {
-		profilePendingRef.current += 1
-		setSavingProfile(true)
-		setError('')
-		const update = profileQueueRef.current.then(async () => {
-			try {
-				const snapshot = await updateLobbyProfile(gameId, session, changes)
-				if (changes.name === latestNameRef.current.trim()) nameDirtyRef.current = false
-				receiveGame(snapshot, session)
-			} catch (error) {
-				setError(error.message)
-				const snapshot = await getGame(gameId, session).catch(() => null)
-				if (snapshot) receiveGame(snapshot, session)
-			} finally {
-				profilePendingRef.current -= 1
-				setSavingProfile(profilePendingRef.current > 0)
-			}
-		})
-		profileQueueRef.current = update.catch(() => {})
-		return update
-	}
-
-	const changeName = event => {
-		const nextName = event.target.value
-		setName(nextName)
-		latestNameRef.current = nextName
-		nameDirtyRef.current = true
-		clearTimeout(nameTimerRef.current)
-		if (nextName.trim()) {
-			nameTimerRef.current = setTimeout(() => saveProfile({ name: nextName.trim() }), 250)
-		}
-	}
-
-	const flushName = async () => {
-		clearTimeout(nameTimerRef.current)
-		if (nameDirtyRef.current && latestNameRef.current.trim()) {
-			await saveProfile({ name: latestNameRef.current.trim() })
-		} else {
-			await profileQueueRef.current
-		}
-	}
-
-	const changeSettings = async changes => {
-		setSavingSettings(true)
-		setError('')
-		try {
-			const snapshot = await updateLobbySettings(gameId, session, { ...game.settings, ...changes })
-			receiveGame(snapshot, session)
-		} catch (error) {
-			setError(error.message)
-		} finally {
-			setSavingSettings(false)
-		}
-	}
-
-	const startGame = async () => {
-		if (starting) return
-		setStarting(true)
-		setError('')
-		try {
-			await flushName()
-			const snapshot = await (remaining > 0
-				? startLobbyGameWithBots(gameId, session)
-				: startLobbyGame(gameId, session))
-			receiveGame(snapshot, session)
-		} catch (error) {
-			setError(error.message)
-			setStarting(false)
-		}
-	}
-
-	const leaveRoom = async () => {
-		leavingRef.current = true
-		setLeaving(true)
-		clearTimeout(nameTimerRef.current)
-		try {
-			if (session && me) await leaveLobby(gameId, session)
-			localStorage.removeItem(`tipto-player-${gameId}`)
-			localStorage.removeItem(`tipto-admin-${gameId}`)
-			onLeave()
-		} catch (error) {
-			if (error.status === 403 || error.status === 404) {
-				localStorage.removeItem(`tipto-player-${gameId}`)
-				localStorage.removeItem(`tipto-admin-${gameId}`)
-				onLeave()
-				return
-			}
-			setError(error.message)
-			setLeaving(false)
-			leavingRef.current = false
-		}
-	}
-
-	const manageSeats = async action => {
-		setManagingSeats(true)
-		setError('')
-		try {
-			receiveGame(await action(), session)
-		} catch (error) {
-			setError(error.message)
-		} finally {
-			setManagingSeats(false)
-		}
-	}
-
-	const copyInvite = async () => {
-		try {
-			await navigator.clipboard.writeText(gameId)
-			setCopied(true)
-			clearTimeout(copyTimerRef.current)
-			copyTimerRef.current = setTimeout(() => setCopied(false), 1200)
-		} catch {
-			setError('Could not copy the invite code. Select and copy it manually.')
-		}
-	}
-
-	const waitingText = remaining > 0
-		? `Waiting for ${remaining} more`
-		: "Everyone’s in"
-	const handleNameBlur = () => {
-		if (!latestNameRef.current.trim()) {
-			nameDirtyRef.current = false
-			setName(me.name)
-			latestNameRef.current = me.name
-		} else flushName()
-	}
-
-	return (
-		<div className="lobbyScreen">
-
-			<header className="lobbyTopBar">
-				<div className="lobbyLogo"><span className="lobbyLogoMark" aria-hidden="true"><i /><i /><i /></span>Tipto</div>
-				<button type="button" className="lobbyLeave" onClick={leaveRoom} disabled={leaving || starting}>Leave room</button>
-			</header>
-
-			<main className="lobbyPanel">
-
-				<header className="lobbyHeader">
-					<h1>Lobby</h1>
-					<button type="button" className="lobbyCode" onClick={copyInvite} aria-label="Copy invite link">
-						<strong>{formatInviteCode(gameId)}</strong>
-						<span aria-hidden="true" />
-						<CopyIcon />
-						<em className={copied ? 'copied' : ''}>{copied ? 'Copied' : 'Copy'}</em>
-					</button>
-				</header>
-
-				{game && me ?
-					<>
-					<section className="lobbyPlayers">
-						<div className="lobbySectionHeading">
-							<h2>Players</h2>
-							<span className="lobbyCount">{joined} / {target}</span>
-						</div>
-						<div className="lobbySeats">
-							{Array.from({ length: target }, (_, index) => {
-								const player = game.players.find(player => player.settingsPlayerKey === `Player ${index + 1}`)
-								const isYou = player?.id === me.id
-								const isSeatHost = player?.id === game.adminPlayerId
-								const colour = COLOURS.find(option => option.name === player?.color)?.hex
-								const contents = player && <>
-									<span className={`lobbySeatColour${player.color ? '' : ' lobbySeatColourUnassigned'}`} style={{ background: colour }} aria-hidden="true" />
-									<span className="lobbySeatName" title={player.name}>{player.name}</span>
-									{player.isBot && <span className="lobbySeatTag">Bot</span>}
-									{isYou && <span className="lobbySeatTag">You</span>}
-									{isYou && <PencilIcon />}
-									{!isYou && isSeatHost && <span className="lobbySeatTag">Host</span>}
-								</>
-
-								if (isYou)
-									return <div key={player.id} className="lobbySeat lobbyOwnSeat">
-									{contents}
-									{isHost && player.isBot && <button type="button" className="lobbyGhostButton" aria-label={`Remove ${player.name}`} disabled={busy} onClick={() => manageSeats(() => removeLobbyPlayer(gameId, session, player.id))}>×</button>}
-								</div>
-
-								if (player) return <div key={player.id} className="lobbySeat">
-									{contents}
-									{isHost && player.isBot && <button type="button" className="lobbyGhostButton" aria-label={`Remove ${player.name}`} disabled={busy} onClick={() => manageSeats(() => removeLobbyPlayer(gameId, session, player.id))}>×</button>}
-								</div>
-
-								return <div key={`empty-${index}`} className="lobbySeat lobbySeatEmpty">
-									<span className="lobbySeatName">Waiting…</span>
-									{isHost && <div className="lobbySeatActions">
-										<button type="button" className="lobbyGhostButton" disabled={busy} onClick={() => manageSeats(() => addLobbyBot(gameId, session, index + 1))}>+ Bot</button>
-										{target > 2 && <button type="button" className="lobbyGhostButton" aria-label={`Remove empty slot ${index + 1}`} disabled={busy || savingSettings} onClick={() => changeSettings({ playerCount: target - 1 })}>×</button>}
-									</div>}
-								</div>
-							})}
-							{isHost && target < 6 && <button type="button" className="lobbySeat lobbyAddSlot" disabled={busy || savingSettings} onClick={() => changeSettings({ playerCount: target + 1 })}>+ Add slot</button>}
-						</div>
-
-						<div className="lobbyProfileEditor">
-							<label htmlFor="lobby-name">Name</label>
-							<input id="lobby-name" value={name} maxLength={24} onChange={changeName} onBlur={handleNameBlur} disabled={busy} autoComplete="nickname" />
-							<div className="lobbySwatches" role="group" aria-label="Colour">
-								{COLOURS.map(colour => {
-									const takenBy = game.players.find(player => player.id !== me.id && player.color === colour.name)
-									return <button key={colour.name} type="button" className="lobbySwatch" style={{ '--lobby-swatch': colour.hex }} data-taken={takenBy ? '' : undefined} disabled={Boolean(takenBy) || busy || savingProfile} aria-pressed={me.color === colour.name} aria-label={`${colour.label || colour.name}${takenBy ? ` — taken by ${takenBy.name}` : ''}`} title={takenBy ? `Taken by ${takenBy.name}` : colour.label || colour.name} onClick={() => saveProfile({ color: colour.name })} />
-								})}
-							</div>
-						</div>
-					</section>
-
-					<section className="lobbySettings">
-						<h2>Game settings</h2>
-						{isHost ? <>
-							<div className="lobbySettingRow">
-								<span>Board</span>
-								<div className="lobbySegments lobbyBoardSegments" role="group" aria-label="Board layout">
-									{BOARDS.map(board => <button type="button" key={board.id} aria-pressed={game.settings.boardLayout === board.id} disabled={busy || savingSettings} onClick={() => changeSettings({ boardLayout: board.id })}><BoardShape layout={board.id} /><span>{board.label}</span></button>)}
-								</div>
-							</div>
-							<div className="lobbySettingRow">
-								<span>Timer</span>
-								<div className="lobbySegments" role="group" aria-label="Time per move">
-									{TIMES.map(time => <button type="button" key={time ?? 'none'} aria-pressed={game.settings.moveTimeLimitSeconds === time} disabled={busy || savingSettings} onClick={() => changeSettings({ moveTimeLimitSeconds: time })}>{time === null ? 'None' : `${time}s`}</button>)}
-								</div>
-							</div>
-						</> : <>
-							<div className="lobbyPills">
-								<span><BoardShape layout={game.settings.boardLayout} />{BOARDS.find(board => board.id === game.settings.boardLayout)?.label}</span>
-								<span>Players <b>{target}</b></span>
-								<span>Timer <b>{game.settings.moveTimeLimitSeconds === null ? 'None' : `${game.settings.moveTimeLimitSeconds}s`}</b></span>
-							</div>
-						</>}
-					</section>
-
-					<footer className="lobbyFooter">
-						<span role="status">{connected ? (isHost ? waitingText : 'Waiting for host to start…') : 'Reconnecting…'}</span>
-						{isHost && <button type="button" className="lobbyStart" onClick={startGame} aria-busy={starting}>{starting ? 'Starting…' : remaining > 0 ? `Start with ${remaining} bot${remaining === 1 ? '' : 's'}` : 'Start game'}</button>}
-					</footer>
-					</>
-				:
-					!error && <div className="lobbyLoading" role="status">Joining room…</div>
-				}
-				{error && <div className="lobbyError" role="alert">{error}</div>}
-			</main>
-		</div>
-	)
+	return <div className="lobbyScreen"><header className="lobbyTopBar"><div className="lobbyTopBarLeft"><div className="lobbyLogo"><span className="lobbyLogoMark" aria-hidden="true"><i /><i /><i /></span>Tipto</div><span className="lobbyTopBarDivider" aria-hidden="true" /><h1>Lobby</h1></div><div className="lobbyTopBarRight"><div className="lobbyInvite"><div className="lobbyRoomCode"><span>Room code</span><strong>{`${gameId.slice(0, 3)} ${gameId.slice(3)}`.trim()}</strong></div><button type="button" className={copied ? 'copied' : ''} onClick={copyInvite} aria-label="Copy invite link"><CopyIcon copied={copied} /><span>{copied ? 'Link copied' : 'Copy invite link'}</span></button></div><button type="button" className="lobbyLeave" onClick={leaveRoom} disabled={leaving || starting}>Leave room</button></div></header><main className="lobbyPage">
+	{game && me ? <><section className="lobbyPanel lobbyPlayersPanel"><h2>Players</h2><div className="lobbyPlayerList">{game.players.map(player => <PlayerRow key={player.id} player={player} isYou={player.id === me.id} isHost={isHost} players={game.players} name={name} busy={busy} savingProfile={savingProfile} onNameChange={changeName} onNameBlur={handleNameBlur} onColour={color => saveProfile({ color })} onRemove={() => managePlayers(() => removeLobbyPlayer(gameId, session, player.id))} />)}</div>{isHost && <button type="button" className="lobbyAddBot" disabled={busy || game.players.length >= MAX_PLAYERS} onClick={() => managePlayers(() => addLobbyBot(gameId, session))}>+ Add bot</button>}</section>
+	<div className="lobbyRightColumn"><section className="lobbyPanel lobbySettingsPanel"><h2>Game settings</h2><div className="lobbySettingHeading"><GridIcon /><span>Board</span></div><div className="lobbyBoardCards" role="group" aria-label="Board layout">{BOARDS.map(board => { const selected = game.settings.boardLayout === board.id; return <button type="button" key={board.id} className={selected ? 'selected' : ''} aria-pressed={selected} disabled={!isHost || busy || savingSettings} onClick={() => changeSettings({ boardLayout: board.id })}><BoardPreview board={board} players={game.players} selected={selected} /><span>{board.label}</span></button> })}</div><div className="lobbyTimerSection"><div className="lobbySettingHeading"><ClockIcon /><div><span>Turn timer</span><p>How long each player has to make a move. If time runs out, a piece is placed for them automatically.</p></div></div><TimerDial value={game.settings.moveTimeLimitSeconds} readOnly={!isHost} disabled={busy || savingSettings} onChange={moveTimeLimitSeconds => changeSettings({ moveTimeLimitSeconds })} /></div></section>
+	<footer className="lobbyFooter">{isHost && <button type="button" className="lobbyStart" onClick={startGame} disabled={busy || savingSettings || game.players.length < 2} aria-busy={starting}>{starting ? 'Starting…' : 'Start game'}</button>}</footer></div></> : !error && <div className="lobbyLoading" role="status">Joining room…</div>}{error && <div className="lobbyError" role="alert">{error}</div>}</main></div>
 }
 
 export default LobbyScreen

@@ -1,4 +1,5 @@
 const EPSILON = 1e-6
+const COLLISION_SLOP = 1e-3
 
 export function advanceAxis(position, velocity, seconds, limit) {
 	if (limit <= 0) return { position: 0, velocity }
@@ -74,21 +75,21 @@ export function piecesOverlap(a, b) {
 	return Boolean(geometryContact(pieceGeometry(a), pieceGeometry(b)))
 }
 
-function boundaryContact(geometry, width, height) {
+function boundaryContact(geometry, width, height, topBoundary = 0) {
 	if (geometry.minX < -EPSILON) return { nx: 1, ny: 0 }
 	if (geometry.maxX > width + EPSILON) return { nx: -1, ny: 0 }
-	if (geometry.minY < -EPSILON) return { nx: 0, ny: 1 }
+	if (geometry.minY < topBoundary - EPSILON) return { nx: 0, ny: 1 }
 	if (geometry.maxY > height + EPSILON) return { nx: 0, ny: -1 }
 	return null
 }
 
-export function arrangePieces(pieces, width, height) {
+export function arrangePieces(pieces, width, height, topBoundary = 0) {
 	const placed = []
 	for (const piece of [...pieces].sort((a, b) => b.width * b.height - a.width * a.height)) {
 		piece.active = false
 		const local = pieceGeometry({ ...piece, x: 0, y: 0 })
 		const minX = -local.minX, maxX = width - local.maxX
-		const minY = -local.minY, maxY = height - local.maxY
+		const minY = topBoundary - local.minY, maxY = height - local.maxY
 		if (minX > maxX || minY > maxY) continue
 		const startX = Math.max(minX, Math.min(piece.x, maxX))
 		const startY = Math.max(minY, Math.min(piece.y, maxY))
@@ -130,7 +131,7 @@ function reflect(piece, nx, ny) {
 	}
 }
 
-export function advancePieces(pieces, seconds, width, height) {
+export function advancePieces(pieces, seconds, width, height, topBoundary = 0) {
 	if (seconds <= 0) return
 	const active = pieces.filter(piece => piece.active)
 	const maxSpeed = Math.max(0, ...active.map(piece => Math.hypot(piece.vx, piece.vy)))
@@ -146,7 +147,7 @@ export function advancePieces(pieces, seconds, width, height) {
 				y: start.y + piece.vy * dt * fraction,
 			})
 			const findContact = geometry => {
-				const edge = boundaryContact(geometry, width, height)
+				const edge = boundaryContact(geometry, width, height, topBoundary)
 				if (edge) return edge
 				for (let other = 0; other < active.length; other++) {
 					if (other === index) continue
@@ -170,12 +171,29 @@ export function advancePieces(pieces, seconds, width, height) {
 			}
 			piece.x = start.x + piece.vx * dt * fraction
 			piece.y = start.y + piece.vy * dt * fraction
-			geometries[index] = contact ? pieceGeometry(piece) : targetGeometry
 			if (contact) {
+				const contactX = piece.x
+				const contactY = piece.y
+				// Leave a microscopic gap so corner contacts cannot repeat as a
+				// zero-distance reflection loop. Skip it in a tightly packed spot.
+				piece.x += contact.nx * COLLISION_SLOP
+				piece.y += contact.ny * COLLISION_SLOP
+				let settledGeometry = pieceGeometry(piece)
+				const separationBlocked = boundaryContact(settledGeometry, width, height, topBoundary)
+					|| geometries.some((otherGeometry, other) =>
+						other !== index && geometryContact(settledGeometry, otherGeometry))
+				if (separationBlocked) {
+					piece.x = contactX
+					piece.y = contactY
+					settledGeometry = pieceGeometry(piece)
+				}
 				reflect(piece, contact.nx, contact.ny)
 				if (contact.other !== undefined) {
 					reflect(active[contact.other], -contact.nx, -contact.ny)
 				}
+				geometries[index] = settledGeometry
+			} else {
+				geometries[index] = targetGeometry
 			}
 		}
 	}

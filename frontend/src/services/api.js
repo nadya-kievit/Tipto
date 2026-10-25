@@ -115,17 +115,11 @@ export const updateLobbySettings = (gameId, credentials, settings) =>
 export const startLobbyGame = (gameId, credentials) =>
 	lobbyRequest(gameId, 'start', credentials)
 
-export const startLobbyGameWithBots = (gameId, credentials) =>
-	lobbyRequest(gameId, 'start-with-bots', credentials)
-
 export const leaveLobby = (gameId, credentials) =>
 	lobbyRequest(gameId, 'leave-room', credentials)
 
-export const addLobbyBot = (gameId, credentials, seat) =>
-	lobbyRequest(gameId, 'bots', credentials, { seat })
-
-export const fillLobbyBots = (gameId, credentials) =>
-	lobbyRequest(gameId, 'fill-bots', credentials)
+export const addLobbyBot = (gameId, credentials) =>
+	lobbyRequest(gameId, 'bots', credentials)
 
 export const removeLobbyPlayer = (gameId, credentials, targetPlayerId) =>
 	lobbyRequest(gameId, 'remove-player', credentials, { targetPlayerId })

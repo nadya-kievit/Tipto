@@ -111,7 +111,7 @@ function App() {
 	if (!hasGameSession) {
 		return (
 			<div className="pregameShell">
-				<BackgroundPieces className="pregameBackground" />
+				<BackgroundPieces className="pregameBackground" topCollisionSelector={route.screen === 'lobby' ? '.lobbyTopBar' : undefined} />
 				{route.screen === 'home' ? (
 					<CreateGameScreen
 						isPhoneLandscape={isPhoneLandscape}

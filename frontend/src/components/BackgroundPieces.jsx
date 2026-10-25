@@ -1,4 +1,5 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { backgroundPieceAnchor, backgroundPieceCount, orderBackgroundPieces } from './backgroundDensity'
 import { advancePieces, arrangePieces } from './backgroundMotion'
 import { createBackgroundVariants } from './backgroundVariants'
 import './BackgroundPieces.css'
@@ -44,22 +45,36 @@ function BackgroundPieces({
 	cellSize = 28,
 	opacity = 0.1,
 	compact = false,
+	topCollisionSelector,
 	className = '',
 }) {
 	const containerRef = useRef(null)
 	const [variantSeed] = useState(() => Math.floor(Math.random() * 4294967296))
-	const displayPieces = useMemo(() => createBackgroundVariants(
-		pieces, pieces === DEFAULT_BACKGROUND_PIECES ? 2 : 1, variantSeed,
+	const displayPieces = useMemo(() => orderBackgroundPieces(
+		createBackgroundVariants(
+			pieces, pieces === DEFAULT_BACKGROUND_PIECES ? 2 : 1, variantSeed,
+		),
+		variantSeed,
 	), [pieces, variantSeed])
 
 	useLayoutEffect(() => {
 		const container = containerRef.current
 		let width = container.clientWidth
 		let height = container.clientHeight
+		let topBoundary = 0
+		const topObstacle = topCollisionSelector ? document.querySelector(topCollisionSelector) : null
+		const measureTopBoundary = () => {
+			if (!topObstacle) return 0
+			const containerBounds = container.getBoundingClientRect()
+			const obstacleBounds = topObstacle.getBoundingClientRect()
+			return Math.max(0, Math.min(height, obstacleBounds.bottom - containerBounds.top))
+		}
+		topBoundary = measureTopBoundary()
 		const movingPieces = [...container.children].map((element, index) => {
 			const piece = displayPieces[index]
 			const angle = Math.random() * Math.PI * 2
 			const speed = 48 + Math.random() * 60
+			const anchor = backgroundPieceAnchor(piece, width, height, element.offsetWidth)
 			return {
 				element,
 				speed,
@@ -67,10 +82,8 @@ function BackgroundPieces({
 					x: tile.offsetLeft, y: tile.offsetTop,
 					width: tile.offsetWidth, height: tile.offsetHeight,
 				})),
-				x: piece.left === undefined
-					? width * (1 - (piece.right ?? 0) / 100) - element.offsetWidth
-					: width * piece.left / 100,
-				y: height * piece.top / 100,
+				x: anchor.x,
+				y: anchor.y,
 				vx: Math.cos(angle) * speed,
 				vy: Math.sin(angle) * speed,
 				width: element.offsetWidth,
@@ -83,27 +96,37 @@ function BackgroundPieces({
 				piece.element.style.transform = `translate3d(${piece.x}px, ${piece.y}px, 0)`
 			}
 		}
+		const arrangeForViewport = () => {
+			for (const piece of movingPieces) piece.active = false
+			const count = backgroundPieceCount(width, height, movingPieces.length)
+			arrangePieces(movingPieces.slice(0, count), width, height, topBoundary)
+		}
 		const observer = new ResizeObserver(() => {
 			width = container.clientWidth
 			height = container.clientHeight
-			for (const piece of movingPieces) {
+			topBoundary = measureTopBoundary()
+			for (const [index, piece] of movingPieces.entries()) {
 				piece.width = piece.element.offsetWidth
 				piece.height = piece.element.offsetHeight
 				piece.cells = [...piece.element.children].map(tile => ({
 					x: tile.offsetLeft, y: tile.offsetTop,
 					width: tile.offsetWidth, height: tile.offsetHeight,
 				}))
+				const anchor = backgroundPieceAnchor(displayPieces[index], width, height, piece.width)
+				piece.x = anchor.x
+				piece.y = anchor.y
 			}
-			arrangePieces(movingPieces, width, height)
+			arrangeForViewport()
 			paint()
 		})
 		observer.observe(container)
+		if (topObstacle) observer.observe(topObstacle)
 		let frame
 		let previousTime = null
 		const animate = time => {
 			const seconds = previousTime === null ? 0 : Math.min((time - previousTime) / 1000, 0.1)
 			previousTime = time
-			advancePieces(movingPieces, seconds, width, height)
+			advancePieces(movingPieces, seconds, width, height, topBoundary)
 			paint()
 			frame = requestAnimationFrame(animate)
 		}
@@ -112,7 +135,7 @@ function BackgroundPieces({
 			previousTime = null
 			if (!document.hidden) frame = requestAnimationFrame(animate)
 		}
-		arrangePieces(movingPieces, width, height)
+		arrangeForViewport()
 		paint()
 		syncVisibility()
 		document.addEventListener('visibilitychange', syncVisibility)
@@ -121,7 +144,7 @@ function BackgroundPieces({
 			observer.disconnect()
 			document.removeEventListener('visibilitychange', syncVisibility)
 		}
-	}, [displayPieces, cellSize, compact])
+	}, [displayPieces, cellSize, compact, topCollisionSelector])
 
 	return (
 		<div

@@ -60,6 +60,14 @@ test('pieces bounce at visible screen edges and retain their fixed orientation',
 	assertSeparated([piece], 300, 200)
 })
 
+test('pieces bounce below an inset top boundary', () => {
+	const piece = makePiece(['#'], 40, 61)
+	piece.vy = -60
+	advancePieces([piece], 0.1, 300, 200, 60)
+	assert.ok(piece.vy > 0)
+	assert.ok(pieceGeometry(piece).minY >= 60)
+})
+
 test('64 moving shapes remain separated through collisions and resize', () => {
 	const shapes = [['####', '...#'], ['.#.', '###', '.#.'], ['##', '#.', '##'], ['#####'], ['#'], ['##', '##']]
 	const pieces = Array.from({ length: 64 }, (_, index) => {
@@ -89,4 +97,23 @@ test('fast pieces cannot tunnel through occupied tiles', () => {
 	advancePieces([a, b], 0.1, 300, 100)
 	assertSeparated([a, b], 300, 100)
 	assert.ok(a.x < b.x)
+})
+
+test('corner-to-corner collisions do not lock both pieces in place', () => {
+	const a = makePiece(['.#.', '.#.', '###'], 42.92797617908428, 713.6095638431957)
+	const b = makePiece(['#####'], 99.92801205504249, 715.7384615871655)
+	a.vx = 82.69752568937615
+	a.vy = 52.98590134162561
+	b.vx = -26.5242050248091
+	b.vy = -67.44437939860455
+	const start = [a.x, a.y, b.x, b.y]
+
+	for (let frame = 0; frame < 60; frame++) {
+		advancePieces([a, b], 1 / 60, 390, 844)
+		assertSeparated([a, b], 390, 844)
+	}
+
+	const distanceMoved = Math.hypot(a.x - start[0], a.y - start[1])
+		+ Math.hypot(b.x - start[2], b.y - start[3])
+	assert.ok(distanceMoved > 1, `pieces only moved ${distanceMoved}px`)
 })
