@@ -2,6 +2,10 @@ import { useMemo, useState } from 'react'
 import { getPlayerColorHex } from '../playerColors'
 import Piece from './Piece'
 
+function RobotIcon() {
+	return <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="8" width="16" height="12" rx="3" /><path d="M12 4v4M9 13v1M15 13v1M9.5 17h5" /><circle cx="12" cy="3.5" r="1" /></svg>
+}
+
 function PlayerRank({ currentUserId, game, pieceCellSize = 7 }) {
 	const [expandedPlayerId, setExpandedPlayerId] = useState(null)
 	const playerProgress = useMemo(() => Object.keys(game?.settings?.players || {})
@@ -15,7 +19,7 @@ function PlayerRank({ currentUserId, game, pieceCellSize = 7 }) {
 		}).sort((a, b) => b.placedBlocks - a.placedBlocks || a.originalIndex - b.originalIndex), [game])
 	return (
 		<aside className="playerRankPanel" aria-label="Players">
-			<h2 className="gamePanelTitle">Players</h2>
+			<div className="playerPanelHeader"><h2 className="gamePanelTitle">Players</h2></div>
 			<div className="playerPanelGrid">
 				{playerProgress.map(({ player, playerKey, placedBlocks, left }) => {
 					const isYou = player?.id === currentUserId
@@ -25,11 +29,9 @@ function PlayerRank({ currentUserId, game, pieceCellSize = 7 }) {
 					return (
 						<div key={player?.id || playerKey} className={`playerStatusCard${player?.id === game.currentPlayerId ? ' playerStatusActive' : ''}`}
 							style={{ '--player-color': getPlayerColorHex(player?.color) }}>
-							<div className="playerStatusHeader">
-								<span className="playerStatusColor" aria-hidden="true" />
-								<span className="playerStatusName" title={player?.name}>{player?.name || playerKey}{isYou ? ' (you)' : ''}</span>
-								<span className="playerStatusBlocks" title="Blocks placed">{placedBlocks}</span>
-							</div>
+							<span className="playerStatusColor" aria-hidden="true">{player?.isBot && <RobotIcon />}</span>
+							<span className="playerStatusName" title={player?.name}>{player?.name || playerKey}{isYou ? <small> (you)</small> : ''}</span>
+							<span className="playerStatusBlocks" title="Blocks placed">{placedBlocks}<small>pts</small></span>
 							<div className="playerPiecesProgress" aria-label={`${left} of ${total} pieces left`}><span style={{ width: `${left / total * 100}%` }} /></div>
 							<div className="playerStatusBody">
 								<span className="playerPiecesLeft">{left}/{total}</span>

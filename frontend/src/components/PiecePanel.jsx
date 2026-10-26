@@ -26,15 +26,17 @@ function PiecePanel({
 				<h2 className="gamePanelTitle">Your pieces</h2>
 				<span className="pieceCount">{left}/{totalPieceCount}</span>
 			</div>
-			<div data-game-piece className="pieceCardGrid">
-				{pieces.map(piece => <Piece key={piece.name} piece={piece} isWaitingForPlayers={isWaitingForPlayers}
-					color={player?.color} isSelected={selectedPieceName === piece.name}
-					isPlayable={playablePieceNames.has(piece.name)} disabled={!canMove}
-					onClick={event => onPieceClick(piece, event)} rotation={piece.rotation} flipped={piece.flipped} cellSize={pieceCellSize} />)}
-			</div>
+			<div className="piecesBody">
+				<div data-game-piece className="pieceCardGrid">
+					{pieces.map(piece => <Piece key={piece.name} piece={piece} isWaitingForPlayers={isWaitingForPlayers}
+						color={player?.color} isSelected={selectedPieceName === piece.name}
+						isPlayable={playablePieceNames.has(piece.name)} disabled={!canMove}
+						onClick={event => onPieceClick(piece, event)} rotation={piece.rotation} flipped={piece.flipped} cellSize={pieceCellSize} />)}
+				</div>
+				<div className="piecePanelAside">
 			{firstMove ? <div className="pieceAbilityCard firstMoveCard" data-game-piece>
 				<div className="firstMoveSwatch" style={{ '--start-color': getPlayerColorHex(player?.color) }} aria-hidden="true"><i /></div>
-				<div><div className="abilityTitle">First move</div><p>Pick any piece and place it so it covers your starting square, outlined in white on the board.</p></div>
+				<div><div className="abilityTitle">First move</div><p>Pick any piece and place it so it covers your starting square, outlined in your color on the board.</p></div>
 			</div> : ability && <div className="pieceAbilityCard" data-game-piece>
 				<div className="abilitySwatch" aria-hidden="true">
 					{Array.from({ length: 4 }, (_, index) => <i key={index} style={tileFinish(getPlayerColorHex(player?.color), ability, 'tray')} />)}
@@ -52,6 +54,8 @@ function PiecePanel({
 				<div className="pieceControlRow"><span><MouseIcon action="rotate" />Rotate</span><span className="controlKeys"><kbd>Scroll</kbd><span>or</span><kbd>← →</kbd></span></div>
 				<div className="pieceControlRow"><span><MouseIcon action="flip" />Flip</span><span className="controlKeys"><kbd>Right-click</kbd><span>or</span><kbd>↑ ↓</kbd></span></div>
 				<div className="pieceControlRow"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>Put back</span><kbd>Esc</kbd></div>
+			</div>
+				</div>
 			</div>
 		</aside>
 	)

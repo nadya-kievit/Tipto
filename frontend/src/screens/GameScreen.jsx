@@ -16,7 +16,6 @@ import {
 	closestLegalPlacement,
 } from '../game/placementRules'
 import { horizontalFlip, wheelRotation } from '../game/piecePresentation'
-import useTheme from '../hooks/useTheme'
 import useUiScale from '../hooks/useUiScale'
 import './GameScreen.css'
 import './GameDesktop.css'
@@ -26,7 +25,6 @@ const EMPTY_BOARD = []
 
 
 function GameScreen({ gameId, onLeaveGame, onNeedsColor, isPhoneLandscape = false }) {
-	useTheme()
 	const { uiScale, style: uiScaleStyle } = useUiScale()
 
 	const storageKey = `tipto-player-${gameId}`
@@ -522,6 +520,7 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, isPhoneLandscape = fals
 	if (!game) {
 		return (
 			<div className="gamePage gameLoading" style={uiScaleStyle}>
+				{!isPhoneLandscape && <><div className="gameCity" aria-hidden="true" /><div className="gameCityFade" aria-hidden="true" /></>}
 				<h1 className="gameHeaderTitle">Tipto</h1>
 
 				<div className="startPanel">
@@ -571,7 +570,9 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, isPhoneLandscape = fals
 	}
 
 	return (
-		<div className="gamePage" style={uiScaleStyle}>
+		<div className="gamePage" style={{ ...uiScaleStyle, '--me': getPlayerColorHex(me?.color) }}>
+			<div className="gameCity" aria-hidden="true" />
+			<div className="gameCityFade" aria-hidden="true" />
 
 			{selectedPiece && createPortal(
 				<CursorPiece
@@ -624,6 +625,7 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, isPhoneLandscape = fals
 					currentPlayerId={me?.id}
 					preview={{ color: me?.color, ability: selectedPiece?.ability }}
 					lastMove={game.moveHistory.at(-1)}
+					desktopPresentation
 				/>
 
 				<PiecePanel
