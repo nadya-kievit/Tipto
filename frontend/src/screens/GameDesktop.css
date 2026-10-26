@@ -24,7 +24,10 @@
 	font-family: 'DM Sans', sans-serif; font-size: calc(14px * var(--text-scale));
 }
 .gamePage:not(.phoneGame) *, .gamePage:not(.phoneGame) *::before, .gamePage:not(.phoneGame) *::after { box-sizing: border-box; }
-.gamePage:not(.phoneGame) > :not(.gameCity):not(.gameCityFade) { position: relative; z-index: 1; }
+.gamePage:not(.phoneGame) > .gameHeader,
+.gamePage:not(.phoneGame) > .gameMain,
+.gamePage:not(.phoneGame).gameLoading > .gameHeaderTitle,
+.gamePage:not(.phoneGame).gameLoading > .startPanel { position: relative; z-index: 1; }
 .gameCity, .gameCityFade { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
 .gameCity { background: url('/city-landscape.webp') center / cover no-repeat; opacity: .15; }
 .gameCityFade { background: radial-gradient(ellipse 62% 60% at 50% 52%, rgba(17,19,25,.82) 0%, rgba(17,19,25,.55) 45%, rgba(17,19,25,0) 100%); }
@@ -127,7 +130,13 @@
 .gamePage:not(.phoneGame) .startPanel, .gamePage:not(.phoneGame) .winnerModal, .gamePage:not(.phoneGame) .readyDial { border: 1px solid var(--border); border-radius: calc(6px * var(--ui-scale)); background: var(--board); box-shadow: none; color: var(--text); }
 .gamePage:not(.phoneGame) .startPanel h2, .gamePage:not(.phoneGame) .winnerTitle { font-family: 'Space Grotesk', sans-serif; }
 .gamePage:not(.phoneGame) .statusMessageError { color: var(--error); }
-.gamePage:not(.phoneGame) .modalBackdrop { background: var(--backdrop); backdrop-filter: none; }
+.gamePage:not(.phoneGame) > .modalBackdrop { position: fixed; inset: 0; z-index: 20; background: var(--backdrop); backdrop-filter: none; }
+.gamePage.desktopGameModalHost {
+	position: fixed; inset: 0; z-index: 100; display: block;
+	width: auto; height: auto; min-height: 0; padding: 0; overflow: visible;
+	background: transparent; pointer-events: none;
+}
+.gamePage.desktopGameModalHost > .modalBackdrop { position: absolute; inset: 0; z-index: 1; pointer-events: auto; }
 .gamePage:not(.phoneGame) .modalCloseButton, .gamePage:not(.phoneGame) .leaderboardRow, .gamePage:not(.phoneGame) .tieLabel { background: var(--board); }
 .gamePage:not(.phoneGame) .leaderboardRow { border: 1px solid var(--border); }
 .gamePage:not(.phoneGame) .waitingOverlay { background: color-mix(in srgb, var(--page) 72%, transparent); backdrop-filter: blur(calc(1px * var(--ui-scale))); }
