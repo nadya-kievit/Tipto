@@ -56,12 +56,22 @@ function App() {
 	const hasGameSession = route.screen === 'game' && Boolean(localStorage.getItem(`tipto-player-${route.gameId}`))
 
 	const isPhoneLandscape = phoneMode === 'landscape'
+	const isPhoneGame = phoneMode === 'portrait'
 
 	useEffect(() => {
 		const handlePopState = () => setPath(window.location.pathname)
 		window.addEventListener('popstate', handlePopState)
 		return () => window.removeEventListener('popstate', handlePopState)
 	}, [])
+
+	useEffect(() => {
+		const className = 'phoneViewportLocked'
+		const isPhone = phoneMode !== 'desktop'
+
+		document.documentElement.classList.toggle(className, isPhone)
+
+		return () => document.documentElement.classList.remove(className)
+	}, [phoneMode])
 
 	const navigateTo = useCallback(nextPath => {
 		if (window.location.pathname !== nextPath) window.history.pushState({}, '', nextPath)
@@ -105,8 +115,7 @@ function App() {
 		}
 	}
 
-	if (hasGameSession && phoneMode === 'portrait') return <PhoneRotateOverlay orientation="landscape" />
-	if (!hasGameSession && phoneMode === 'landscape') return <PhoneRotateOverlay orientation="portrait" />
+	if (phoneMode === 'landscape') return <PhoneRotateOverlay orientation="portrait" />
 
 	if (!hasGameSession) {
 		return (
@@ -140,7 +149,7 @@ function App() {
 			gameId={route.gameId}
 			onLeaveGame={handleLeaveRoom}
 			onNeedsColor={handleNeedsSession}
-			isPhoneLandscape={isPhoneLandscape}
+			isPhoneGame={isPhoneGame}
 		/>
 	)
 }

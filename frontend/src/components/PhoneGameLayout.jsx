@@ -64,18 +64,6 @@ function placementReason(board, cells, player, isFirstMove, players, ability) {
 	return 'That piece cannot be placed there'
 }
 
-function PhoneSheet({ type, onClose, onQuit, ownColor }) {
-	return <div className="phoneSheetBackdrop" onPointerDown={onClose}>
-		<section className="phoneSheet" onPointerDown={event => event.stopPropagation()}>
-			<header><strong>{type === 'menu' ? 'Menu' : 'How to play'}</strong><button type="button" onClick={onClose} aria-label="Close">×</button></header>
-			{type === 'menu' ? <>
-				<div className="phoneLegend"><span><i className="last" />Last move</span><span><i style={tileFinish(ownColor, 'scout', 'list')} />Scout</span><span><i style={tileFinish(ownColor, 'connector', 'list')} />Connector</span></div>
-				<button type="button" className="phoneSheetLeave" onClick={onQuit}>Leave game</button>
-			</> : <div className="phoneHelp"><p>Your first piece must cover your marked starting square.</p><p>After that, your pieces touch only at corners. Scout may be placed without connecting; Connector may also share edges.</p><p>Tap a piece, orient it, then drag it from the staging area onto the board.</p></div>}
-		</section>
-	</div>
-}
-
 export default function PhoneGameLayout({
 	game, me, board, canMove, pieces, selectedPiece, selectedPieceName, pendingPlacement,
 	onStage, onRotate, onFlip, onPlace, onQuit, lastMove,
@@ -88,7 +76,6 @@ export default function PhoneGameLayout({
 	const dragRef = useRef(null)
 	const [drag, setDrag] = useState(null)
 	const [toast, setToast] = useState('')
-	const [sheet, setSheet] = useState(null)
 	const [scroll, setScroll] = useState({ width: 100, left: 0 })
 	const unplaced = pieces.filter(piece => !piece.placed)
 	const ownColor = getPlayerColorHex(me?.color)
@@ -105,6 +92,7 @@ export default function PhoneGameLayout({
 		currentPlayerId={me.id}
 		preview={{ color: me.color, ability: selectedPiece?.ability }}
 		lastMove={lastMove}
+		trayPresentation
 	/>, [board, game.players, lastMove, me.color, me.id, pendingPlacement, selectedPiece?.ability])
 
 	useEffect(() => {
@@ -190,8 +178,17 @@ export default function PhoneGameLayout({
 		return () => clearTimeout(timeout)
 	}, [toast])
 
-	const stageCell = selectedPiece ? Math.min(16, selectedPiece.cells.length <= 2 ? 16 : 14) : 14
+	const stageCell = selectedPiece ? (selectedPiece.cells.length <= 2 ? 24 : 20) : 20
 	return <div className="gamePage phoneGame">
+		<div className="gameCity" aria-hidden="true" />
+		<div className="gameCityFade" aria-hidden="true" />
+		<header className="phoneGameHeader">
+			<div className="phoneGameBrand">
+				<h1><span className="phoneGameLogoMark" aria-hidden="true"><i /><i /><i /></span>Tipto</h1>
+				<span>Room <strong>{game.inviteCode || game.gameId}</strong></span>
+			</div>
+			<button type="button" className="phoneHeaderLeave" onClick={onQuit}>Leave</button>
+		</header>
 		<main className="phoneGameMain">
 			<aside className="phoneLeftRail">
 				<PhoneTurnCard game={game} canMove={canMove} />
@@ -200,7 +197,6 @@ export default function PhoneGameLayout({
 					const score = player.pieces.reduce((sum, piece) => sum + (piece.placed ? piece.cells.length : 0), 0)
 					return <div key={player.id} className={player.id === game.currentPlayerId ? 'active' : ''} style={{ '--player-color': getPlayerColorHex(player.color) }}><div><i /><span>{player.id === me.id ? 'You' : player.name}</span><b>{score}</b></div><em><i style={{ width: `${left / 16 * 100}%` }} /></em></div>
 				})}</div>
-				<div className="phoneRailActions"><button type="button" onClick={() => setSheet('menu')} aria-label="Menu">☰</button><button type="button" onClick={() => setSheet('help')} aria-label="How to play">?</button></div>
 			</aside>
 			<div className="phoneBoardZone" ref={boardZoneRef}>
 				{boardView}
@@ -211,12 +207,11 @@ export default function PhoneGameLayout({
 					{unplaced.length === 0 ? <span>All pieces placed</span> : selectedPiece && !drag ? <><PhonePieceShape piece={selectedPiece} cellSize={stageCell} color={ownColor} />{selectedPiece.ability && <small>{selectedPiece.ability === 'scout' ? 'Scout' : 'Connector'}</small>}</> : !selectedPiece ? <span>Choose a piece</span> : null}
 				</div>
 				<div className="phoneOrientation"><button type="button" onClick={() => onRotate(90)} disabled={!selectedPiece} aria-label="Rotate left">↶</button><button type="button" onClick={() => onRotate(270)} disabled={!selectedPiece} aria-label="Rotate right">↷</button><button type="button" onClick={onFlip} disabled={!selectedPiece} aria-label="Flip">↔</button></div>
-				<div ref={stripRef} className="phonePieceStrip">{unplaced.map(piece => <Piece key={piece.name} piece={piece} color={me.color} isSelected={selectedPieceName === piece.name} isPlayable disabled={false} onClick={() => onStage(piece.name)} rotation={piece.rotation} flipped={piece.flipped} cellSize={5} />)}</div>
+				<div ref={stripRef} className="phonePieceStrip">{unplaced.map(piece => <Piece key={piece.name} piece={piece} color={me.color} isSelected={selectedPieceName === piece.name} isPlayable disabled={false} onClick={() => onStage(piece.name)} rotation={piece.rotation} flipped={piece.flipped} cellSize={7} />)}</div>
 				<div className="phoneScrollTrack"><i style={{ width: `${scroll.width}%`, left: `${scroll.left}%` }} /></div>
 			</aside>
 		</main>
 		{drag && selectedPiece && <div className={`phoneDragGhost${drag.returning ? ' returning' : ''}`} style={{ left: drag.left, top: drag.top }}><PhonePieceShape piece={selectedPiece} cellSize={drag.cellSize} color={ownColor} invalid={!drag.valid} /></div>}
 		{toast && <div className="phoneGameToast" role="status">{toast}</div>}
-		{sheet && <PhoneSheet type={sheet} onClose={() => setSheet(null)} onQuit={onQuit} ownColor={ownColor} />}
 	</div>
 }

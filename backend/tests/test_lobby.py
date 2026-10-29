@@ -298,10 +298,48 @@ def test_removed_bot_can_be_replaced(client):
     assert bot["color"] is not None
     snapshot = client.post(f"/games/{room_id}/bots", json=host).json()
     replacement = snapshot["players"][-1]
-    assert replacement["name"] == "Bot 3"
+    assert replacement["name"] == "Bot 1"
     assert replacement["color"] is not None
     assert replacement["settingsPlayerKey"] == "Player 4"
     assert replacement["id"] != bot["id"]
+
+
+def test_new_bot_uses_the_first_available_name_without_renaming_existing_bots(client):
+    room_id, host = new_lobby(client)
+    snapshot = None
+    for _ in range(3):
+        snapshot = client.post(f"/games/{room_id}/bots", json=host).json()
+
+    bot_2 = next(player for player in snapshot["players"] if player["name"] == "Bot 2")
+    snapshot = client.post(
+        f"/games/{room_id}/remove-player",
+        json={**host, "targetPlayerId": bot_2["id"]},
+    ).json()
+    assert [player["name"] for player in snapshot["players"] if player["isBot"]] == [
+        "Bot 1",
+        "Bot 3",
+    ]
+
+    snapshot = client.post(f"/games/{room_id}/bots", json=host).json()
+    assert snapshot["players"][-1]["name"] == "Bot 2"
+    assert [player["name"] for player in snapshot["players"] if player["isBot"]] == [
+        "Bot 1",
+        "Bot 3",
+        "Bot 2",
+    ]
+
+    for bot in [player for player in snapshot["players"] if player["isBot"]]:
+        snapshot = client.post(
+            f"/games/{room_id}/remove-player",
+            json={**host, "targetPlayerId": bot["id"]},
+        ).json()
+
+    snapshot = client.post(f"/games/{room_id}/bots", json=host).json()
+    snapshot = client.post(f"/games/{room_id}/bots", json=host).json()
+    assert [player["name"] for player in snapshot["players"] if player["isBot"]] == [
+        "Bot 1",
+        "Bot 2",
+    ]
 
 
 def test_removed_human_is_notified_and_old_credentials_cannot_reconnect(client):

@@ -211,7 +211,6 @@ def create_game_state(game_id, settings):
         "status": "waiting",
         "hasStarted": False,
         "nextPlayerNumber": 1,
-        "nextBotNumber": 1,
         "removedPlayers": {},
         "notice": None,
         "winnerId": None,
@@ -1067,17 +1066,29 @@ def reassign_bots_for_human_color(game, human):
         bot["color"] = first_free_lobby_color(game, excluded_player_id=bot["id"])
 
 
+def first_free_lobby_bot_number(game):
+    used_names = {
+        player["name"]
+        for player in game["players"]
+        if player.get("isBot")
+    }
+    number = 1
+    while f"Bot {number}" in used_names:
+        number += 1
+    return number
+
+
 def make_lobby_bot(game):
     color = first_free_lobby_color(game)
+    bot_number = first_free_lobby_bot_number(game)
     bot = make_runtime_player(
         {"color": color},
         game["nextPlayerNumber"],
         settings_player_key=f'Player {game["nextPlayerNumber"]}',
         is_bot=True,
-        player_name=f'Bot {game["nextBotNumber"]}',
+        player_name=f"Bot {bot_number}",
     )
     game["nextPlayerNumber"] += 1
-    game["nextBotNumber"] += 1
     game["players"].append(bot)
 
 

@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef } from 'react'
 import { getPlayerColorHex } from '../playerColors'
 import { tileFinish } from '../game/piecePresentation'
 import Piece from './Piece'
@@ -16,7 +17,31 @@ function MouseIcon({ action }) {
 function PiecePanel({
 	canMove, isWaitingForPlayers, onPieceClick, pieces, playablePieceNames,
 	player, selectedPieceName, totalPieceCount, selectedPiece, pieceCellSize = 13,
+	fitPiecePreviews = false,
 }) {
+	const gridRef = useRef(null)
+	useLayoutEffect(() => {
+		const grid = gridRef.current
+		if (!fitPiecePreviews || !grid) return undefined
+		const fitPreviews = () => {
+			for (const card of grid.children) {
+				const shape = card.querySelector('.pieceShape')
+				if (!shape) continue
+				const scale = Math.max(0, Math.min(1,
+					(card.clientWidth - 12) / shape.offsetWidth,
+					(card.clientHeight - 12) / shape.offsetHeight,
+				))
+				shape.style.setProperty('--piece-preview-scale', scale)
+			}
+		}
+		fitPreviews()
+		const observer = new ResizeObserver(fitPreviews)
+		observer.observe(grid)
+		return () => {
+			observer.disconnect()
+			for (const shape of grid.querySelectorAll('.pieceShape')) shape.style.removeProperty('--piece-preview-scale')
+		}
+	}, [fitPiecePreviews, pieces, pieceCellSize])
 	const left = pieces.filter(piece => !piece.placed).length
 	const ability = selectedPiece?.ability
 	const firstMove = !player?.pieces.some(piece => piece.placed)
@@ -27,7 +52,13 @@ function PiecePanel({
 				<span className="pieceCount">{left}/{totalPieceCount}</span>
 			</div>
 			<div className="piecesBody">
-				<div data-game-piece className="pieceCardGrid">
+				<div className={`portraitPieceHint${firstMove ? ' firstMoveHint' : ''}`} style={{ '--start-color': getPlayerColorHex(player?.color) }}>
+					<span aria-hidden="true" />
+					<p>{firstMove
+						? 'First move: place any piece so it covers your starting square.'
+						: 'Pick a piece: normal pieces touch yours at a corner; Scout and Connector use their special rules.'}</p>
+				</div>
+				<div ref={gridRef} data-game-piece className="pieceCardGrid">
 					{pieces.map(piece => <Piece key={piece.name} piece={piece} isWaitingForPlayers={isWaitingForPlayers}
 						color={player?.color} isSelected={selectedPieceName === piece.name}
 						isPlayable={playablePieceNames.has(piece.name)} disabled={!canMove}

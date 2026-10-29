@@ -151,6 +151,11 @@
 	background: var(--input);
 	font-weight: 600;
 }
+.lobbyOwnProfile input:disabled[data-managing-players] {
+	opacity: 1;
+	color: var(--text-soft);
+	-webkit-text-fill-color: var(--text-soft);
+}
 .lobbySwatches { display: flex; flex-wrap: wrap; gap: 7px; }
 .lobbyScreen .lobbySwatch {
 	position: relative;
@@ -168,6 +173,7 @@
 }
 .lobbyScreen .lobbySwatch[aria-pressed='true'] { box-shadow: 0 0 0 2px color-mix(in srgb, var(--player-colour) 6%, var(--surface-raised)), 0 0 0 4px var(--swatch); }
 .lobbyScreen .lobbySwatch[aria-pressed='true'] span { color: white; font-size: 14px; line-height: 1; text-shadow: 0 1px 2px rgb(0 0 0 / 55%); }
+.lobbyScreen .lobbySwatch:disabled[data-managing-players]:not([data-taken]) { opacity: 1; }
 .lobbyScreen .lobbySwatch[data-taken] { opacity: .35; }
 .lobbyScreen .lobbySwatch[data-taken] span { color: white; }
 .lobbyScreen .lobbyRemoveBot {
@@ -229,7 +235,7 @@
 .lobbyTimerControls { display: flex; align-items: center; justify-content: center; gap: 26px; min-height: 205px; }
 .lobbyTimerDial { width: 220px; height: 205px; transition: opacity 150ms; }
 .lobbyTimerDial.noLimit { opacity: .3; }
-.lobbyDialFace { position: relative; width: 220px; height: 205px; touch-action: none; }
+.lobbyDialFace { position: relative; width: 220px; height: 205px; touch-action: pan-y; }
 .lobbyDialFace svg { display: block; width: 100%; height: 100%; overflow: visible; }
 .lobbyDialFace path { fill: none; stroke-width: 11; stroke-linecap: round; }
 .lobbyDialFace .dialTrack { stroke: var(--border-strong); }
@@ -237,6 +243,7 @@
 .lobbyDialFace line { stroke: var(--muted); stroke-width: 1.5; }
 .lobbyDialFace line.major { stroke: var(--text-soft); stroke-width: 2; }
 .lobbyDialFace .dialKnob { fill: var(--surface); stroke: var(--accent); stroke-width: 5; transition: r 100ms; }
+.lobbyDialFace .dialKnobHitTarget { fill: transparent; pointer-events: all; touch-action: none; }
 .lobbyDialFace .dialGhost { fill: color-mix(in srgb, var(--accent) 18%, transparent); stroke: color-mix(in srgb, var(--accent) 45%, transparent); stroke-width: 2; }
 .lobbyTimerDial:not(.readOnly, .noLimit) .lobbyDialFace { cursor: grab; }
 .lobbyTimerDial:not(.readOnly, .noLimit) .lobbyDialFace:hover .dialKnob,
@@ -254,11 +261,38 @@
 .lobbyNoLimit input:checked + i b { background: var(--on-accent); transform: translateX(20px); }
 .lobbyNoLimit input:focus-visible + i { outline: 2px solid var(--accent); outline-offset: 2px; }
 .lobbyNoLimit:has(input:disabled) { cursor: default; opacity: .65; }
+.lobbyNoLimit:has(input:disabled[data-saving-settings]) { opacity: 1; }
 
 .lobbyFooter { display: flex; justify-content: flex-end; }
+.lobbyStartControl { position: relative; display: inline-flex; }
+.lobbyStartControl:focus-visible { outline: none; }
 .lobbyScreen .lobbyStart { min-width: 145px; height: 46px; padding: 0 20px; border: 0; border-radius: 4px; background: var(--accent); color: var(--on-accent); font-weight: 700; }
 .lobbyScreen .lobbyStart:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 88%, white); }
 .lobbyScreen .lobbyStart:disabled { opacity: .42; }
+.lobbyScreen .lobbyStart:disabled[data-saving-settings] { opacity: 1; }
+.lobbyStartTooltip {
+	position: absolute;
+	right: 0;
+	bottom: calc(100% + 10px);
+	z-index: 2;
+	width: max-content;
+	max-width: min(280px, calc(100vw - 32px));
+	padding: 7px 10px;
+	border: 1px solid var(--border-strong);
+	border-radius: 4px;
+	background: var(--surface-raised);
+	box-shadow: 0 5px 18px rgb(0 0 0 / 28%);
+	color: var(--text-soft);
+	font-size: 13px;
+	font-weight: 500;
+	line-height: 1.35;
+	pointer-events: none;
+	opacity: 0;
+	transform: translateY(3px);
+	transition: opacity 120ms, transform 120ms;
+}
+.lobbyStartControl:hover .lobbyStartTooltip,
+.lobbyStartControl:focus-visible .lobbyStartTooltip { opacity: 1; transform: translateY(0); }
 .lobbyLoading,
 .lobbyError { grid-column: 1 / -1; padding: 18px; border-radius: 4px; background: var(--surface); color: var(--muted); text-align: center; }
 .lobbyError { border: 1px solid var(--leave-border); color: var(--leave-text); }
@@ -290,7 +324,6 @@
 	.lobbyScreen .lobbyBoardCards button { height: 116px; padding-inline: 4px; font-size: 12px; }
 	.lobbyBoardPreview { --cell: 8px; }
 	.lobbyTimerControls { flex-wrap: wrap; gap: 8px 20px; }
-	.lobbyScreen .lobbyStart { width: 100%; }
 }
 
 @media (max-width: 380px) {

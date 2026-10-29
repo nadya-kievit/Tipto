@@ -24,7 +24,7 @@ import './PhoneGame.css'
 const EMPTY_BOARD = []
 
 
-function GameScreen({ gameId, onLeaveGame, onNeedsColor, isPhoneLandscape = false }) {
+function GameScreen({ gameId, onLeaveGame, onNeedsColor, isPhoneGame = false }) {
 	const { uiScale, style: uiScaleStyle } = useUiScale()
 
 	const storageKey = `tipto-player-${gameId}`
@@ -52,6 +52,7 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, isPhoneLandscape = fals
 	const [isQuitting, setIsQuitting] = useState(false)
 	const [isRestarting, setIsRestarting] = useState(false)
 	const [closedWinnerTurnNumber, setClosedWinnerTurnNumber] = useState(null)
+	const [isPortraitComputer, setIsPortraitComputer] = useState(() => window.matchMedia('(orientation: portrait) and (min-width: 700px)').matches)
 
 	const me = useMemo(() => 
 		game?.players.find(player => player.id === credentials?.playerId),
@@ -108,16 +109,16 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, isPhoneLandscape = fals
 		pieces.find(piece =>
 			piece.name === selectedPieceName &&
 			!piece.placed &&
-			(isPhoneLandscape || playablePieceNames.has(piece.name))
+			(isPhoneGame || playablePieceNames.has(piece.name))
 		) || null,
-		[isPhoneLandscape, pieces, playablePieceNames, selectedPieceName]
+		[isPhoneGame, pieces, playablePieceNames, selectedPieceName]
 	)
 	const availablePieces = useMemo(() => pieces.map(piece =>
 		piece.name === pendingPlacement?.pieceName ? { ...piece, placed: true } : piece
 	),
 		[pendingPlacement?.pieceName, pieces]
 	)
-	const phoneSelectedPiece = isPhoneLandscape
+	const phoneSelectedPiece = isPhoneGame
 		? selectedPiece || availablePieces.find(piece => !piece.placed) || null
 		: null
 	const winners = useMemo(() => {
@@ -140,6 +141,13 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, isPhoneLandscape = fals
 			onNeedsColor()
 		}
 	}, [game, credentials, onNeedsColor])
+
+	useEffect(() => {
+		const query = window.matchMedia('(orientation: portrait) and (min-width: 700px)')
+		const update = () => setIsPortraitComputer(query.matches)
+		query.addEventListener('change', update)
+		return () => query.removeEventListener('change', update)
+	}, [])
 
 
 	useEffect(() => {
@@ -214,7 +222,7 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, isPhoneLandscape = fals
 
 
 	useEffect(() => {
-		if (isPhoneLandscape) return undefined
+		if (isPhoneGame) return undefined
 		const handleKeyDown = event => {
 			if (!selectedPiece) return
 
@@ -254,10 +262,10 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, isPhoneLandscape = fals
 		return () => {
 			window.removeEventListener('keydown', handleKeyDown)
 		}
-	}, [canMove, isPhoneLandscape, selectedPiece])
+	}, [canMove, isPhoneGame, selectedPiece])
 
 	useEffect(() => {
-		if (isPhoneLandscape || !canMove || !selectedPiece) return
+		if (isPhoneGame || !canMove || !selectedPiece) return
 		const handleWheel = event => {
 			event.preventDefault()
 			if (!event.deltaY) return
@@ -282,7 +290,7 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, isPhoneLandscape = fals
 			window.removeEventListener('wheel', handleWheel)
 			window.removeEventListener('contextmenu', handleContextMenu)
 		}
-	}, [canMove, isPhoneLandscape, selectedPiece])
+	}, [canMove, isPhoneGame, selectedPiece])
 
 	useEffect(() => {
 		const boardElement = document.querySelector('[data-game-board]')
@@ -297,7 +305,7 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, isPhoneLandscape = fals
 
 
 	useLayoutEffect(() => {
-		if (isPhoneLandscape) return
+		if (isPhoneGame) return
 		const element = cursorPieceRef.current
 
 		if (!element || !selectedPiece) return
@@ -307,11 +315,11 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, isPhoneLandscape = fals
 
 		element.style.transform =
 			`translate3d(${x - width / 2}px, ${y - height / 2}px, 0)`
-	}, [isPhoneLandscape, selectedPiece, cursorCellSize])
+	}, [isPhoneGame, selectedPiece, cursorCellSize])
 
 
 	useEffect(() => {
-		if (isPhoneLandscape || !selectedPiece) return
+		if (isPhoneGame || !selectedPiece) return
 
 		const handlePointerMove = event => {
 			cursorPositionRef.current = { x: event.clientX, y: event.clientY }
@@ -336,11 +344,11 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, isPhoneLandscape = fals
 			cancelAnimationFrame(cursorFrameRef.current)
 			cursorFrameRef.current = null
 		}
-	}, [isPhoneLandscape, selectedPiece])
+	}, [isPhoneGame, selectedPiece])
 
 
 	useEffect(() => {
-		if (isPhoneLandscape || !selectedPiece) return
+		if (isPhoneGame || !selectedPiece) return
 
 		const handleOutsidePointerDown = event => {
 			if (event.button !== 0) return
@@ -357,7 +365,7 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, isPhoneLandscape = fals
 		return () => {
 			document.removeEventListener('pointerdown', handleOutsidePointerDown, true)
 		}
-	}, [isPhoneLandscape, selectedPiece])
+	}, [isPhoneGame, selectedPiece])
 
 
 	const handleCopyInvite = async () => {
@@ -520,7 +528,7 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, isPhoneLandscape = fals
 	if (!game) {
 		return (
 			<div className="gamePage gameLoading" style={uiScaleStyle}>
-				{!isPhoneLandscape && <><div className="gameCity" aria-hidden="true" /><div className="gameCityFade" aria-hidden="true" /></>}
+				{!isPhoneGame && <><div className="gameCity" aria-hidden="true" /><div className="gameCityFade" aria-hidden="true" /></>}
 				<h1 className="gameHeaderTitle">Tipto</h1>
 
 				<div className="startPanel">
@@ -540,7 +548,7 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, isPhoneLandscape = fals
 		return null
 	}
 
-	if (isPhoneLandscape) {
+	if (isPhoneGame) {
 		return <>
 			<PhoneGameLayout
 				game={game}
@@ -570,7 +578,7 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, isPhoneLandscape = fals
 	}
 
 	return (
-		<div className="gamePage" style={{ ...uiScaleStyle, '--me': getPlayerColorHex(me?.color) }}>
+		<div className="gamePage" style={{ ...(isPortraitComputer ? { '--ui-scale': 1, '--text-scale': 1 } : uiScaleStyle), '--me': getPlayerColorHex(me?.color) }}>
 			<div className="gameCity" aria-hidden="true" />
 			<div className="gameCityFade" aria-hidden="true" />
 
@@ -638,7 +646,8 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, isPhoneLandscape = fals
 					selectedPieceName={selectedPieceName}
 					totalPieceCount={pieces.length}
 					selectedPiece={selectedPiece}
-					pieceCellSize={14.5 * uiScale}
+					pieceCellSize={isPortraitComputer ? 20 : 14.5 * uiScale}
+					fitPiecePreviews={isPortraitComputer}
 				/>
 			</div>
 
