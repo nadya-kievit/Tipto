@@ -1,12 +1,12 @@
 import { useLayoutEffect, useRef, useState } from 'react'
-import { getPlayerColorHex } from '../playerColors'
-import { tileFinish } from '../game/piecePresentation'
+import { getPlayerColorHex } from '../../../game/playerColors'
+import { tileFinish } from '../../../game/piecePresentation'
 import Tile from './Tile'
 
 function Board({
 	board, boardRotation = 0, onTileClick, onBoardPointerMove, onBoardLeave,
 	hoverCells, pendingPlacement, players, currentPlayerId, preview, lastMove,
-	desktopPresentation = false, trayPresentation = false,
+	desktopPresentation = false, trayPresentation = false, lastMoveWidth = 2, trayMetrics = null,
 }) {
 	const stageRef = useRef(null)
 	const [tray, setTray] = useState({ cell: 20, gap: 2, pad: 10 })
@@ -35,7 +35,7 @@ function Board({
 				const tile = boardElement?.querySelector('.tile')
 				if (!boardElement || !tile) return
 				const boardStyle = getComputedStyle(boardElement)
-				const next = {
+				const next = trayMetrics || {
 					cell: tile.getBoundingClientRect().width,
 					gap: Number.parseFloat(boardStyle.columnGap) || 0,
 					pad: Number.parseFloat(boardStyle.paddingLeft) || 0,
@@ -89,7 +89,7 @@ function Board({
 		if (main) observer.observe(main)
 		if (playersPanel) observer.observe(playersPanel)
 		return () => observer.disconnect()
-	}, [desktopPresentation, framedPresentation, trayPresentation, viewHeight, viewWidth, board])
+	}, [desktopPresentation, framedPresentation, trayPresentation, trayMetrics, viewHeight, viewWidth, board])
 	function viewToBoard(row, col) {
 		switch (boardRotation) {
 			case 90: return { row: height - 1 - col, col: row }
@@ -137,7 +137,7 @@ function Board({
 			startPlayer={startPlayer} isOwnStart={startPlayer?.id === currentPlayerId}
 			ability={pending ? pendingPlacement.ability : abilities.get(value.pieceId)}
 			preview={preview} isPending={pending} isLastMove={Boolean(value.occupied && lastCells.has(key))}
-			lastMoveEdges={lastEdges} desktopPresentation={framedPresentation} />
+			lastMoveEdges={lastEdges} lastMoveWidth={lastMoveWidth} desktopPresentation={framedPresentation} />
 	}))
 	const boardGrid = <div className="board" data-game-board onClick={onTileClick} onPointerMove={handlePointerMove} onPointerLeave={onBoardLeave}
 		style={desktopPresentation ? { '--board-cell-size': `${tray.cell}px`, '--board-gap': `${tray.gap}px`, '--board-pad': `${tray.pad}px` } : undefined}>{tiles}</div>

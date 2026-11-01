@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { advanceAxis, advancePieces, arrangePieces, pieceGeometry, piecesOverlap } from '../src/components/backgroundMotion.js'
+import { advanceAxis, advancePieces, arrangePieces, pieceGeometry, piecesOverlap } from '../src/components/background/backgroundMotion.js'
 
 function makePiece(shape, x, y) {
 	return {

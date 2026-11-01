@@ -1,30 +1,30 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useLayoutEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { gameSocketUrl, getGame, quitGame, restartGame } from '../services/api'
-import Board from '../components/Board'
-import CursorPiece from '../components/CursorPiece'
-import Header from '../components/Header'
-import PiecePanel from '../components/PiecePanel'
-import PlayerRank from '../components/PlayerRank'
-import TurnBanner from '../components/TurnBanner'
-import WaitingOverlay from '../components/WaitingOverlay'
-import WinnerModal from '../components/WinnerModal'
-import PhoneGameLayout from '../components/PhoneGameLayout'
-import { PLAYER_COLOR_HEX, getPlayerColorHex } from '../playerColors'
+import Board from '../components/game/board/Board'
+import CursorPiece from '../components/game/pieces/CursorPiece'
+import GameHeader from '../components/game/layout/GameHeader'
+import PiecePanel from '../components/game/pieces/PiecePanel'
+import PlayerRank from '../components/game/players/PlayerRank'
+import TurnBanner from '../components/game/players/TurnBanner'
+import WaitingOverlay from '../components/game/overlays/WaitingOverlay'
+import WinnerModal from '../components/game/overlays/WinnerModal'
+import PhoneGameLayout from '../components/game/layout/PhoneGameLayout'
+import { PLAYER_COLOR_HEX, getPlayerColorHex } from '../game/playerColors'
 import {
 	canPlacePieceInAnyOrientation,
 	closestLegalPlacement,
 } from '../game/placementRules'
 import { horizontalFlip, wheelRotation } from '../game/piecePresentation'
 import useUiScale from '../hooks/useUiScale'
-import './GameScreen.css'
-import './GameDesktop.css'
-import './PhoneGame.css'
+import '../styles/game/base.css'
+import '../styles/game/desktop.css'
+import '../styles/game/phone.css'
 
 const EMPTY_BOARD = []
 
 
-function GameScreen({ gameId, onLeaveGame, onNeedsColor, isPhoneGame = false }) {
+function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhoneGame = false }) {
 	const { uiScale, style: uiScaleStyle } = useUiScale()
 
 	const storageKey = `tipto-player-${gameId}`
@@ -119,7 +119,7 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, isPhoneGame = false }) 
 		[pendingPlacement?.pieceName, pieces]
 	)
 	const phoneSelectedPiece = isPhoneGame
-		? selectedPiece || availablePieces.find(piece => !piece.placed) || null
+		? (pendingPlacement ? null : selectedPiece)
 		: null
 	const winners = useMemo(() => {
 		const winnerIds = game?.winnerIds?.length
@@ -374,10 +374,10 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, isPhoneGame = false }) 
 	}
 
 
-	const handleQuit = async () => {
+	const handleQuit = useCallback(async () => {
 		if (
-			!credentials ||
-			!window.confirm('Quit this game? Your pieces will be removed from the board.')
+			isQuitting || !credentials ||
+			!window.confirm('Leave this game? A bot will take your place.')
 		) {
 			return
 		}
@@ -388,13 +388,16 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, isPhoneGame = false }) 
 			await quitGame(gameId, credentials)
 
 			localStorage.removeItem(storageKey)
+			localStorage.removeItem(`tipto-admin-${gameId}`)
 			socketRef.current?.close()
 			onLeaveGame()
 		} catch (err) {
 			setLastMessage(err.message)
 			setIsQuitting(false)
 		}
-	}
+	}, [credentials, gameId, isQuitting, onLeaveGame, storageKey])
+
+	useEffect(() => onRegisterLeave?.(handleQuit), [handleQuit, onRegisterLeave])
 
 
 	const handleRestart = async () => {
@@ -595,7 +598,7 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, isPhoneGame = false }) 
 				document.body
 			)}
 			
-			<Header
+			<GameHeader
 				gameId={gameId}
 				isQuitting={isQuitting}
 				onCopyInvite={handleCopyInvite}
@@ -610,7 +613,7 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, isPhoneGame = false }) 
 					resultColor={resultColor}
 					winner={winner}
 				/>
-			</Header>
+			</GameHeader>
 
 			<div className="gameMain">
 				{isWaitingForPlayers && <WaitingOverlay game={game} />}

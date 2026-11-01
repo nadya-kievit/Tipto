@@ -1,10 +1,10 @@
-import { getPlayerColorHex } from '../playerColors'
-import { tileFinish } from '../game/piecePresentation'
+import { getPlayerColorHex } from '../../../game/playerColors'
+import { tileFinish } from '../../../game/piecePresentation'
 
 function Tile({
 	value, row, col, isHovered,
 	startPlayer, isOwnStart, ability, preview, isLastMove, isPending,
-	lastMoveEdges, desktopPresentation = false,
+	lastMoveEdges, desktopPresentation = false, lastMoveWidth = 2,
 }) {
 	const playable = value.playable !== false
 	const finish = isHovered
@@ -25,10 +25,10 @@ function Tile({
 	if (desktopPresentation && isLastMove && lastMoveEdges) {
 		const color = `color-mix(in srgb, ${getPlayerColorHex(value.color)} 45%, #fff)`
 		const edges = []
-		if (lastMoveEdges.top) edges.push(`inset 0 2px 0 0 ${color}`)
-		if (lastMoveEdges.right) edges.push(`inset -2px 0 0 0 ${color}`)
-		if (lastMoveEdges.bottom) edges.push(`inset 0 -2px 0 0 ${color}`)
-		if (lastMoveEdges.left) edges.push(`inset 2px 0 0 0 ${color}`)
+		if (lastMoveEdges.top) edges.push(`inset 0 ${lastMoveWidth}px 0 0 ${color}`)
+		if (lastMoveEdges.right) edges.push(`inset -${lastMoveWidth}px 0 0 0 ${color}`)
+		if (lastMoveEdges.bottom) edges.push(`inset 0 -${lastMoveWidth}px 0 0 ${color}`)
+		if (lastMoveEdges.left) edges.push(`inset ${lastMoveWidth}px 0 0 0 ${color}`)
 		if (edges.length) finish.boxShadow = finish.boxShadow === 'none' ? edges.join(', ') : `${edges.join(', ')}, ${finish.boxShadow}`
 	}
 	if (playable) {

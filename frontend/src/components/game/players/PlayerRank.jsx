@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { getPlayerColorHex } from '../playerColors'
-import Piece from './Piece'
+import { getPlayerColorHex } from '../../../game/playerColors'
+import Piece from '../pieces/Piece'
 
 function RobotIcon() {
 	return <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="8" width="16" height="12" rx="3" /><path d="M12 4v4M9 13v1M15 13v1M9.5 17h5" /><circle cx="12" cy="3.5" r="1" /></svg>

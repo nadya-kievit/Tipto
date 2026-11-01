@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import CreateGameScreen from './screens/CreateGameScreen'
-import LobbyScreen from './screens/LobbyScreen'
-import GameScreen from './screens/GameScreen'
-import BackgroundPieces from './components/BackgroundPieces'
-import { createGame } from './services/api'
-import { enterLobby } from './services/roomSession'
-import usePhoneLayout from './hooks/usePhoneLayout'
-import './screens/PhoneLayout.css'
+import HomeScreen from '../screens/HomeScreen'
+import LobbyScreen from '../screens/LobbyScreen'
+import GameScreen from '../screens/GameScreen'
+import BackgroundPieces from '../components/background/BackgroundPieces'
+import { createGame, wakeGameServer } from '../services/api'
+import { enterLobby } from '../services/roomSession'
+import { createRoomNavigation } from './roomNavigation'
+import usePhoneLayout from '../hooks/usePhoneLayout'
+import '../styles/phone-layout.css'
 
 function getRouteFromPath(pathname) {
 	const roomMatch = pathname.match(/^\/(lobby|game)\/([^/]+)$/)
@@ -34,14 +35,13 @@ function getEntryErrorMessage(error, action) {
 	return error?.message || 'Something went wrong. Please try again.'
 }
 
-function PhoneRotateOverlay({ orientation }) {
-	const isLandscape = orientation === 'landscape'
-	return <div className={`phoneRotateOverlay phoneRotate${isLandscape ? 'Landscape' : 'Portrait'}`} role="status">
+function PhoneRotateOverlay() {
+	return <div className="phoneRotateOverlay phoneRotatePortrait" role="status">
 		<svg viewBox="0 0 64 64" aria-hidden="true">
-			<rect x={isLandscape ? 10 : 20} y={isLandscape ? 20 : 10} width={isLandscape ? 44 : 24} height={isLandscape ? 24 : 44} rx="4" />
+			<rect x={20} y={10} width={24} height={44} rx="4" />
 			<path d="M11 24A23 23 0 0 1 31 4M11 24l-5-7m5 7 8-3" />
 		</svg>
-		<span>Rotate your phone {isLandscape ? 'to play' : 'upright to continue'}</span>
+		<span>Rotate your phone upright to continue</span>
 	</div>
 }
 
@@ -49,21 +49,27 @@ function App() {
 	const phoneMode = usePhoneLayout()
 	const [path, setPath] = useState(window.location.pathname)
 	const [entryError, setEntryError] = useState('')
-	const [isEntering, setIsEntering] = useState(false)
 	const [enteringAction, setEnteringAction] = useState(null)
 	const enteringRef = useRef(false)
+	const navigationRef = useRef(null)
+	const leaveHandlerRef = useRef(null)
 	const route = getRouteFromPath(path)
 	const hasGameSession = route.screen === 'game' && Boolean(localStorage.getItem(`tipto-player-${route.gameId}`))
 
-	const isPhoneLandscape = phoneMode === 'landscape'
 	const isPhoneGame = phoneMode === 'portrait'
 
 	useEffect(() => {
-		const handlePopState = () => setPath(window.location.pathname)
-		window.addEventListener('popstate', handlePopState)
-		return () => window.removeEventListener('popstate', handlePopState)
+		wakeGameServer().catch(() => {})
 	}, [])
 
+	//Setup browser navigation handling
+	useEffect(() => {
+		const navigation = createRoomNavigation(window, setPath, () => leaveHandlerRef.current)
+		navigationRef.current = navigation
+		return () => navigation.dispose()
+	}, [])
+
+	//Prevents scrolling on the phone
 	useEffect(() => {
 		const className = 'phoneViewportLocked'
 		const isPhone = phoneMode !== 'desktop'
@@ -73,10 +79,14 @@ function App() {
 		return () => document.documentElement.classList.remove(className)
 	}, [phoneMode])
 
-	const navigateTo = useCallback(nextPath => {
-		if (window.location.pathname !== nextPath) window.history.pushState({}, '', nextPath)
-		setPath(nextPath)
+
+	const navigateTo = useCallback(nextPath => { navigationRef.current?.navigateTo(nextPath) }, [])
+
+	const registerLeave = useCallback(handler => {
+		leaveHandlerRef.current = handler
+		return () => { if (leaveHandlerRef.current === handler) leaveHandlerRef.current = null }
 	}, [])
+
 	const handleLeaveRoom = useCallback(() => navigateTo('/'), [navigateTo])
 	const handleRemoved = useCallback(() => {
 		setEntryError('You were removed from the room')
@@ -85,11 +95,11 @@ function App() {
 	const handleStartPlaying = useCallback(gameId => navigateTo(`/game/${gameId}`), [navigateTo])
 	const handleNeedsSession = useCallback(() => navigateTo(`/lobby/${route.gameId}`), [navigateTo, route.gameId])
 
+
 	const handleEnterRoom = async gameId => {
 		if (enteringRef.current) return
 		const action = gameId ? 'join' : 'create'
 		enteringRef.current = true
-		setIsEntering(true)
 		setEnteringAction(action)
 		setEntryError('')
 		try {
@@ -110,24 +120,21 @@ function App() {
 			setEntryError(getEntryErrorMessage(error, action))
 		} finally {
 			enteringRef.current = false
-			setIsEntering(false)
 			setEnteringAction(null)
 		}
 	}
 
-	if (phoneMode === 'landscape') return <PhoneRotateOverlay orientation="portrait" />
+	if (phoneMode === 'landscape') return <PhoneRotateOverlay />
 
 	if (!hasGameSession) {
 		return (
 			<div className="pregameShell">
 				<BackgroundPieces className="pregameBackground" topCollisionSelector={route.screen === 'lobby' ? '.lobbyTopBar' : undefined} />
 				{route.screen === 'home' ? (
-					<CreateGameScreen
-						isPhoneLandscape={isPhoneLandscape}
+					<HomeScreen
 						onEnterGame={handleEnterRoom}
 						onConfigureGame={() => handleEnterRoom()}
 						actionError={entryError}
-						isEntering={isEntering}
 						enteringAction={enteringAction}
 					/>
 				) : (
@@ -137,6 +144,7 @@ function App() {
 						onLeave={handleLeaveRoom}
 						onStarted={handleStartPlaying}
 						onRemoved={handleRemoved}
+						onRegisterLeave={registerLeave}
 					/>
 				)}
 			</div>
@@ -150,6 +158,7 @@ function App() {
 			onLeaveGame={handleLeaveRoom}
 			onNeedsColor={handleNeedsSession}
 			isPhoneGame={isPhoneGame}
+			onRegisterLeave={registerLeave}
 		/>
 	)
 }

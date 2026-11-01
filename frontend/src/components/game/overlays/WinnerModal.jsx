@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import { getPlayerColorHex } from '../playerColors'
+import { getPlayerColorHex } from '../../../game/playerColors'
 
 function WinnerModal({ isOpen, isTie, leaderboard, onClose, resultColor, winner }) {
 	if (!isOpen) return null

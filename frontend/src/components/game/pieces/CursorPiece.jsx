@@ -1,5 +1,5 @@
-import { getPlayerColorHex } from '../playerColors'
-import { displayCells, tileFinish } from '../game/piecePresentation'
+import { getPlayerColorHex } from '../../../game/playerColors'
+import { displayCells, tileFinish } from '../../../game/piecePresentation'
 
 function CursorPiece({ piece, rotation, flipped, color, cursorRef, position, cellSize = 28 }) {
 	const cells = displayCells(piece.cells, rotation, flipped)

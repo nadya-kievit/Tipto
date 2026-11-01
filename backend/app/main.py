@@ -692,16 +692,20 @@ def refresh_out_of_moves(game):
 
 
 async def broadcast_game(game_id):
-    game = games[game_id]
+    game = games.get(game_id)
+    if game is None:
+        return
     game["revision"] = game.get("revision", 0) + 1
-    sockets = list(connections.get(game_id, []))
+    game_connections = connections.get(game_id, set())
+    sockets = list(game_connections)
     if not sockets:
         return
 
     stale_sockets = []
     for socket in sockets:
         try:
-            game = games[game_id]
+            if games.get(game_id) is not game:
+                return
             viewer = get_player(game, socket.state.player_id)
             viewer_id = (
                 viewer["id"]
@@ -717,7 +721,28 @@ async def broadcast_game(game_id):
             stale_sockets.append(socket)
 
     for socket in stale_sockets:
-        connections[game_id].discard(socket)
+        game_connections.discard(socket)
+
+
+async def delete_game_if_no_humans(game):
+    if any(not player.get("isBot") for player in game["players"]):
+        return False
+
+    game_id = game["gameId"]
+    if games.get(game_id) is not game:
+        return False
+    games.pop(game_id)
+    task = turn_tasks.pop(game_id, None)
+    if task and not task.done() and task is not asyncio.current_task():
+        task.cancel()
+    sockets = connections.pop(game_id, set())
+    for socket in list(sockets):
+        try:
+            await socket.close(code=1001, reason="No human players remain")
+        except (RuntimeError, WebSocketDisconnect):
+            pass
+    sockets.clear()
+    return True
 
 
 def advance_turn(game):
@@ -885,15 +910,7 @@ def convert_player_to_bot(game, player):
     ]
 
     if not remaining_humans:
-        finish_game(game)
         game["adminPlayerId"] = None
-        game["notice"] = (
-            f'{player["name"]} left the game and became a bot. '
-            "The game ended because no human players remain."
-        )
-        task = turn_tasks.pop(game["gameId"], None)
-        if task and not task.done():
-            task.cancel()
         return
 
     if was_admin:
@@ -1213,8 +1230,8 @@ async def leave_lobby(game_id: str, request: QuitRequest):
         game["adminToken"] = secrets.token_urlsafe(24)
         if not remaining_humans:
             game["players"].clear()
-    if not game["players"]:
-        game["status"] = "closed"
+    if await delete_game_if_no_humans(game):
+        return {"success": True}
     await broadcast_game(game_id)
     return {"success": True}
 
@@ -1226,6 +1243,8 @@ async def quit_game(game_id: str, request: QuitRequest):
         return await leave_lobby(game_id, request)
     player = authenticate_player(game, request.playerId, request.playerToken)
     convert_player_to_bot(game, player)
+    if await delete_game_if_no_humans(game):
+        return {"success": True}
     await broadcast_game(game_id)
     schedule_turn(game_id)
     return {"success": True}
@@ -1297,14 +1316,15 @@ async def game_websocket(websocket: WebSocket, game_id: str, playerId: str, toke
     websocket.state.player_id = playerId
     websocket.state.player_token = token
     await websocket.accept()
-    connections.setdefault(game_id, set()).add(websocket)
+    game_connections = connections.setdefault(game_id, set())
+    game_connections.add(websocket)
     player["connected"] = True
     await broadcast_game(game_id)
 
     try:
         while True:
             message = await websocket.receive_json()
-            if player not in game["players"] or player.get("isBot") or player["token"] != token:
+            if games.get(game_id) is not game or player not in game["players"] or player.get("isBot") or player["token"] != token:
                 await websocket.close(code=1008)
                 break
             action = message.get("type")
@@ -1342,7 +1362,8 @@ async def game_websocket(websocket: WebSocket, game_id: str, playerId: str, toke
         if websocket.application_state != WebSocketState.DISCONNECTED:
             raise
     finally:
-        connections[game_id].discard(websocket)
+        game_connections.discard(websocket)
         if player in game["players"] and not player.get("isBot"):
             player["connected"] = False
-        await broadcast_game(game_id)
+        if games.get(game_id) is game:
+            await broadcast_game(game_id)

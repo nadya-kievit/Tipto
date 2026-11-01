@@ -1,5 +1,5 @@
-import { getPlayerColorHex } from '../playerColors'
-import { displayCells, tileFinish } from '../game/piecePresentation'
+import { getPlayerColorHex } from '../../../game/playerColors'
+import { displayCells, tileFinish } from '../../../game/piecePresentation'
 
 function Piece({
 	piece, isWaitingForPlayers, placed = piece.placed, isSelected, isPlayable = true,

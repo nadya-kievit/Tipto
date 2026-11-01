@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef } from 'react'
-import { getPlayerColorHex } from '../playerColors'
-import { tileFinish } from '../game/piecePresentation'
+import { getPlayerColorHex } from '../../../game/playerColors'
+import { tileFinish } from '../../../game/piecePresentation'
 import Piece from './Piece'
 
 function MouseIcon({ action }) {

@@ -1,4 +1,4 @@
-function Header({ gameId, isQuitting, onCopyInvite, onQuit, children }) {
+function GameHeader({ gameId, isQuitting, onCopyInvite, onQuit, children }) {
 	return (
 		<header className="gameHeader">
 			<h1 className="gameHeaderTitle">
@@ -19,4 +19,4 @@ function Header({ gameId, isQuitting, onCopyInvite, onQuit, children }) {
 	)
 }
 
-export default Header
+export default GameHeader

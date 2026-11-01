@@ -2,7 +2,7 @@ import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { backgroundPieceAnchor, backgroundPieceCount, orderBackgroundPieces } from './backgroundDensity'
 import { advancePieces, arrangePieces } from './backgroundMotion'
 import { createBackgroundVariants } from './backgroundVariants'
-import './BackgroundPieces.css'
+import '../../styles/background.css'
 
 const DEFAULT_BACKGROUND_PIECES = [
 	// Each of the game's 16 shapes appears twice, with a different colour each time.

@@ -263,7 +263,7 @@ def test_creator_is_admin_and_admin_transfers_to_earliest_remaining_player():
     assert green["playerId"] != state["adminPlayerId"]
 
 
-def test_game_finishes_when_last_human_quits():
+def test_game_is_deleted_when_last_human_quits():
     created_game = client.post("/games").json()
     game_id = created_game["gameId"]
     player = client.post(
@@ -275,15 +275,10 @@ def test_game_finishes_when_last_human_quits():
         f"/games/{game_id}/quit",
         json={"playerId": player["playerId"], "playerToken": player["playerToken"]},
     )
-    state = client.get(f"/games/{game_id}").json()
-
-    assert state["status"] == "finished"
-    assert state["adminPlayerId"] is None
-    assert state["settings"]["players"]["Player 1"] == {
-        "color": "Blue",
-        "isBot": True,
-    }
-    assert "no human players remain" in state["notice"]
+    assert client.get(f"/games/{game_id}").status_code == 404
+    assert game_id not in games
+    assert game_id not in main_module.connections
+    assert game_id not in main_module.turn_tasks
 
 
 def test_game_starts_after_all_configured_humans_join():

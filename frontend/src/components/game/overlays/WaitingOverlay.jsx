@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import clsx from 'clsx'
-import { PLAYER_COLORS, getPlayerColorHex } from '../playerColors'
+import { PLAYER_COLORS, getPlayerColorHex } from '../../../game/playerColors'
 
 function WaitingOverlay({ game }) {
 	const readySlots = useMemo(() => {
@@ -48,7 +48,7 @@ function WaitingOverlay({ game }) {
 								className="readyArc"
 								strokeDasharray={`${segmentLength} ${circumference - segmentLength}`}
 								transform={`rotate(${rotation} 110 110)`}
-								style={{ '--seat-color': slot.color || '#40374e' }}
+								style={{ '--seat-color': slot.color || 'var(--border-strong)' }}
 							/>
 						)
 					})}
@@ -67,7 +67,7 @@ function WaitingOverlay({ game }) {
 								className={clsx('readySeatDot', {
 									readySeatDotFilled: Boolean(slot.color),
 								})}
-								style={{ '--seat-color': slot.color || '#40374e' }}
+								style={{ '--seat-color': slot.color || 'var(--border-strong)' }}
 							/>
 						)
 					})}

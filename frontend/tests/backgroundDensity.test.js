@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
 	backgroundPieceAnchor, backgroundPieceCount, orderBackgroundPieces,
-} from '../src/components/backgroundDensity.js'
+} from '../src/components/background/backgroundDensity.js'
 
 test('piece count scales with viewport area and is capped', () => {
 	assert.equal(backgroundPieceCount(390, 844, 64), 16)

@@ -211,12 +211,12 @@ def test_disconnect_and_reconnect_keep_seat_profile_and_host(client):
         assert snapshot["players"][0]["color"] == "Pink"
 
 
-def test_last_departure_closes_room_and_lobby_quit_never_creates_bot(client):
+def test_last_departure_deletes_room(client):
     room_id, host = new_lobby(client)
     assert client.post(f"/games/{room_id}/quit", json=host).status_code == 200
-    assert state(client, room_id)["players"] == []
-    assert state(client, room_id)["status"] == "closed"
-    assert client.post(f"/games/{room_id}/join", json={}).status_code == 409
+    assert client.get(f"/games/{room_id}").status_code == 404
+    assert client.post(f"/games/{room_id}/join", json={}).status_code == 404
+    assert room_id not in main.connections
 
 
 def test_lobby_revisions_order_live_updates_and_http_responses(client):
@@ -397,7 +397,7 @@ def test_lobby_bot_uses_existing_bot_turn_and_covers_assigned_start(client, monk
     assert [piece.get("ability") for piece in bot["pieces"]] == original_assignments
 
 
-def test_host_departure_transfers_to_human_not_bot_or_closes_bot_only_room(client):
+def test_host_departure_transfers_to_human_not_bot_or_deletes_bot_only_room(client):
     room_id, host = new_lobby(client)
     client.post(f"/games/{room_id}/bots", json=host)
     guest = join(client, room_id)
@@ -405,8 +405,9 @@ def test_host_departure_transfers_to_human_not_bot_or_closes_bot_only_room(clien
     assert state(client, room_id)["adminPlayerId"] == guest["playerId"]
     assert client.post(f"/games/{room_id}/bots", json=guest).status_code == 200
     client.post(f"/games/{room_id}/leave-room", json=guest)
-    assert state(client, room_id)["status"] == "closed"
-    assert state(client, room_id)["players"] == []
+    assert client.get(f"/games/{room_id}").status_code == 404
+    assert room_id not in main.games
+    assert room_id not in main.connections
 
 
 @pytest.mark.parametrize("player_count", [1, 7])

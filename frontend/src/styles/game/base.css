@@ -16,7 +16,7 @@
 
 .gamePage *, .gamePage *::before, .gamePage *::after { box-sizing: border-box; }
 .gamePage button { font: inherit; border-radius: 4px; background: var(--surface-raised); border: 1px solid var(--border-strong); box-shadow: none; }
-.gamePage button:focus-visible { outline: 2px solid var(--tile-outline); outline-offset: 3px; }
+.gamePage button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .gamePage .gamePanelTitle { margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 17px; font-weight: 700; }
 
 .gamePage .gameHeader {
@@ -224,16 +224,28 @@
 .gamePage.gameLoading { align-items: center; justify-content: center; gap: 24px; padding: 24px 16px; }
 .gamePage .startPanel { max-width: 100%; border-color: var(--border); border-radius: 6px; background: var(--surface); box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
 .gamePage .startPanel h2 { font-family: 'Space Grotesk', sans-serif; }
+.gamePage .statusMessage { border: 1px solid var(--border); background: var(--surface); color: var(--text); box-shadow: none; }
+.gamePage .statusMessageError { border-color: var(--leave-border); color: var(--error); }
 .gamePage .modalBackdrop { background: var(--backdrop); backdrop-filter: none; }
-.gamePage .winnerModal { border: 1px solid var(--border); border-radius: 6px; background: var(--surface); box-shadow: none; }
+.gamePage .winnerModal { border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--text); box-shadow: none; }
 .gamePage .winnerBadge { border-radius: 4px; box-shadow: none; }
-.gamePage .winnerTitle { font-family: 'Space Grotesk', sans-serif; }
+.gamePage .winnerBadge svg { stroke: var(--page); }
+.gamePage .winnerTitle { color: var(--text); font-family: 'Space Grotesk', sans-serif; }
 .gamePage .leaderboardRow { border: 1px solid var(--border); border-radius: 4px; background: var(--surface-raised); }
 .gamePage .leaderboardTiedLeader { border-color: var(--border-strong); background: var(--surface-raised); box-shadow: none; }
-.gamePage .leaderboardRank { border-radius: 1px; box-shadow: none; font-family: 'JetBrains Mono', monospace; }
-.gamePage .leaderboardBlocks { font-family: 'JetBrains Mono', monospace; }
-.gamePage .tieLabel { border-radius: 2px; background: var(--surface-raised); color: var(--text-soft); }
-.gamePage .modalCloseButton { border-radius: 4px; }
+.gamePage .leaderboardRank { border-radius: 1px; color: var(--page); box-shadow: none; font-family: 'JetBrains Mono', monospace; }
+.gamePage .leaderboardName { color: var(--text); }
+.gamePage .leaderboardBlocks { color: var(--text-soft); font-family: 'JetBrains Mono', monospace; }
+.gamePage .tieLabel { border-color: var(--border-strong); border-radius: 2px; background: var(--surface-raised); color: var(--text-soft); }
+.gamePage .modalCloseButton { border-radius: 4px; color: var(--text-soft); }
+.gamePage .waitingOverlay { background: color-mix(in srgb, var(--page) 72%, transparent); }
+.gamePage .readyDial { border-color: var(--border); background: var(--surface); color: var(--text); }
+.gamePage .readyContent, .gamePage .readyCount { color: var(--text); }
+.gamePage .readyLabel { color: var(--text-soft); }
+.gamePage .readyMessage { color: var(--muted); }
+.gamePage .readyArc, .gamePage .readySeatDot { filter: none; }
+.gamePage .readySeatDot { fill: var(--board); stroke: var(--text); }
+.gamePage .readySeatDotFilled { fill: var(--seat-color); }
 
 @media (max-width: 1100px) {
 	.gamePage .gameHeader { grid-template-columns: minmax(0, 1fr) auto; gap: 12px; }

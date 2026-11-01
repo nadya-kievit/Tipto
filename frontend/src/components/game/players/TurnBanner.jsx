@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getPlayerColorHex } from '../playerColors'
+import { getPlayerColorHex } from '../../../game/playerColors'
 
 function secondsUntil(timestamp) {
 	return Math.max(0, Math.ceil((timestamp - Date.now()) / 1000))
