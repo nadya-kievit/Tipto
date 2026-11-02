@@ -1,5 +1,28 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@600;700&display=swap');
 
+.gamePage .gameNotice {
+	position: fixed;
+	top: calc(88px + env(safe-area-inset-top));
+	left: max(12px, env(safe-area-inset-left));
+	right: max(12px, env(safe-area-inset-right));
+	z-index: 12;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	width: fit-content;
+	max-width: min(560px, calc(100% - 24px));
+	margin-inline: auto;
+	padding: 10px 12px;
+	border: 1px solid var(--border-strong);
+	border-radius: 6px;
+	background: var(--surface);
+	color: var(--text);
+	font-size: 13px;
+}
+.gamePage .gameNotice span { min-width: 0; overflow-wrap: anywhere; }
+.gamePage .gameNotice button { flex: none; padding: 5px 8px; color: var(--text-soft); font-size: 12px; }
+.gamePage.phoneGame .gameNotice { top: calc(102px + env(safe-area-inset-top)); }
+
 .gamePage {
 	height: 100vh;
 	height: 100dvh;
@@ -238,7 +261,6 @@
 .gamePage .leaderboardBlocks { color: var(--text-soft); font-family: 'JetBrains Mono', monospace; }
 .gamePage .tieLabel { border-color: var(--border-strong); border-radius: 2px; background: var(--surface-raised); color: var(--text-soft); }
 .gamePage .modalCloseButton { border-radius: 4px; color: var(--text-soft); }
-.gamePage .waitingOverlay { background: color-mix(in srgb, var(--page) 72%, transparent); }
 .gamePage .readyDial { border-color: var(--border); background: var(--surface); color: var(--text); }
 .gamePage .readyContent, .gamePage .readyCount { color: var(--text); }
 .gamePage .readyLabel { color: var(--text-soft); }

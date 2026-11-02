@@ -64,13 +64,10 @@ function PlayerRow({
 								data-managing-players={managingPlayers || undefined}
 								data-taken={takenBy ? '' : undefined}
 								aria-pressed={selected}
-								aria-label={`${option.name}${takenBy ? ` â€” taken by ${takenBy.name}` : ''}`}
+								aria-label={`${option.name}${takenBy ? ` \u2014 taken by ${takenBy.name}` : ''}`}
 								title={takenBy ? `Taken by ${takenBy.name}` : option.name}
 								onClick={() => onColour(option.name)}
 							>
-								{selected ? <span aria-hidden="true">âœ“</span> : takenBy ? <span aria-hidden="true">
-									{takenBy.name.charAt(0).toUpperCase()}
-								</span> : null}
 							</button>
 						)
 					})}
@@ -84,7 +81,7 @@ function PlayerRow({
 				aria-label={`Remove ${player.name}`}
 				disabled={busy}
 				onClick={onRemove}
-			>Ã—</button>}
+			>{'\u00d7'}</button>}
 		</div>
 	)
 }

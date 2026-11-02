@@ -15,7 +15,7 @@ function MouseIcon({ action }) {
 }
 
 function PiecePanel({
-	canMove, isWaitingForPlayers, onPieceClick, pieces, playablePieceNames,
+	canMove, onPieceClick, pieces, playablePieceNames,
 	player, selectedPieceName, totalPieceCount, selectedPiece, pieceCellSize = 13,
 	fitPiecePreviews = false,
 }) {
@@ -59,7 +59,7 @@ function PiecePanel({
 						: 'Pick a piece: normal pieces touch yours at a corner; Scout and Connector use their special rules.'}</p>
 				</div>
 				<div ref={gridRef} data-game-piece className="pieceCardGrid">
-					{pieces.map(piece => <Piece key={piece.name} piece={piece} isWaitingForPlayers={isWaitingForPlayers}
+					{pieces.map(piece => <Piece key={piece.name} piece={piece}
 						color={player?.color} isSelected={selectedPieceName === piece.name}
 						isPlayable={playablePieceNames.has(piece.name)} disabled={!canMove}
 						onClick={event => onPieceClick(piece, event)} rotation={piece.rotation} flipped={piece.flipped} cellSize={pieceCellSize} />)}

@@ -56,7 +56,7 @@ function placementReason(board, cells, player, isFirstMove, players, ability) {
 
 export default function PhoneGameLayout({
  game, me, board, canMove, pieces, selectedPiece, selectedPieceName, pendingPlacement,
- onStage, onRotate, onFlip, onPlace, onQuit, lastMove,
+ onStage, onRotate, onFlip, onPlace, onQuit, lastMove, notice,
 }) {
  const boardZoneRef = useRef(null)
  const stripRef = useRef(null)
@@ -206,6 +206,7 @@ export default function PhoneGameLayout({
    <div className="phoneDragFollower" style={{ left: activeDrag.left, top: activeDrag.top }}><PhonePieceShape piece={selectedPiece} cellSize={metrics.cell} gap={metrics.gap} color={ownColor} /></div>
    {!!activeDrag.cells.length && <div className="phoneHoverPlacement" style={{ left: activeDrag.hoverLeft, top: activeDrag.hoverTop }}><PhonePieceShape piece={selectedPiece} cellSize={metrics.cell} gap={metrics.gap} color={ownColor} /></div>}
   </>}
+  {notice}
   {overlay && <div className="phoneOutsideCatch" onClick={closeOverlays} />}
   {overlay === 'menu' && <section className="phoneMenu" id="phone-menu" aria-label="Game menu">
    <h3>Room</h3><div className="phoneRoomRow"><span>Code <strong>{roomCode}</strong></span><button type="button" aria-label={copied ? 'Room code copied' : 'Copy room code'} onClick={copyRoom}>{copied ? '\u2713' : <Icon kind="copy" />}</button></div>

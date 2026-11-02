@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, useLayoutEffect } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { gameSocketUrl, getGame, quitGame, restartGame } from '../services/api'
 import Board from '../components/game/board/Board'
@@ -7,15 +7,13 @@ import GameHeader from '../components/game/layout/GameHeader'
 import PiecePanel from '../components/game/pieces/PiecePanel'
 import PlayerRank from '../components/game/players/PlayerRank'
 import TurnBanner from '../components/game/players/TurnBanner'
-import WaitingOverlay from '../components/game/overlays/WaitingOverlay'
 import WinnerModal from '../components/game/overlays/WinnerModal'
+import GameNotice from '../components/game/overlays/GameNotice'
 import PhoneGameLayout from '../components/game/layout/PhoneGameLayout'
 import { PLAYER_COLOR_HEX, getPlayerColorHex } from '../game/playerColors'
-import {
-	canPlacePieceInAnyOrientation,
-	closestLegalPlacement,
-} from '../game/placementRules'
+import { canPlacePieceInAnyOrientation, closestLegalPlacement } from '../game/placementRules'
 import { horizontalFlip, wheelRotation } from '../game/piecePresentation'
+import { getNewGameNotice } from '../game/gameNotices'
 import useUiScale from '../hooks/useUiScale'
 import '../styles/game/base.css'
 import '../styles/game/desktop.css'
@@ -29,10 +27,10 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 
 	const storageKey = `tipto-player-${gameId}`
 	const socketRef = useRef(null)
+	const revisionRef = useRef(-1)
+	const lastServerNoticeRef = useRef('')
 	const lastHoverTargetRef = useRef(null)
-	const cursorPieceRef = useRef(null)
 	const cursorPositionRef = useRef({ x: 0, y: 0 })
-	const cursorFrameRef = useRef(null)
 	const lastWheelRef = useRef(-Infinity)
 
 	const [credentials] = useState(() => {
@@ -44,7 +42,6 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 	const [pieceRotations, setPieceRotations] = useState({})
 	const [pieceFlips, setPieceFlips] = useState({})
 	const [selectedPieceName, setSelectedPieceName] = useState(null)
-	const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 })
 	const [cursorCellSize, setCursorCellSize] = useState(28)
 	const [hoverCells, setHoverCells] = useState([])
 	const [pendingPlacement, setPendingPlacement] = useState(null)
@@ -54,10 +51,7 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 	const [closedWinnerTurnNumber, setClosedWinnerTurnNumber] = useState(null)
 	const [isPortraitComputer, setIsPortraitComputer] = useState(() => window.matchMedia('(orientation: portrait) and (min-width: 700px)').matches)
 
-	const me = useMemo(() => 
-		game?.players.find(player => player.id === credentials?.playerId),
-		[game, credentials]
-	)
+	const me = game?.players.find(player => player.id === credentials?.playerId)
 
 	const canMove = game?.status === 'playing' && game.currentPlayerId === credentials?.playerId
 	const board = game?.board || EMPTY_BOARD
@@ -75,10 +69,10 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 	const playablePieceNames = useMemo(() => {
 		const playableNames = new Set()
 
-		if (!me) return playableNames
+		if (!me || isPhoneGame) return playableNames
 
 		if (game?.status !== 'playing') {
-			for (const piece of pieces) {
+			for (const piece of me.pieces) {
 				if (!piece.placed) playableNames.add(piece.name)
 			}
 
@@ -87,7 +81,7 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 
 		const isFirstMove = !me.pieces.some(piece => piece.placed)
 
-		for (const piece of pieces) {
+		for (const piece of me.pieces) {
 			if (piece.placed) continue
 
 			const isPlayable = canPlacePieceInAnyOrientation(
@@ -103,7 +97,7 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 		}
 
 		return playableNames
-	}, [board, boardRotation, game?.players, game?.status, me, pieces])
+	}, [board, boardRotation, game?.players, game?.status, isPhoneGame, me])
 
 	const selectedPiece = useMemo(() => 
 		pieces.find(piece =>
@@ -134,7 +128,33 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 	const isTie = winners.length > 1
 	const resultColor = getPlayerColorHex(winner?.color, PLAYER_COLOR_HEX.Yellow)
 	const leaderboard = game?.leaderboard || []
-	const isWaitingForPlayers = game?.status === 'waiting'
+
+	const clearHover = useCallback(() => {
+		lastHoverTargetRef.current = null
+		setHoverCells([])
+	}, [])
+
+	const clearSelection = useCallback(() => {
+		setSelectedPieceName(null)
+		clearHover()
+	}, [clearHover])
+
+	const receiveGame = useCallback(snapshot => {
+		const revision = snapshot.revision ?? 0
+		if (revision < revisionRef.current) return
+		revisionRef.current = revision
+		setGame(snapshot)
+		setPendingPlacement(pending => {
+			if (!pending) return null
+			const confirmed = pending.cells.every(cell =>
+				snapshot.board[cell.row]?.[cell.col]?.pieceId === pending.pieceId
+			)
+			return confirmed ? null : pending
+		})
+		const notice = getNewGameNotice(lastServerNoticeRef.current, snapshot.notice)
+		lastServerNoticeRef.current = snapshot.notice || ''
+		if (notice) setLastMessage(notice)
+	}, [])
 
 	useEffect(() => {
 		if (game && !credentials) {
@@ -158,7 +178,7 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 				const initialGame = await getGame(gameId, credentials)
 
 				if (isActive) {
-					setGame(initialGame)
+					receiveGame(initialGame)
 				}
 			} catch (err) {
 				if (isActive) {
@@ -172,37 +192,22 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 		return () => {
 			isActive = false
 		}
-	}, [gameId, credentials])
+	}, [gameId, credentials, receiveGame])
 
 
 	useEffect(() => {
 		if (!credentials) return
 
+		let active = true
 		const socket = new WebSocket(gameSocketUrl(gameId, credentials))
 		socketRef.current = socket
 
-		socket.onopen = () => {
-			socket.send(JSON.stringify({ type: 'request_state' }))
-		}
-
 		socket.onmessage = event => {
+			if (!active) return
 			const message = JSON.parse(event.data)
 
 			if (message.type === 'game_state') {
-				setGame(message.game)
-				setPendingPlacement(pending => {
-					if (!pending) return null
-
-					const isConfirmed = pending.cells.every(cell =>
-						message.game.board[cell.row][cell.col].pieceId === pending.pieceId
-					)
-
-					return isConfirmed ? null : pending
-				})
-
-				if (message.game.notice) {
-					setLastMessage(message.game.notice)
-				}
+				receiveGame(message.game)
 			}
 
 			if (message.type === 'error') {
@@ -212,13 +217,15 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 		}
 
 		socket.onclose = () => {
-			setPendingPlacement(null)
+			if (active) setPendingPlacement(null)
 		}
 
 		return () => {
+			active = false
+			if (socketRef.current === socket) socketRef.current = null
 			socket.close()
 		}
-	}, [gameId, credentials])
+	}, [gameId, credentials, receiveGame])
 
 
 	useEffect(() => {
@@ -228,9 +235,7 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 
 			if (event.key === 'Escape') {
 				event.preventDefault()
-				setSelectedPieceName(null)
-				setHoverCells([])
-				lastHoverTargetRef.current = null
+				clearSelection()
 				return
 			}
 			if (!canMove) return
@@ -262,7 +267,7 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 		return () => {
 			window.removeEventListener('keydown', handleKeyDown)
 		}
-	}, [canMove, isPhoneGame, selectedPiece])
+	}, [canMove, clearSelection, isPhoneGame, selectedPiece])
 
 	useEffect(() => {
 		if (isPhoneGame || !canMove || !selectedPiece) return
@@ -293,6 +298,7 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 	}, [canMove, isPhoneGame, selectedPiece])
 
 	useEffect(() => {
+		if (isPhoneGame) return
 		const boardElement = document.querySelector('[data-game-board]')
 		if (!boardElement) return
 		const observer = new ResizeObserver(() => {
@@ -301,50 +307,7 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 		})
 		observer.observe(boardElement)
 		return () => observer.disconnect()
-	}, [boardHeight, boardWidth])
-
-
-	useLayoutEffect(() => {
-		if (isPhoneGame) return
-		const element = cursorPieceRef.current
-
-		if (!element || !selectedPiece) return
-
-		const { width, height } = element.getBoundingClientRect()
-		const { x, y } = cursorPositionRef.current
-
-		element.style.transform =
-			`translate3d(${x - width / 2}px, ${y - height / 2}px, 0)`
-	}, [isPhoneGame, selectedPiece, cursorCellSize])
-
-
-	useEffect(() => {
-		if (isPhoneGame || !selectedPiece) return
-
-		const handlePointerMove = event => {
-			cursorPositionRef.current = { x: event.clientX, y: event.clientY }
-
-			if (cursorFrameRef.current) return
-
-			cursorFrameRef.current = requestAnimationFrame(() => {
-				cursorFrameRef.current = null
-				const element = cursorPieceRef.current
-
-				if (!element) return
-
-				const { width, height } = element.getBoundingClientRect()
-				element.style.transform = `translate3d(${cursorPositionRef.current.x - width / 2}px, ${cursorPositionRef.current.y - height / 2}px, 0)`
-			})
-		}
-
-		window.addEventListener('pointermove', handlePointerMove, { passive: true })
-
-		return () => {
-			window.removeEventListener('pointermove', handlePointerMove)
-			cancelAnimationFrame(cursorFrameRef.current)
-			cursorFrameRef.current = null
-		}
-	}, [isPhoneGame, selectedPiece])
+	}, [boardHeight, boardWidth, isPhoneGame])
 
 
 	useEffect(() => {
@@ -355,9 +318,7 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 			if (event.target.closest('[data-game-board]')) return
 			if (event.target.closest('[data-game-piece]')) return
 
-			lastHoverTargetRef.current = null
-			setHoverCells([])
-			setSelectedPieceName(null)
+			clearSelection()
 		}
 
 		document.addEventListener('pointerdown', handleOutsidePointerDown, true)
@@ -365,12 +326,16 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 		return () => {
 			document.removeEventListener('pointerdown', handleOutsidePointerDown, true)
 		}
-	}, [isPhoneGame, selectedPiece])
+	}, [clearSelection, isPhoneGame, selectedPiece])
 
 
 	const handleCopyInvite = async () => {
-		await navigator.clipboard.writeText(gameId)
-		setLastMessage('Invite code copied.')
+		try {
+			await navigator.clipboard.writeText(gameId)
+			setLastMessage('Invite code copied.')
+		} catch {
+			setLastMessage('Could not copy the invite code.')
+		}
 	}
 
 
@@ -409,11 +374,9 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 
 		try {
 			const restartedGame = await restartGame(gameId, credentials)
-			setGame(restartedGame)
+			receiveGame(restartedGame)
 			setPendingPlacement(null)
-			setSelectedPieceName(null)
-			setHoverCells([])
-			setLastMessage(restartedGame.notice || '')
+			clearSelection()
 		} catch (err) {
 			setLastMessage(err.message)
 		} finally {
@@ -428,9 +391,7 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 		if (piece.placed || !canMove || !isPlayable) return
 
 		if (selectedPieceName === piece.name) {
-			setSelectedPieceName(null)
-			setHoverCells([])
-			lastHoverTargetRef.current = null
+			clearSelection()
 			return
 		}
 
@@ -438,7 +399,6 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 			x: event.clientX,
 			y: event.clientY,
 		}
-		setCursorPosition(cursorPositionRef.current)
 		lastWheelRef.current = -Infinity
 		setSelectedPieceName(piece.name)
 	}
@@ -469,8 +429,7 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 			cells,
 		}))
 
-		setSelectedPieceName(null)
-		setHoverCells([])
+		clearSelection()
 	}
 
 
@@ -491,12 +450,6 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 		setPieceRotations(current => ({ ...current, [phoneSelectedPiece.name]: orientation.rotation }))
 		setPieceFlips(current => ({ ...current, [phoneSelectedPiece.name]: orientation.flipped }))
 	}
-
-
-	const handleBoardLeave = useCallback(() => {
-		lastHoverTargetRef.current = null
-		setHoverCells([])
-	}, [])
 
 
 	const handleBoardPointerMove = useCallback((pointerRow, pointerCol) => {
@@ -551,9 +504,23 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 		return null
 	}
 
+	const notice = <GameNotice message={lastMessage} onDismiss={() => setLastMessage('')} />
+	const winnerModal = (
+		<WinnerModal
+			isOpen={isFinished && !isWinnerModalClosed}
+			isTie={isTie}
+			leaderboard={leaderboard}
+			onClose={handleCloseWinnerModal}
+			resultColor={resultColor}
+			winner={winner}
+		/>
+	)
+
+
 	if (isPhoneGame) {
 		return <>
 			<PhoneGameLayout
+				notice={notice}
 				game={game}
 				me={me}
 				board={board}
@@ -569,14 +536,7 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 				onQuit={handleQuit}
 				lastMove={game.moveHistory.at(-1)}
 			/>
-			<WinnerModal
-				isOpen={isFinished && !isWinnerModalClosed}
-				isTie={isTie}
-				leaderboard={leaderboard}
-				onClose={handleCloseWinnerModal}
-				resultColor={resultColor}
-				winner={winner}
-			/>
+			{winnerModal}
 		</>
 	}
 
@@ -591,8 +551,7 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 					rotation={selectedPiece.rotation}
 					flipped={selectedPiece.flipped}
 					color={me?.color}
-					cursorRef={cursorPieceRef}
-					position={cursorPosition}
+					positionRef={cursorPositionRef}
 					cellSize={cursorCellSize}
 				/>,
 				document.body
@@ -616,7 +575,6 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 			</GameHeader>
 
 			<div className="gameMain">
-				{isWaitingForPlayers && <WaitingOverlay game={game} />}
 
 				<PlayerRank
 					currentUserId={me?.id}
@@ -629,7 +587,7 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 					boardRotation={boardRotation}
 					onTileClick={handleTileClick}
 					onBoardPointerMove={handleBoardPointerMove}
-					onBoardLeave={handleBoardLeave}
+					onBoardLeave={clearHover}
 					hoverCells={hoverCells}
 					pendingPlacement={pendingPlacement}
 					players={game.players}
@@ -641,7 +599,6 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 
 				<PiecePanel
 					canMove={canMove}
-					isWaitingForPlayers={isWaitingForPlayers}
 					onPieceClick={handlePieceClick}
 					pieces={availablePieces}
 					playablePieceNames={playablePieceNames}
@@ -654,14 +611,8 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 				/>
 			</div>
 
-			<WinnerModal
-				isOpen={isFinished && !isWinnerModalClosed}
-				isTie={isTie}
-				leaderboard={leaderboard}
-				onClose={handleCloseWinnerModal}
-				resultColor={resultColor}
-				winner={winner}
-			/>
+			{notice}
+			{winnerModal}
 		</div>
 	)
 }

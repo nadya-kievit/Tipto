@@ -140,7 +140,6 @@
 .gamePage.desktopGameModalHost > .modalBackdrop { position: absolute; inset: 0; z-index: 1; pointer-events: auto; }
 .gamePage:not(.phoneGame) .modalCloseButton, .gamePage:not(.phoneGame) .leaderboardRow, .gamePage:not(.phoneGame) .tieLabel { background: var(--surface-raised); }
 .gamePage:not(.phoneGame) .leaderboardRow { border: 1px solid var(--border); }
-.gamePage:not(.phoneGame) .waitingOverlay { background: color-mix(in srgb, var(--page) 72%, transparent); backdrop-filter: blur(calc(1px * var(--ui-scale))); }
 
 @media (orientation: portrait) { .gameCity { background-image: url('/city-portrait.webp'); } }
 

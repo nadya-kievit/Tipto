@@ -54,26 +54,6 @@ function CopyIcon({ copied }) {
 	)
 }
 
-function GridIcon() {
-	return (
-		<svg viewBox="0 0 24 24" aria-hidden="true">
-			<rect x="4" y="4" width="6" height="6" />
-			<rect x="14" y="4" width="6" height="6" />
-			<rect x="4" y="14" width="6" height="6" />
-			<rect x="14" y="14" width="6" height="6" />
-		</svg>
-	)
-}
-
-function ClockIcon() {
-	return (
-		<svg viewBox="0 0 24 24" aria-hidden="true">
-			<circle cx="12" cy="12" r="8" />
-			<path d="M12 7v5l3 2" />
-		</svg>
-	)
-}
-
 function LobbyScreen({ gameId, onLeave, onStarted, onRemoved, onRegisterLeave }) {
 	const [game, setGame] = useState(null)
 	const [session, setSession] = useState(null)
@@ -427,7 +407,6 @@ function LobbyScreen({ gameId, onLeave, onStarted, onRemoved, onRegisterLeave })
 						<section className="lobbyPanel lobbySettingsPanel">
 							<h2>Game settings</h2>
 							<div className="lobbySettingHeading">
-								<GridIcon />
 								<span>Board</span>
 							</div>
 							<div
@@ -462,7 +441,6 @@ function LobbyScreen({ gameId, onLeave, onStarted, onRemoved, onRegisterLeave })
 							</div>
 							<div className="lobbyTimerSection">
 								<div className="lobbySettingHeading">
-									<ClockIcon />
 									<div>
 										<span>Turn timer</span>
 										<p>How long each player has to make a move. If time runs out, a piece is placed for them automatically.</p>
@@ -494,7 +472,7 @@ function LobbyScreen({ gameId, onLeave, onStarted, onRemoved, onRegisterLeave })
 									aria-busy={starting}
 									aria-describedby={startDisabled ? 'lobby-start-tooltip' : undefined}
 								>
-									{starting ? 'Startingâ€¦' : 'Start game'}
+									{starting ? 'Starting\u2026' : 'Start game'}
 								</button>
 								{startDisabled && <span
 									id="lobby-start-tooltip"
@@ -506,7 +484,7 @@ function LobbyScreen({ gameId, onLeave, onStarted, onRemoved, onRegisterLeave })
 							</span>}
 						</footer>
 					</div>
-				</> : !error && <div className="lobbyLoading" role="status">Joining roomâ€¦</div>}
+				</> : !error && <div className="lobbyLoading" role="status">Joining room{'\u2026'}</div>}
 				{error && <div className="lobbyError" role="alert">
 					{error}
 				</div>}

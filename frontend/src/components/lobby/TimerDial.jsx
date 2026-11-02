@@ -184,7 +184,7 @@ function TimerDial({ value, readOnly, disabled, saving, onChange }) {
 					})}
 					<div className="dialValue">
 						<strong>
-							{noLimit ? 'âˆž' : shown}
+							{noLimit ? '\u221e' : shown}
 						</strong>
 						<span>
 							{noLimit ? 'no limit' : 'sec'}

@@ -172,7 +172,7 @@
 	font-weight: 700;
 }
 .lobbyScreen .lobbySwatch[aria-pressed='true'] { box-shadow: 0 0 0 2px color-mix(in srgb, var(--player-colour) 6%, var(--surface-raised)), 0 0 0 4px var(--swatch); }
-.lobbyScreen .lobbySwatch[aria-pressed='true'] span { color: white; font-size: 14px; line-height: 1; text-shadow: 0 1px 2px rgb(0 0 0 / 55%); }
+.lobbyScreen .lobbySwatch[aria-pressed='true'] svg { display: block; color: white; filter: drop-shadow(0 1px 2px rgb(0 0 0 / 55%)); }
 .lobbyScreen .lobbySwatch:disabled[data-managing-players]:not([data-taken]) { opacity: 1; }
 .lobbyScreen .lobbySwatch[data-taken] { opacity: .35; }
 .lobbyScreen .lobbySwatch[data-taken] span { color: white; }
