@@ -53,3 +53,12 @@
 	.appHeader .headerActions { grid-column: 1; grid-row: 2; justify-self: stretch; justify-content: space-between; }
 	.appHeaderWithCenter .headerCenter { grid-row: 3; }
 }
+
+@media (orientation: portrait) and (min-width: 700px) {
+	.appHeaderWithCenter { grid-template-columns: auto minmax(0, 1fr) auto; }
+	.appHeaderWithCenter .headerLogo { grid-column: 1; grid-row: 1; }
+	.appHeaderWithCenter .headerCenter { grid-column: 2; grid-row: 1; max-width: 100%; }
+	.appHeaderWithCenter .headerActions { grid-column: 3; grid-row: 1; }
+	.appHeaderWithCenter .turnTitle { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+	.gamePage .appHeaderWithCenter .turnTimerTrack { min-width: 24px; flex-shrink: 1; }
+}

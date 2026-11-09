@@ -22,9 +22,6 @@ function Board({
 	const abilities = new Map(players.flatMap(player => player.pieces
 		.filter(piece => piece.placed && piece.ability)
 		.map(piece => [`${player.id}-${piece.name}`, piece.ability])))
-	const ownColour = getPlayerColorHex(players.find(player => player.id === currentPlayerId)?.color)
-	const lastMoveColour = getPlayerColorHex(players.find(player => player.id === lastMove?.playerId)?.color, ownColour)
-	const firstMove = !players.find(player => player.id === currentPlayerId)?.pieces.some(piece => piece.placed)
 	const framedPresentation = desktopPresentation || trayPresentation
 	useLayoutEffect(() => {
 		if (!framedPresentation || !stageRef.current) return undefined
@@ -50,16 +47,15 @@ function Board({
 			if (window.matchMedia('(orientation: portrait) and (min-width: 700px)').matches) {
 				const main = stage.closest('.gameMain')
 				const playersPanel = main?.querySelector('.playerRankPanel')
-				if (main && playersPanel) {
+				const piecesPanel = main?.querySelector('.piecesRight')
+				if (main && playersPanel && piecesPanel) {
 					const mainStyle = getComputedStyle(main)
 					availableHeight = main.clientHeight
 						- Number.parseFloat(mainStyle.paddingTop)
 						- Number.parseFloat(mainStyle.paddingBottom)
-						- 2 * Number.parseFloat(mainStyle.rowGap)
 						- playersPanel.getBoundingClientRect().height
-						- (legend?.getBoundingClientRect().height || 0)
-						- 16
-						- 400
+						- piecesPanel.getBoundingClientRect().height
+						- 32
 				}
 			}
 			const portraitComputer = window.matchMedia('(orientation: portrait) and (min-width: 700px)').matches
@@ -86,8 +82,10 @@ function Board({
 		if (legend) observer.observe(legend)
 		const main = stage.closest('.gameMain')
 		const playersPanel = main?.querySelector('.playerRankPanel')
+		const piecesPanel = main?.querySelector('.piecesRight')
 		if (main) observer.observe(main)
 		if (playersPanel) observer.observe(playersPanel)
+		if (piecesPanel) observer.observe(piecesPanel)
 		return () => observer.disconnect()
 	}, [desktopPresentation, framedPresentation, trayPresentation, trayMetrics, viewHeight, viewWidth, board])
 	function viewToBoard(row, col) {
@@ -153,14 +151,6 @@ function Board({
 					</svg>
 					{boardGrid}
 				</div> : boardGrid}
-				<div className="boardLegend">
-					{firstMove && <>
-						<span><i className="startingSquareLegend" style={{ '--start-color': ownColour }} />Starting squares</span>
-					</>}
-					<span><i className="lastMoveLegend" style={{ '--last-color': lastMoveColour }} />Last move</span>
-					<span><i style={tileFinish(ownColour, 'scout', 'list')} />Scout</span>
-					<span><i style={tileFinish(ownColour, 'connector', 'list')} />Connector</span>
-				</div>
 			</section>
 		</div>
 	)

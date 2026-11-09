@@ -52,12 +52,6 @@ function PiecePanel({
 				<span className="pieceCount">{left}/{totalPieceCount}</span>
 			</div>
 			<div className="piecesBody">
-				<div className={`portraitPieceHint${firstMove ? ' firstMoveHint' : ''}`} style={{ '--start-color': getPlayerColorHex(player?.color) }}>
-					<span aria-hidden="true" />
-					<p>{firstMove
-						? 'First move: place any piece so it covers your starting square.'
-						: 'Pick a piece: normal pieces touch yours at a corner; Scout and Connector use their special rules.'}</p>
-				</div>
 				<div ref={gridRef} data-game-piece className="pieceCardGrid">
 					{pieces.map(piece => <Piece key={piece.name} piece={piece}
 						color={player?.color} isSelected={selectedPieceName === piece.name}
@@ -65,6 +59,12 @@ function PiecePanel({
 						onClick={event => onPieceClick(piece, event)} rotation={piece.rotation} flipped={piece.flipped} cellSize={pieceCellSize} />)}
 				</div>
 				<div className="piecePanelAside">
+			{fitPiecePreviews && !firstMove && !ability && <div className="pieceAbilityCard portraitPieceHint" data-game-piece>
+				<div className="instructionSwatch" style={tileFinish(getPlayerColorHex(player?.color), null, 'tray')} aria-hidden="true" />
+				<div><div className="abilityTitle">{selectedPiece ? 'Place your piece' : 'Your turn'}</div>
+					<p>{selectedPiece ? 'It must touch one of your pieces at a corner, but never along an edge.' : 'Pick a piece and place it so it touches one of your pieces at a corner.'}</p>
+				</div>
+			</div>}
 			{firstMove ? <div className="pieceAbilityCard firstMoveCard" data-game-piece>
 				<div className="firstMoveSwatch" style={{ '--start-color': getPlayerColorHex(player?.color) }} aria-hidden="true"><i /></div>
 				<div><div className="abilityTitle">First move</div><p>Pick any piece and place it so it covers your starting square, outlined in your color on the board.</p></div>
@@ -75,7 +75,10 @@ function PiecePanel({
 				<div>
 					<div className="abilityTitle">{ability === 'scout' ? 'Scout' : 'Connector'}</div>
 					<div className="abilityLabel">Special piece</div>
-					<p>{ability === 'scout'
+					<p>{fitPiecePreviews ? ability === 'scout'
+						? 'Place it without a corner connection, but never along an edge of your own pieces.'
+						: 'It must touch one of your pieces along an edge or at a corner.'
+						: ability === 'scout'
 						? 'Ignores the corner rule. Place it anywhere it fits, even without touching your other pieces.'
 						: 'Ignores the edge rule. It can touch your own pieces along an edge as well as at a corner.'}</p>
 				</div>

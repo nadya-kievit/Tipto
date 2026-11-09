@@ -126,38 +126,38 @@ function App() {
 
 	if (phoneMode === 'landscape') return <PhoneRotateOverlay />
 
-		return (
-			<div className="pregameShell">
-				<BackgroundPieces className="pregameBackground" topCollisionSelector={route.screen === 'lobby' ? '.appHeader' : undefined} />
-				
-				{!hasGameSession && route.screen === 'home' ? (
-					<HomeScreen
-						onEnterGame={handleEnterRoom}
-						onConfigureGame={() => handleEnterRoom()}
-						actionError={entryError}
-						enteringAction={enteringAction}
-					/> 
-				) : (!hasGameSession ? 
-					<LobbyScreen
-						key={route.gameId}
-						gameId={route.gameId}
-						onLeave={handleLeaveRoom}
-						onStarted={handleStartPlaying}
-						onRemoved={handleRemoved}
-						onRegisterLeave={registerLeave}
-					/>
-				:
-					<GameScreen
-						key={route.gameId}
-						gameId={route.gameId}
-						onLeaveGame={handleLeaveRoom}
-						onNeedsColor={handleNeedsSession}
-						isPhoneGame={isPhoneGame}
-						onRegisterLeave={registerLeave}
-					/>
-				)}
-			</div>
-		)
+	return (
+		<div className="pregameShell">
+			<BackgroundPieces className="pregameBackground" topCollisionSelector={route.screen === 'lobby' ? '.appHeader' : undefined} />
+			
+			{!hasGameSession && route.screen === 'home' ? (
+				<HomeScreen
+					onEnterGame={handleEnterRoom}
+					onConfigureGame={() => handleEnterRoom()}
+					actionError={entryError}
+					enteringAction={enteringAction}
+				/> 
+			) : (!hasGameSession ? 
+				<LobbyScreen
+					key={route.gameId}
+					gameId={route.gameId}
+					onLeave={handleLeaveRoom}
+					onStarted={handleStartPlaying}
+					onRemoved={handleRemoved}
+					onRegisterLeave={registerLeave}
+				/>
+			:
+				<GameScreen
+					key={route.gameId}
+					gameId={route.gameId}
+					onLeaveGame={handleLeaveRoom}
+					onNeedsColor={handleNeedsSession}
+					isPhoneGame={isPhoneGame}
+					onRegisterLeave={registerLeave}
+				/>
+			)}
+		</div>
+	)
 }
 
 export default App

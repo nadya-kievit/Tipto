@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { copyText } from '../services/clipboard'
 import '../styles/header.css'
 
 export default function Header({ screen, gameId, onLeave, leaveDisabled = false, onCopyError, children, actions }) {
@@ -9,11 +10,13 @@ export default function Header({ screen, gameId, onLeave, leaveDisabled = false,
 
 	const copyInvite = async () => {
 		try {
-			await navigator.clipboard.writeText(window.location.href)
+			await copyText(window.location.href)
 			setCopied(true)
 			clearTimeout(copyTimer.current)
 			copyTimer.current = setTimeout(() => setCopied(false), 1800)
 		} catch {
+			setCopied(false)
+			clearTimeout(copyTimer.current)
 			onCopyError?.('Could not copy the invite link.')
 		}
 	}
