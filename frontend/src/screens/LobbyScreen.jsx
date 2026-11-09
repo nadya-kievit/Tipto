@@ -10,6 +10,7 @@ import {
 	updateLobbySettings,
 } from '../services/api'
 import { enterLobby } from '../services/roomSession'
+import Header from '../components/Header'
 import BoardPreview from '../components/lobby/BoardPreview'
 import PlayerRow from '../components/lobby/PlayerRow'
 import TimerDial from '../components/lobby/TimerDial'
@@ -40,20 +41,6 @@ function clearRoomCredentials(gameId) {
 	localStorage.removeItem(`tipto-admin-${gameId}`)
 }
 
-function CopyIcon({ copied }) {
-	return (
-		<span className="lobbyCopyIcons" aria-hidden="true">
-			<svg className={copied ? 'hidden' : ''} viewBox="0 0 24 24">
-				<rect x="8" y="8" width="12" height="12" rx="1" />
-				<path d="M16 8V4H4v12h4" />
-			</svg>
-			<svg className={copied ? '' : 'hidden'} viewBox="0 0 24 24">
-				<path d="m5 12 4 4 10-10" />
-			</svg>
-		</span>
-	)
-}
-
 function LobbyScreen({ gameId, onLeave, onStarted, onRemoved, onRegisterLeave }) {
 	const [game, setGame] = useState(null)
 	const [session, setSession] = useState(null)
@@ -65,11 +52,9 @@ function LobbyScreen({ gameId, onLeave, onStarted, onRemoved, onRegisterLeave })
 	const [managingPlayers, setManagingPlayers] = useState(false)
 	const [starting, setStarting] = useState(false)
 	const [leaving, setLeaving] = useState(false)
-	const [copied, setCopied] = useState(false)
 
 	const entryRef = useRef(null)
 	const nameTimerRef = useRef(null)
-	const copyTimerRef = useRef(null)
 	const nameDirtyRef = useRef(false)
 	const latestNameRef = useRef('')
 	const profileQueueRef = useRef(Promise.resolve())
@@ -195,7 +180,6 @@ function LobbyScreen({ gameId, onLeave, onStarted, onRemoved, onRegisterLeave })
 
 	useEffect(() => () => {
 		clearTimeout(nameTimerRef.current)
-		clearTimeout(copyTimerRef.current)
 	}, [])
 
 	const saveProfile = changes => {
@@ -309,16 +293,6 @@ function LobbyScreen({ gameId, onLeave, onStarted, onRemoved, onRegisterLeave })
 	}, [gameId, onLeave, session])
 
 	useEffect(() => onRegisterLeave?.(leaveRoom), [leaveRoom, onRegisterLeave])
-	const copyInvite = async () => {
-		try {
-			await navigator.clipboard.writeText(window.location.href)
-			setCopied(true)
-			clearTimeout(copyTimerRef.current)
-			copyTimerRef.current = setTimeout(() => setCopied(false), 1800)
-		} catch {
-			setError('Could not copy the invite link.')
-		}
-	}
 
 	const handleNameBlur = () => {
 		if (!latestNameRef.current.trim()) {
@@ -331,47 +305,13 @@ function LobbyScreen({ gameId, onLeave, onStarted, onRemoved, onRegisterLeave })
 	}
 	return (
 		<div className="lobbyScreen">
-			<header className="lobbyTopBar">
-				<div className="lobbyTopBarLeft">
-					<div className="lobbyLogo">
-						<span className="lobbyLogoMark" aria-hidden="true">
-							<i />
-							<i />
-							<i />
-						</span>
-					Tipto
-					</div>
-					<span className="lobbyTopBarDivider" aria-hidden="true" />
-					<h1>Lobby</h1>
-				</div>
-				<div className="lobbyTopBarRight">
-					<div className="lobbyInvite">
-						<div className="lobbyRoomCode">
-							<span>Room code</span>
-							<strong>
-								{`${gameId.slice(0, 3)} ${gameId.slice(3)}`.trim()}
-							</strong>
-						</div>
-						<button
-							type="button"
-							className={copied ? 'copied' : ''}
-							onClick={copyInvite}
-							aria-label="Copy invite link"
-						>
-							<CopyIcon copied={copied} />
-							<span>
-								{copied ? 'Link copied' : 'Copy invite link'}
-							</span>
-						</button>
-					</div>
-					<button
-						type="button"
-						className="lobbyLeave"
-						onClick={leaveRoom}
-						disabled={leaving || starting}
-					>Leave room</button>
-				</div>
-			</header>
+			<Header 
+				screen={'lobby'}
+				gameId={gameId} 
+				onLeave={leaveRoom} 
+				leaveDisabled={leaving || starting} 
+				onCopyError={setError} 
+			/>
 
 			<main className="lobbyPage">
 				{game && me ? <>
@@ -423,6 +363,7 @@ function LobbyScreen({ gameId, onLeave, onStarted, onRemoved, onRegisterLeave })
 											className={selected ? 'selected' : ''}
 											aria-pressed={selected}
 											disabled={!isHost || busy || savingSettings}
+											data-saving-settings={isHost && !busy && savingSettings || undefined}
 											onClick={() => changeSettings({
 												boardLayout: board.id
 											})}
@@ -469,6 +410,7 @@ function LobbyScreen({ gameId, onLeave, onStarted, onRemoved, onRegisterLeave })
 									onClick={startGame}
 									disabled={startDisabled}
 									data-saving-settings={savingSettings || undefined}
+									data-updating-players={managingPlayers && game.players.length >= 2 && connected && !leaving && !starting || undefined}
 									aria-busy={starting}
 									aria-describedby={startDisabled ? 'lobby-start-tooltip' : undefined}
 								>

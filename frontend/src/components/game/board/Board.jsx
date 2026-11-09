@@ -143,20 +143,13 @@ function Board({
 		style={desktopPresentation ? { '--board-cell-size': `${tray.cell}px`, '--board-gap': `${tray.gap}px`, '--board-pad': `${tray.pad}px` } : undefined}>{tiles}</div>
 	const trayWidth = viewWidth * tray.cell + Math.max(0, viewWidth - 1) * tray.gap + 2 * tray.pad
 	const trayHeight = viewHeight * tray.cell + Math.max(0, viewHeight - 1) * tray.gap + 2 * tray.pad
-	const trayRects = Array.from({ length: viewHeight * viewWidth }, (_, index) => {
-		const viewRow = Math.floor(index / viewWidth)
-		const viewCol = index % viewWidth
-		const position = viewToBoard(viewRow, viewCol)
-		if (board[position.row][position.col].playable === false) return null
-		return <rect key={index} x={tray.pad + viewCol * (tray.cell + tray.gap)} y={tray.pad + viewRow * (tray.cell + tray.gap)} width={tray.cell} height={tray.cell} />
-	})
 	return (
 		<div className="boardStage" ref={stageRef} style={{ '--board-columns': viewWidth, '--board-rows': viewHeight }}>
 			<section className="boardPanel" aria-label="Game board">
 				{framedPresentation ? <div className="boardWrap">
 					<svg className="boardTray" aria-hidden="true" viewBox={`0 0 ${trayWidth} ${trayHeight}`}>
-						<g className="boardTrayEdge" strokeWidth={2 * tray.pad + 2}>{trayRects}</g>
-						<g className="boardTrayFill" strokeWidth={2 * tray.pad}>{trayRects}</g>
+						<rect className="boardTrayEdge" width={trayWidth} height={trayHeight} rx={2} strokeWidth={0} />
+						<rect className="boardTrayFill" x={1} y={1} width={trayWidth - 2} height={trayHeight - 2} rx={1} strokeWidth={0} />
 					</svg>
 					{boardGrid}
 				</div> : boardGrid}

@@ -126,18 +126,18 @@ function App() {
 
 	if (phoneMode === 'landscape') return <PhoneRotateOverlay />
 
-	if (!hasGameSession) {
 		return (
 			<div className="pregameShell">
-				<BackgroundPieces className="pregameBackground" topCollisionSelector={route.screen === 'lobby' ? '.lobbyTopBar' : undefined} />
-				{route.screen === 'home' ? (
+				<BackgroundPieces className="pregameBackground" topCollisionSelector={route.screen === 'lobby' ? '.appHeader' : undefined} />
+				
+				{!hasGameSession && route.screen === 'home' ? (
 					<HomeScreen
 						onEnterGame={handleEnterRoom}
 						onConfigureGame={() => handleEnterRoom()}
 						actionError={entryError}
 						enteringAction={enteringAction}
-					/>
-				) : (
+					/> 
+				) : (!hasGameSession ? 
 					<LobbyScreen
 						key={route.gameId}
 						gameId={route.gameId}
@@ -146,21 +146,18 @@ function App() {
 						onRemoved={handleRemoved}
 						onRegisterLeave={registerLeave}
 					/>
+				:
+					<GameScreen
+						key={route.gameId}
+						gameId={route.gameId}
+						onLeaveGame={handleLeaveRoom}
+						onNeedsColor={handleNeedsSession}
+						isPhoneGame={isPhoneGame}
+						onRegisterLeave={registerLeave}
+					/>
 				)}
 			</div>
 		)
-	}
-
-	return (
-		<GameScreen
-			key={route.gameId}
-			gameId={route.gameId}
-			onLeaveGame={handleLeaveRoom}
-			onNeedsColor={handleNeedsSession}
-			isPhoneGame={isPhoneGame}
-			onRegisterLeave={registerLeave}
-		/>
-	)
 }
 
 export default App

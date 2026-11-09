@@ -31,9 +31,7 @@ function TurnBanner({ canMove, game, isRestarting, isTie, onRestart, resultColor
 					: game?.status === 'waiting' ? 'Waiting for players'
 						: canMove ? 'Your turn' : `${currentPlayer?.name || 'Player'}'s turn`}
 			</span>
-			{!finished && game?.turnEndsAt != null
-				? <TurnTimer key={game.turnNumber} endsAt={game.turnEndsAt} limit={game.settings.moveTimeLimitSeconds} />
-				: !finished && <span className="turnTimer">No limit</span>}
+			{!finished && game?.turnEndsAt != null && <TurnTimer key={game.turnNumber} endsAt={game.turnEndsAt} limit={game.settings.moveTimeLimitSeconds} />}
 			{finished && <button type="button" className="restartButton" onClick={onRestart} disabled={isRestarting}>{isRestarting ? 'Starting…' : 'New game'}</button>}
 		</div>
 	)

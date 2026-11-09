@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import Header from '../../Header'
 import Board from '../board/Board'
 import { displayCells, tileFinish } from '../../../game/piecePresentation'
 import { isValidPlacement } from '../../../game/placementRules'
@@ -56,7 +57,7 @@ function placementReason(board, cells, player, isFirstMove, players, ability) {
 
 export default function PhoneGameLayout({
  game, me, board, canMove, pieces, selectedPiece, selectedPieceName, pendingPlacement,
- onStage, onRotate, onFlip, onPlace, onQuit, lastMove, notice,
+ onStage, onRotate, onFlip, onPlace, onQuit, isQuitting, onCopyError, lastMove, notice,
 }) {
  const boardZoneRef = useRef(null)
  const stripRef = useRef(null)
@@ -77,7 +78,10 @@ export default function PhoneGameLayout({
 
  useLayoutEffect(() => {
   const zone = boardZoneRef.current
+  const page = zone.closest('.gamePage')
+  const header = page.querySelector('.appHeader')
   const fit = () => {
+   page.style.setProperty('--phone-header-height', `${header.offsetHeight}px`)
    const width = zone.clientWidth - 8
    const height = zone.clientHeight - 16
    const rows = boardRows
@@ -95,6 +99,7 @@ export default function PhoneGameLayout({
   fit()
   const observer = new ResizeObserver(fit)
   observer.observe(zone)
+  observer.observe(header)
   return () => observer.disconnect()
  }, [boardRows, boardColumns])
 
@@ -174,15 +179,13 @@ export default function PhoneGameLayout({
  else if (selectedPiece) status = 'Drag the piece onto the board'
 
  return <div className="gamePage phoneGame" style={{ '--player-color': ownColor }}>
-  <div className="gameCity" aria-hidden="true" /><div className="gameCityFade" aria-hidden="true" />
-  <header className="phoneGameHeader">
-   <h1><span className="phoneGameLogoMark" aria-hidden="true"><i /><i /><i /></span>Tipto</h1>
+  <Header gameId={roomCode} onLeave={onQuit} leaveDisabled={isQuitting} onCopyError={onCopyError}
+   actions={<button type="button" className="phoneMenuButton" aria-label="Menu" aria-expanded={overlay === 'menu'} aria-controls="phone-menu" onClick={() => { setOverlay(overlay === 'menu' ? null : 'menu'); setExpanded(null) }}><Icon kind="menu" /></button>}>
    <div className="phoneTurnPill" style={{ '--turn-color': getPlayerColorHex(current?.color) }}>
     <strong>{canMove ? 'Your turn' : `${current?.name || 'Player'}'s turn`}</strong>
-    {game.turnEndsAt ? <PhoneTimer key={`${game.turnNumber}-${game.turnEndsAt}`} endsAt={game.turnEndsAt} limit={game.settings.moveTimeLimitSeconds} /> : <span className="phoneTime">No limit</span>}
+    {game.turnEndsAt && <PhoneTimer key={`${game.turnNumber}-${game.turnEndsAt}`} endsAt={game.turnEndsAt} limit={game.settings.moveTimeLimitSeconds} />}
    </div>
-   <button type="button" className="phoneMenuButton" aria-label="Menu" aria-expanded={overlay === 'menu'} aria-controls="phone-menu" onClick={() => { setOverlay(overlay === 'menu' ? null : 'menu'); setExpanded(null) }}><Icon kind="menu" /></button>
-  </header>
+  </Header>
   <div className="phonePlayersBar">
    <div className="phonePlayerChips" ref={stripRef}>{players.map(player => <button type="button" key={player.id} className={`phonePlayerChip${player.id === game.currentPlayerId ? ' active' : ''}`} style={{ '--pc': getPlayerColorHex(player.color) }} onClick={openStandings}><i /><span>{player.id === me.id ? 'You' : player.name}</span><b>{score(player)}</b></button>)}</div>
    <button type="button" className="phoneAllPlayers" aria-label="Standings" aria-expanded={overlay === 'standings'} onClick={openStandings}><Icon /></button>

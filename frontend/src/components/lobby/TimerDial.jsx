@@ -131,7 +131,7 @@ function TimerDial({ value, readOnly, disabled, saving, onChange }) {
 					aria-valuemin="30"
 					aria-valuemax="90"
 					aria-valuenow={noLimit ? undefined : shown}
-					aria-valuetext={noLimit ? 'No limit' : `${shown} seconds`}
+					aria-valuetext={noLimit ? '' : `${shown} seconds`}
 					aria-disabled={inactive}
 					onKeyDown={keyDown}
 					onPointerDown={beginDrag}

@@ -61,6 +61,7 @@ function PlayerRow({
 									'--swatch': option.hex
 								}}
 								disabled={Boolean(takenBy) || busy || savingProfile}
+								data-saving-profile={savingProfile && !busy || undefined}
 								data-managing-players={managingPlayers || undefined}
 								data-taken={takenBy ? '' : undefined}
 								aria-pressed={selected}
@@ -80,6 +81,7 @@ function PlayerRow({
 				className="lobbyRemoveBot"
 				aria-label={`Remove ${player.name}`}
 				disabled={busy}
+				data-managing-players={managingPlayers || undefined}
 				onClick={onRemove}
 			>{'\u00d7'}</button>}
 		</div>

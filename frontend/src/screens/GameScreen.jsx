@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { gameSocketUrl, getGame, quitGame, restartGame } from '../services/api'
 import Board from '../components/game/board/Board'
 import CursorPiece from '../components/game/pieces/CursorPiece'
-import GameHeader from '../components/game/layout/GameHeader'
+import Header from '../components/Header'
 import PiecePanel from '../components/game/pieces/PiecePanel'
 import PlayerRank from '../components/game/players/PlayerRank'
 import TurnBanner from '../components/game/players/TurnBanner'
@@ -329,15 +329,6 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 	}, [clearSelection, isPhoneGame, selectedPiece])
 
 
-	const handleCopyInvite = async () => {
-		try {
-			await navigator.clipboard.writeText(gameId)
-			setLastMessage('Invite code copied.')
-		} catch {
-			setLastMessage('Could not copy the invite code.')
-		}
-	}
-
 
 	const handleQuit = useCallback(async () => {
 		if (
@@ -484,7 +475,6 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 	if (!game) {
 		return (
 			<div className="gamePage gameLoading" style={uiScaleStyle}>
-				{!isPhoneGame && <><div className="gameCity" aria-hidden="true" /><div className="gameCityFade" aria-hidden="true" /></>}
 				<h1 className="gameHeaderTitle">Tipto</h1>
 
 				<div className="startPanel">
@@ -534,6 +524,8 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 				onFlip={handlePhoneFlip}
 				onPlace={submitPlacement}
 				onQuit={handleQuit}
+				isQuitting={isQuitting}
+				onCopyError={setLastMessage}
 				lastMove={game.moveHistory.at(-1)}
 			/>
 			{winnerModal}
@@ -542,8 +534,6 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 
 	return (
 		<div className="gamePage" style={{ ...(isPortraitComputer ? { '--ui-scale': 1, '--text-scale': 1 } : uiScaleStyle), '--me': getPlayerColorHex(me?.color) }}>
-			<div className="gameCity" aria-hidden="true" />
-			<div className="gameCityFade" aria-hidden="true" />
 
 			{selectedPiece && createPortal(
 				<CursorPiece
@@ -557,11 +547,12 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 				document.body
 			)}
 			
-			<GameHeader
+			<Header
+				screem={'gamne'}
 				gameId={gameId}
-				isQuitting={isQuitting}
-				onCopyInvite={handleCopyInvite}
-				onQuit={handleQuit}
+				leaveDisabled={isQuitting}
+				onCopyError={setLastMessage}
+				onLeave={handleQuit}
 			>
 				<TurnBanner
 					canMove={canMove}
@@ -572,7 +563,7 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 					resultColor={resultColor}
 					winner={winner}
 				/>
-			</GameHeader>
+			</Header>
 
 			<div className="gameMain">
 

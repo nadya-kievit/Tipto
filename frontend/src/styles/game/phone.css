@@ -1,6 +1,5 @@
-﻿html:has(.phoneGame), body:has(.phoneGame), body:has(.phoneGame) #root { height: 100%; overflow: hidden; overscroll-behavior: none; }
+html:has(.phoneGame), body:has(.phoneGame), body:has(.phoneGame) #root { height: 100%; overflow: hidden; overscroll-behavior: none; }
 .gamePage.phoneGame { position: fixed; inset: 0; isolation: isolate; display: flex; flex-direction: column; gap: 0; width: 100%; height: 100dvh; min-height: 0; padding: 0; overflow: hidden; overscroll-behavior: none; touch-action: manipulation; }
-.phoneGame > .gameCity, .phoneGame > .gameCityFade { position: absolute; }
 .phoneGame > header, .phoneGame > main, .phoneGame > section, .phonePlayersBar { position: relative; z-index: 1; }
 .phoneGame svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .phoneGame button { padding: 0; color: var(--text); background: var(--board); }
@@ -15,7 +14,7 @@
 .phoneTurnPill strong { min-width: 0; overflow: hidden; font-size: 14px; white-space: nowrap; text-overflow: ellipsis; }
 .phoneTimerTrack { flex: 1; min-width: 20px; height: 4px; background: var(--border-strong); }
 .phoneTimerTrack i { display: block; height: 100%; background: var(--turn-color); transition: width 250ms linear; }
-.phoneTime { margin-left: auto; flex: none; font: 12px 'JetBrains Mono', monospace; color: var(--text-soft); white-space: nowrap; }
+.phoneTime { margin-left: auto; flex: none; font: 12px 'JetBrains Mono', monospace; color: var(--turn-color); white-space: nowrap; }
 .phoneGame .phoneMenuButton { display: grid; place-items: center; flex: none; width: 36px; height: 36px; }
 .phonePlayersBar { display: flex; flex: none; gap: 6px; height: 38px; margin: 8px max(12px, env(safe-area-inset-right)) 0 max(12px, env(safe-area-inset-left)); }
 .phonePlayerChips { display: flex; flex: 1; min-width: 0; gap: 6px; overflow-x: auto; scrollbar-width: none; }
@@ -34,8 +33,8 @@
 .phoneGame .boardWrap { position: relative; width: max-content; }
 .phoneGame .boardTray { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
 .phoneGame .boardTrayEdge { fill: var(--border); stroke: var(--border); stroke-linejoin: round; }
-.phoneGame .boardTrayFill { fill: var(--board); stroke: var(--board); stroke-linejoin: round; }
-.phoneGame .board { --board-cell-size: var(--phone-cell); --board-gap: var(--phone-gap); --grout: var(--board); position: relative; z-index: 1; gap: var(--phone-gap); padding: var(--phone-pad); width: max-content; touch-action: none; }
+.phoneGame .boardTrayFill { fill: var(--surface); stroke: var(--surface); stroke-linejoin: round; }
+.phoneGame .board { --board-cell-size: var(--phone-cell); --board-gap: var(--phone-gap); --grout: var(--surface); position: relative; z-index: 1; gap: var(--phone-gap); padding: var(--phone-pad); width: max-content; touch-action: none; }
 .phoneGame .boardLegend { display: none; }
 .phoneGame .tile { border-radius: max(1px, round(nearest, calc(var(--phone-cell) * .11), 1px)); cursor: default; }
 .phoneGame .phoneDock { flex: none; width: 100%; padding: 10px max(12px, env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); border-top: 1px solid var(--border); background: var(--board); }
@@ -58,7 +57,7 @@
 .phoneGame .phoneDragFollower, .phoneGame .phoneHoverPlacement { position: fixed; z-index: 10; pointer-events: none; }
 .phoneGame .phoneDragFollower { z-index: 11; opacity: .55; }
 .phoneGame .phoneOutsideCatch { position: absolute; inset: 0; z-index: 15; }
-.phoneGame .phoneMenu { position: absolute; z-index: 20; top: calc(52px + env(safe-area-inset-top)); right: max(8px, env(safe-area-inset-right)); width: 250px; padding: 14px; border: 1px solid var(--border-strong); border-radius: 8px; background: color-mix(in srgb, var(--board) 96%, transparent); box-shadow: 0 16px 40px rgba(0,0,0,.6); }
+.phoneGame .phoneMenu { position: absolute; z-index: 20; top: calc(var(--phone-header-height, 100px) + 4px); right: max(8px, env(safe-area-inset-right)); width: 250px; padding: 14px; border: 1px solid var(--border-strong); border-radius: 8px; background: color-mix(in srgb, var(--board) 96%, transparent); box-shadow: 0 16px 40px rgba(0,0,0,.6); }
 .phoneMenu h3 { margin: 0 0 8px; font-size: 11px; font-weight: 600; letter-spacing: 1.4px; color: var(--muted); text-transform: uppercase; }
 .phoneRoomRow { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; color: var(--muted); font-size: 12px; }
 .phoneRoomRow strong { margin-left: 6px; font: 500 15px 'JetBrains Mono', monospace; letter-spacing: 1px; color: var(--text); }

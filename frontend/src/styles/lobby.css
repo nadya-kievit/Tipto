@@ -32,41 +32,6 @@
 .lobbyScreen input:focus-visible,
 .lobbyDialFace:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-.lobbyTopBar {
-	position: relative;
-	z-index: 1;
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	flex-wrap: wrap;
-	gap: 11px 22px;
-	padding: 11px 30px;
-	background: var(--page);
-	border-bottom: 1px solid var(--border);
-}
-.lobbyTopBarLeft,
-.lobbyTopBarRight { display: flex; align-items: center; }
-.lobbyTopBarLeft { gap: 15px; }
-.lobbyTopBarRight { gap: 11px; }
-.lobbyTopBarLeft h1 { margin: 0; color: var(--text-soft); font: 700 22px/1.2 'Space Grotesk', sans-serif; }
-.lobbyTopBarDivider { width: 1px; height: 24px; background: var(--border-strong); }
-
-.lobbyLogo { display: flex; align-items: center; gap: 10px; font: 700 23px/1.2 'Space Grotesk', sans-serif; }
-.lobbyLogoMark { display: grid; grid-template: repeat(2, 11px) / repeat(2, 11px); gap: 1px; }
-.lobbyLogoMark i { grid-area: 2 / 2; background: #8B5CF6; }
-.lobbyLogoMark i:nth-child(2) { grid-area: 1 / 2; background: #F97316; }
-.lobbyLogoMark i:nth-child(3) { grid-area: 2 / 1; background: #14B8A6; }
-
-.lobbyScreen .lobbyLeave {
-	height: 39px;
-	padding: 0 13px;
-	border: 1px solid var(--leave-border);
-	border-radius: 4px;
-	background: transparent;
-	color: var(--leave-text);
-}
-.lobbyScreen .lobbyLeave:hover { background: color-mix(in srgb, var(--leave-text) 8%, transparent); }
-
 .lobbyPage {
 	display: grid;
 	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -76,40 +41,6 @@
 	margin: 100px auto 35px;
 }
 .lobbyRightColumn { display: flex; min-width: 0; flex-direction: column; gap: 18px; }
-
-.lobbyInvite { display: flex; min-width: 0; height: 39px; }
-.lobbyRoomCode {
-	display: flex;
-	flex-direction: column;
-	justify-content: center;
-	min-width: 130px;
-	padding: 0 13px;
-	border: 1px solid var(--border);
-	border-right: 0;
-	border-radius: 4px 0 0 4px;
-	background: var(--input);
-}
-.lobbyRoomCode span { margin-bottom: 3px; color: var(--muted); font-size: 9px; font-weight: 600; letter-spacing: 1px; line-height: 1; text-transform: uppercase; }
-.lobbyRoomCode strong { font: 700 14px/1 'JetBrains Mono', monospace; letter-spacing: 2px; }
-.lobbyInvite > button {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	gap: 8px;
-	width: 194px;
-	height: 37px;
-	padding: 0 13px;
-	border: 1px solid var(--border-strong);
-	border-radius: 0 4px 4px 0;
-	background: var(--surface-raised);
-	font-weight: 600;
-	transition: background 140ms, color 140ms, border-color 140ms;
-}
-.lobbyInvite > button:hover { background: color-mix(in srgb, var(--surface-raised) 82%, white); }
-.lobbyInvite > button.copied { border-color: color-mix(in srgb, #22C55E 55%, var(--border)); background: color-mix(in srgb, #22C55E 15%, var(--surface-raised)); color: #86EFAC; }
-.lobbyCopyIcons { position: relative; width: 16px; height: 16px; flex: 0 0 16px; }
-.lobbyCopyIcons svg { position: absolute; inset: 0; width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.7; opacity: 1; transition: opacity 140ms; }
-.lobbyCopyIcons svg.hidden { opacity: 0; }
 
 .lobbyPanel { min-width: 0; padding: 22px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface); }
 .lobbyPanel > h2 { margin: 0 0 15px; font: 700 20px/1.2 'Space Grotesk', sans-serif; }
@@ -174,6 +105,7 @@
 .lobbyScreen .lobbySwatch[aria-pressed='true'] { box-shadow: 0 0 0 2px color-mix(in srgb, var(--player-colour) 6%, var(--surface-raised)), 0 0 0 4px var(--swatch); }
 .lobbyScreen .lobbySwatch[aria-pressed='true'] svg { display: block; color: white; filter: drop-shadow(0 1px 2px rgb(0 0 0 / 55%)); }
 .lobbyScreen .lobbySwatch:disabled[data-managing-players]:not([data-taken]) { opacity: 1; }
+.lobbyScreen .lobbySwatch:disabled[data-saving-profile]:not([data-taken]) { cursor: pointer; opacity: 1; }
 .lobbyScreen .lobbySwatch[data-taken] { opacity: .35; }
 .lobbyScreen .lobbySwatch[data-taken] span { color: white; }
 .lobbyScreen .lobbyRemoveBot {
@@ -187,6 +119,7 @@
 	font-size: 18px;
 }
 .lobbyScreen .lobbyRemoveBot:hover { background: var(--surface-raised); color: var(--text); }
+.lobbyScreen .lobbyRemoveBot:disabled[data-managing-players] { cursor: pointer; }
 .lobbyScreen .lobbyAddBot {
 	display: block;
 	width: auto;
@@ -224,6 +157,8 @@
 }
 .lobbyScreen .lobbyBoardCards button:not(:disabled):hover { border-color: var(--border-strong); }
 .lobbyScreen .lobbyBoardCards button:disabled { opacity: 1; }
+.lobbyScreen .lobbyBoardCards button:disabled[data-saving-settings] { cursor: pointer; }
+.lobbyScreen .lobbyBoardCards button:disabled[data-saving-settings]:hover { border-color: var(--border-strong); }
 .lobbyScreen .lobbyBoardCards button.selected::after { content: ''; position: absolute; right: 0; bottom: 0; left: 0; height: 4px; background: var(--accent); }
 .lobbyBoardPreview { --cell: 11px; display: grid; grid-template: repeat(7, var(--cell)) / repeat(7, var(--cell)); gap: 1px; }
 .lobbyBoardPreview i { width: var(--cell); height: var(--cell); background: transparent; }
@@ -269,7 +204,8 @@
 .lobbyScreen .lobbyStart { min-width: 145px; height: 46px; padding: 0 20px; border: 0; border-radius: 4px; background: var(--accent); color: var(--on-accent); font-weight: 700; }
 .lobbyScreen .lobbyStart:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 88%, white); }
 .lobbyScreen .lobbyStart:disabled { opacity: .42; }
-.lobbyScreen .lobbyStart:disabled[data-saving-settings] { opacity: 1; }
+.lobbyScreen .lobbyStart:disabled[data-saving-settings],
+.lobbyScreen .lobbyStart:disabled[data-updating-players] { opacity: 1; }
 .lobbyStartTooltip {
 	position: absolute;
 	right: 0;
@@ -309,14 +245,6 @@
 
 @media (max-width: 560px) {
 	.lobbyScreen { padding-bottom: 20px; }
-	.lobbyTopBar { padding: 12px 14px; }
-	.lobbyTopBarDivider,
-	.lobbyTopBarLeft h1,
-	.lobbyRoomCode span,
-	.lobbyInvite > button > span:last-child { display: none; }
-	.lobbyTopBarRight { margin-left: auto; }
-	.lobbyRoomCode { min-width: 104px; }
-	.lobbyInvite > button { width: 44px; padding: 0; }
 	.lobbyPage { width: min(100% - 20px, 720px); margin-top: 18px; }
 	.lobbyPanel { padding: 16px; }
 	.lobbyPlayerRow { padding-inline: 10px; }
