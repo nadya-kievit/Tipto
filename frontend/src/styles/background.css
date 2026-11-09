@@ -5,10 +5,14 @@
 	background: #0D0E13;
 }
 
-.pregameShell > .pregameBackground { position: fixed; }
+.pregameShell > .pregameBackground {
+	position: fixed;
+}
 
 .pregameShell > .createGamePage.homeScreen,
-.pregameShell > .lobbyScreen { background: transparent; }
+.pregameShell > .lobbyScreen {
+	background: transparent;
+}
 
 .backgroundPieces {
 	--background-piece-page: #0D0E13;
@@ -41,4 +45,6 @@
 	--background-piece-cell: calc(var(--background-piece-size) * 0.62);
 }
 
-.backgroundPiecesCompact .backgroundPiece:nth-child(n + 5) { display: none; }
+.backgroundPiecesCompact .backgroundPiece:nth-child(n + 5) {
+	display: none;
+}

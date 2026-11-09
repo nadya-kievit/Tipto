@@ -23,14 +23,30 @@
 	font: 16px/1.4 'DM Sans', sans-serif;
 }
 
-.lobbyScreen * { box-sizing: border-box; }
+.lobbyScreen * {
+	box-sizing: border-box;
+}
+
 .lobbyScreen button,
-.lobbyScreen input { font: inherit; color: inherit; }
-.lobbyScreen button { cursor: pointer; }
-.lobbyScreen button:disabled { cursor: not-allowed; }
+.lobbyScreen input {
+	font: inherit;
+	color: inherit;
+}
+
+.lobbyScreen button {
+	cursor: pointer;
+}
+
+.lobbyScreen button:disabled {
+	cursor: not-allowed;
+}
+
 .lobbyScreen button:focus-visible,
 .lobbyScreen input:focus-visible,
-.lobbyDialFace:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.lobbyDialFace:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 2px;
+}
 
 .lobbyPage {
 	display: grid;
@@ -40,12 +56,33 @@
 	width: min(1200px, calc(100% - 36px));
 	margin: 100px auto 35px;
 }
-.lobbyRightColumn { display: flex; min-width: 0; flex-direction: column; gap: 18px; }
 
-.lobbyPanel { min-width: 0; padding: 22px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface); }
-.lobbyPanel > h2 { margin: 0 0 15px; font: 700 20px/1.2 'Space Grotesk', sans-serif; }
+.lobbyRightColumn {
+	display: flex;
+	min-width: 0;
+	flex-direction: column;
+	gap: 18px;
+}
 
-.lobbyPlayerList { display: flex; flex-direction: column; gap: 7px; }
+.lobbyPanel {
+	min-width: 0;
+	padding: 22px;
+	border: 1px solid var(--border);
+	border-radius: 7px;
+	background: var(--surface);
+}
+
+.lobbyPanel > h2 {
+	margin: 0 0 15px;
+	font: 700 20px/1.2 'Space Grotesk', sans-serif;
+}
+
+.lobbyPlayerList {
+	display: flex;
+	flex-direction: column;
+	gap: 7px;
+}
+
 .lobbyPlayerRow {
 	display: grid;
 	grid-template-columns: 30px minmax(0, 1fr) auto;
@@ -56,8 +93,20 @@
 	border-radius: 4px;
 	background: color-mix(in srgb, var(--player-colour) 6%, var(--surface-raised));
 }
-.lobbyPlayerRow.own { align-items: center; }
-.lobbyPlayerTile { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 2px; background: var(--player-colour); }
+
+.lobbyPlayerRow.own {
+	align-items: center;
+}
+
+.lobbyPlayerTile {
+	display: grid;
+	place-items: center;
+	width: 30px;
+	height: 30px;
+	border-radius: 2px;
+	background: var(--player-colour);
+}
+
 .lobbyPlayerTile.bot svg {
 	width: 22px;
 	height: 22px;
@@ -68,9 +117,29 @@
 	stroke-linecap: round;
 	stroke-linejoin: round;
 }
-.lobbyPlayerTile.bot .robotEye { fill: currentColor; stroke: none; }
-.lobbyPlayerName { min-width: 0; overflow: hidden; color: var(--text-soft); font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
-.lobbyOwnProfile { display: flex; flex-wrap: wrap; align-items: center; gap: 11px 15px; min-width: 0; }
+
+.lobbyPlayerTile.bot .robotEye {
+	fill: currentColor;
+	stroke: none;
+}
+
+.lobbyPlayerName {
+	min-width: 0;
+	overflow: hidden;
+	color: var(--text-soft);
+	font-weight: 600;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.lobbyOwnProfile {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 11px 15px;
+	min-width: 0;
+}
+
 .lobbyOwnProfile input {
 	flex: 1 1 176px;
 	max-width: 242px;
@@ -82,12 +151,19 @@
 	background: var(--input);
 	font-weight: 600;
 }
+
 .lobbyOwnProfile input:disabled[data-managing-players] {
 	opacity: 1;
 	color: var(--text-soft);
 	-webkit-text-fill-color: var(--text-soft);
 }
-.lobbySwatches { display: flex; flex-wrap: wrap; gap: 7px; }
+
+.lobbySwatches {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 7px;
+}
+
 .lobbyScreen .lobbySwatch {
 	position: relative;
 	display: grid;
@@ -102,12 +178,34 @@
 	font-size: 11px;
 	font-weight: 700;
 }
-.lobbyScreen .lobbySwatch[aria-pressed='true'] { box-shadow: 0 0 0 2px color-mix(in srgb, var(--player-colour) 6%, var(--surface-raised)), 0 0 0 4px var(--swatch); }
-.lobbyScreen .lobbySwatch[aria-pressed='true'] svg { display: block; color: white; filter: drop-shadow(0 1px 2px rgb(0 0 0 / 55%)); }
-.lobbyScreen .lobbySwatch:disabled[data-managing-players]:not([data-taken]) { opacity: 1; }
-.lobbyScreen .lobbySwatch:disabled[data-saving-profile]:not([data-taken]) { cursor: pointer; opacity: 1; }
-.lobbyScreen .lobbySwatch[data-taken] { opacity: .35; }
-.lobbyScreen .lobbySwatch[data-taken] span { color: white; }
+
+.lobbyScreen .lobbySwatch[aria-pressed='true'] {
+	box-shadow: 0 0 0 2px color-mix(in srgb, var(--player-colour) 6%, var(--surface-raised)), 0 0 0 4px var(--swatch);
+}
+
+.lobbyScreen .lobbySwatch[aria-pressed='true'] svg {
+	display: block;
+	color: white;
+	filter: drop-shadow(0 1px 2px rgb(0 0 0 / 55%));
+}
+
+.lobbyScreen .lobbySwatch:disabled[data-managing-players]:not([data-taken]) {
+	opacity: 1;
+}
+
+.lobbyScreen .lobbySwatch:disabled[data-saving-profile]:not([data-taken]) {
+	cursor: pointer;
+	opacity: 1;
+}
+
+.lobbyScreen .lobbySwatch[data-taken] {
+	opacity: .35;
+}
+
+.lobbyScreen .lobbySwatch[data-taken] span {
+	color: white;
+}
+
 .lobbyScreen .lobbyRemoveBot {
 	width: 33px;
 	height: 33px;
@@ -118,8 +216,16 @@
 	color: var(--muted);
 	font-size: 18px;
 }
-.lobbyScreen .lobbyRemoveBot:hover { background: var(--surface-raised); color: var(--text); }
-.lobbyScreen .lobbyRemoveBot:disabled[data-managing-players] { cursor: pointer; }
+
+.lobbyScreen .lobbyRemoveBot:hover {
+	background: var(--surface-raised);
+	color: var(--text);
+}
+
+.lobbyScreen .lobbyRemoveBot:disabled[data-managing-players] {
+	cursor: pointer;
+}
+
 .lobbyScreen .lobbyAddBot {
 	display: block;
 	width: auto;
@@ -132,14 +238,51 @@
 	color: var(--text-soft);
 	font-weight: 600;
 }
-.lobbyScreen .lobbyAddBot:hover:not(:disabled) { background: color-mix(in srgb, var(--surface-raised) 84%, white); }
-.lobbyScreen .lobbyAddBot:disabled { opacity: .45; }
 
-.lobbySettingsPanel { padding-bottom: 22px; }
-.lobbySettingHeading { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 13px; color: var(--text-soft); font-weight: 700; }
-.lobbySettingHeading > svg { width: 20px; height: 20px; flex: 0 0 20px; fill: none; stroke: currentColor; stroke-width: 1.7; }
-.lobbySettingHeading p { max-width: 605px; margin: 3px 0 0; color: var(--muted); font-size: 14px; font-weight: 400; }
-.lobbyBoardCards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 11px; }
+.lobbyScreen .lobbyAddBot:hover:not(:disabled) {
+	background: color-mix(in srgb, var(--surface-raised) 84%, white);
+}
+
+.lobbyScreen .lobbyAddBot:disabled {
+	opacity: .45;
+}
+
+.lobbySettingsPanel {
+	padding-bottom: 22px;
+}
+
+.lobbySettingHeading {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+	margin-bottom: 13px;
+	color: var(--text-soft);
+	font-weight: 700;
+}
+
+.lobbySettingHeading > svg {
+	width: 20px;
+	height: 20px;
+	flex: 0 0 20px;
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 1.7;
+}
+
+.lobbySettingHeading p {
+	max-width: 605px;
+	margin: 3px 0 0;
+	color: var(--muted);
+	font-size: 14px;
+	font-weight: 400;
+}
+
+.lobbyBoardCards {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 11px;
+}
+
 .lobbyScreen .lobbyBoardCards button {
 	position: relative;
 	display: flex;
@@ -155,57 +298,271 @@
 	font-weight: 600;
 	overflow: hidden;
 }
-.lobbyScreen .lobbyBoardCards button:not(:disabled):hover { border-color: var(--border-strong); }
-.lobbyScreen .lobbyBoardCards button:disabled { opacity: 1; }
-.lobbyScreen .lobbyBoardCards button:disabled[data-saving-settings] { cursor: pointer; }
-.lobbyScreen .lobbyBoardCards button:disabled[data-saving-settings]:hover { border-color: var(--border-strong); }
-.lobbyScreen .lobbyBoardCards button.selected::after { content: ''; position: absolute; right: 0; bottom: 0; left: 0; height: 4px; background: var(--accent); }
-.lobbyBoardPreview { --cell: 11px; display: grid; grid-template: repeat(7, var(--cell)) / repeat(7, var(--cell)); gap: 1px; }
-.lobbyBoardPreview i { width: var(--cell); height: var(--cell); background: transparent; }
-.lobbyBoardPreview i.playable { background: color-mix(in srgb, var(--muted) 45%, transparent); }
-.lobbyBoardCards button.selected .lobbyBoardPreview i.playable { background: color-mix(in srgb, var(--muted) 60%, transparent); }
-.lobbyBoardPreview i[data-sample] { background: var(--preview-player) !important; }
 
-.lobbyTimerSection { margin-top: 22px; }
-.lobbyTimerControls { display: flex; align-items: center; justify-content: center; gap: 26px; min-height: 205px; }
-.lobbyTimerDial { width: 220px; height: 205px; transition: opacity 150ms; }
-.lobbyTimerDial.noLimit { opacity: .3; }
-.lobbyDialFace { position: relative; width: 220px; height: 205px; touch-action: pan-y; }
-.lobbyDialFace svg { display: block; width: 100%; height: 100%; overflow: visible; }
-.lobbyDialFace path { fill: none; stroke-width: 11; stroke-linecap: round; }
-.lobbyDialFace .dialTrack { stroke: var(--border-strong); }
-.lobbyDialFace .dialFill { stroke: var(--accent); }
-.lobbyDialFace line { stroke: var(--muted); stroke-width: 1.5; }
-.lobbyDialFace line.major { stroke: var(--text-soft); stroke-width: 2; }
-.lobbyDialFace .dialKnob { fill: var(--surface); stroke: var(--accent); stroke-width: 5; transition: r 100ms; }
-.lobbyDialFace .dialKnobHitTarget { fill: transparent; pointer-events: all; touch-action: none; }
-.lobbyDialFace .dialGhost { fill: color-mix(in srgb, var(--accent) 18%, transparent); stroke: color-mix(in srgb, var(--accent) 45%, transparent); stroke-width: 2; }
-.lobbyTimerDial:not(.readOnly, .noLimit) .lobbyDialFace { cursor: grab; }
+.lobbyScreen .lobbyBoardCards button:not(:disabled):hover {
+	border-color: var(--border-strong);
+}
+
+.lobbyScreen .lobbyBoardCards button:disabled {
+	opacity: 1;
+}
+
+.lobbyScreen .lobbyBoardCards button:disabled[data-saving-settings] {
+	cursor: pointer;
+}
+
+.lobbyScreen .lobbyBoardCards button:disabled[data-saving-settings]:hover {
+	border-color: var(--border-strong);
+}
+
+.lobbyScreen .lobbyBoardCards button.selected::after {
+	content: '';
+	position: absolute;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	height: 4px;
+	background: var(--accent);
+}
+
+.lobbyBoardPreview {
+	--cell: 11px;
+	display: grid;
+	grid-template: repeat(7, var(--cell)) / repeat(7, var(--cell));
+	gap: 1px;
+}
+
+.lobbyBoardPreview i {
+	width: var(--cell);
+	height: var(--cell);
+	background: transparent;
+}
+
+.lobbyBoardPreview i.playable {
+	background: color-mix(in srgb, var(--muted) 45%, transparent);
+}
+
+.lobbyBoardCards button.selected .lobbyBoardPreview i.playable {
+	background: color-mix(in srgb, var(--muted) 60%, transparent);
+}
+
+.lobbyBoardPreview i[data-sample] {
+	background: var(--preview-player) !important;
+}
+
+.lobbyTimerSection {
+	margin-top: 22px;
+}
+
+.lobbyTimerControls {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 26px;
+	min-height: 205px;
+}
+
+.lobbyTimerDial {
+	width: 220px;
+	height: 205px;
+	transition: opacity 150ms;
+}
+
+.lobbyTimerDial.noLimit {
+	opacity: .3;
+}
+
+.lobbyDialFace {
+	position: relative;
+	width: 220px;
+	height: 205px;
+	touch-action: pan-y;
+}
+
+.lobbyDialFace svg {
+	display: block;
+	width: 100%;
+	height: 100%;
+	overflow: visible;
+}
+
+.lobbyDialFace path {
+	fill: none;
+	stroke-width: 11;
+	stroke-linecap: round;
+}
+
+.lobbyDialFace .dialTrack {
+	stroke: var(--border-strong);
+}
+
+.lobbyDialFace .dialFill {
+	stroke: var(--accent);
+}
+
+.lobbyDialFace line {
+	stroke: var(--muted);
+	stroke-width: 1.5;
+}
+
+.lobbyDialFace line.major {
+	stroke: var(--text-soft);
+	stroke-width: 2;
+}
+
+.lobbyDialFace .dialKnob {
+	fill: var(--surface);
+	stroke: var(--accent);
+	stroke-width: 5;
+	transition: r 100ms;
+}
+
+.lobbyDialFace .dialKnobHitTarget {
+	fill: transparent;
+	pointer-events: all;
+	touch-action: none;
+}
+
+.lobbyDialFace .dialGhost {
+	fill: color-mix(in srgb, var(--accent) 18%, transparent);
+	stroke: color-mix(in srgb, var(--accent) 45%, transparent);
+	stroke-width: 2;
+}
+
+.lobbyTimerDial:not(.readOnly, .noLimit) .lobbyDialFace {
+	cursor: grab;
+}
+
 .lobbyTimerDial:not(.readOnly, .noLimit) .lobbyDialFace:hover .dialKnob,
 .lobbyTimerDial:not(.readOnly, .noLimit) .lobbyDialFace:active .dialKnob,
-.lobbyDialFace:focus-visible .dialKnob { r: 13px; }
-.dialLabel { position: absolute; color: var(--muted); font: 700 12px/1 'JetBrains Mono', monospace; transform: translate(-50%, -50%); }
-.dialValue { position: absolute; top: 84px; left: 50%; display: flex; flex-direction: column; align-items: center; transform: translateX(-50%); }
-.dialValue strong { font: 700 42px/1 'Space Grotesk', sans-serif; }
-.dialValue span { margin-top: 3px; color: var(--muted); font-size: 11px; text-transform: uppercase; }
-.lobbyNoLimit { display: flex; align-items: center; gap: 11px; color: var(--text-soft); font-weight: 600; cursor: pointer; }
-.lobbyNoLimit input { position: absolute; opacity: 0; pointer-events: none; }
-.lobbyNoLimit i { position: relative; width: 44px; height: 24px; border-radius: 12px; background: var(--border-strong); transition: background 130ms; }
-.lobbyNoLimit i b { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: var(--text-soft); transition: transform 130ms, background 130ms; }
-.lobbyNoLimit input:checked + i { background: var(--accent); }
-.lobbyNoLimit input:checked + i b { background: var(--on-accent); transform: translateX(20px); }
-.lobbyNoLimit input:focus-visible + i { outline: 2px solid var(--accent); outline-offset: 2px; }
-.lobbyNoLimit:has(input:disabled) { cursor: default; opacity: .65; }
-.lobbyNoLimit:has(input:disabled[data-saving-settings]) { opacity: 1; }
+.lobbyDialFace:focus-visible .dialKnob {
+	r: 13px;
+}
 
-.lobbyFooter { display: flex; justify-content: flex-end; }
-.lobbyStartControl { position: relative; display: inline-flex; }
-.lobbyStartControl:focus-visible { outline: none; }
-.lobbyScreen .lobbyStart { min-width: 145px; height: 46px; padding: 0 20px; border: 0; border-radius: 4px; background: var(--accent); color: var(--on-accent); font-weight: 700; }
-.lobbyScreen .lobbyStart:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 88%, white); }
-.lobbyScreen .lobbyStart:disabled { opacity: .42; }
+.dialLabel {
+	position: absolute;
+	color: var(--muted);
+	font: 700 12px/1 'JetBrains Mono', monospace;
+	transform: translate(-50%, -50%);
+}
+
+.dialValue {
+	position: absolute;
+	top: 84px;
+	left: 50%;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	transform: translateX(-50%);
+}
+
+.dialValue strong {
+	font: 700 42px/1 'Space Grotesk', sans-serif;
+}
+
+.dialValue span {
+	margin-top: 3px;
+	color: var(--muted);
+	font-size: 11px;
+	text-transform: uppercase;
+}
+
+.lobbyNoLimit {
+	display: flex;
+	align-items: center;
+	gap: 11px;
+	color: var(--text-soft);
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.lobbyNoLimit input {
+	position: absolute;
+	opacity: 0;
+	pointer-events: none;
+}
+
+.lobbyNoLimit i {
+	position: relative;
+	width: 44px;
+	height: 24px;
+	border-radius: 12px;
+	background: var(--border-strong);
+	transition: background 130ms;
+}
+
+.lobbyNoLimit i b {
+	position: absolute;
+	top: 3px;
+	left: 3px;
+	width: 18px;
+	height: 18px;
+	border-radius: 50%;
+	background: var(--text-soft);
+	transition: transform 130ms, background 130ms;
+}
+
+.lobbyNoLimit input:checked + i {
+	background: var(--accent);
+}
+
+.lobbyNoLimit input:checked + i b {
+	background: var(--on-accent);
+	transform: translateX(20px);
+}
+
+.lobbyNoLimit input:focus-visible + i {
+	outline: 2px solid var(--accent);
+	outline-offset: 2px;
+}
+
+.lobbyNoLimit:has(input:disabled) {
+	cursor: default;
+	opacity: .65;
+}
+
+.lobbyNoLimit:has(input:disabled[data-saving-settings]) {
+	opacity: 1;
+}
+
+.lobbyFooter {
+	display: flex;
+	justify-content: flex-end;
+}
+
+.lobbyStartControl {
+	position: relative;
+	display: inline-flex;
+}
+
+.lobbyStartControl:focus-visible {
+	outline: none;
+}
+
+.lobbyScreen .lobbyStart {
+	min-width: 145px;
+	height: 46px;
+	padding: 0 20px;
+	border: 0;
+	border-radius: 4px;
+	background: var(--accent);
+	color: var(--on-accent);
+	font-weight: 700;
+}
+
+.lobbyScreen .lobbyStart:hover:not(:disabled) {
+	background: color-mix(in srgb, var(--accent) 88%, white);
+}
+
+.lobbyScreen .lobbyStart:disabled {
+	opacity: .42;
+}
+
 .lobbyScreen .lobbyStart:disabled[data-saving-settings],
-.lobbyScreen .lobbyStart:disabled[data-updating-players] { opacity: 1; }
+.lobbyScreen .lobbyStart:disabled[data-updating-players] {
+	opacity: 1;
+}
+
 .lobbyStartTooltip {
 	position: absolute;
 	right: 0;
@@ -227,11 +584,27 @@
 	transform: translateY(3px);
 	transition: opacity 120ms, transform 120ms;
 }
+
 .lobbyStartControl:hover .lobbyStartTooltip,
-.lobbyStartControl:focus-visible .lobbyStartTooltip { opacity: 1; transform: translateY(0); }
+.lobbyStartControl:focus-visible .lobbyStartTooltip {
+	opacity: 1;
+	transform: translateY(0);
+}
+
 .lobbyLoading,
-.lobbyError { grid-column: 1 / -1; padding: 18px; border-radius: 4px; background: var(--surface); color: var(--muted); text-align: center; }
-.lobbyError { border: 1px solid var(--leave-border); color: var(--leave-text); }
+.lobbyError {
+	grid-column: 1 / -1;
+	padding: 18px;
+	border-radius: 4px;
+	background: var(--surface);
+	color: var(--muted);
+	text-align: center;
+}
+
+.lobbyError {
+	border: 1px solid var(--leave-border);
+	color: var(--leave-text);
+}
 
 @media (max-width: 1100px), (orientation: portrait) {
 	.lobbyPage {
@@ -239,22 +612,57 @@
 		justify-items: center;
 		width: min(720px, calc(100% - 32px));
 	}
+
 	.lobbyPlayersPanel,
-	.lobbyRightColumn { width: 100%; }
+	.lobbyRightColumn {
+		width: 100%;
+	}
 }
 
 @media (max-width: 560px) {
-	.lobbyScreen { padding-bottom: 20px; }
-	.lobbyPage { width: min(100% - 20px, 720px); margin-top: 18px; }
-	.lobbyPanel { padding: 16px; }
-	.lobbyPlayerRow { padding-inline: 10px; }
-	.lobbyBoardCards { gap: 6px; }
-	.lobbyScreen .lobbyBoardCards button { height: 116px; padding-inline: 4px; font-size: 12px; }
-	.lobbyBoardPreview { --cell: 8px; }
-	.lobbyTimerControls { flex-wrap: wrap; gap: 8px 20px; }
+	.lobbyScreen {
+		padding-bottom: 20px;
+	}
+
+	.lobbyPage {
+		width: min(100% - 20px, 720px);
+		margin-top: 18px;
+	}
+
+	.lobbyPanel {
+		padding: 16px;
+	}
+
+	.lobbyPlayerRow {
+		padding-inline: 10px;
+	}
+
+	.lobbyBoardCards {
+		gap: 6px;
+	}
+
+	.lobbyScreen .lobbyBoardCards button {
+		height: 116px;
+		padding-inline: 4px;
+		font-size: 12px;
+	}
+
+	.lobbyBoardPreview {
+		--cell: 8px;
+	}
+
+	.lobbyTimerControls {
+		flex-wrap: wrap;
+		gap: 8px 20px;
+	}
 }
 
 @media (max-width: 380px) {
-	.lobbyScreen .lobbyBoardCards button { height: 106px; }
-	.lobbyBoardPreview { --cell: 7px; }
+	.lobbyScreen .lobbyBoardCards button {
+		height: 106px;
+	}
+
+	.lobbyBoardPreview {
+		--cell: 7px;
+	}
 }

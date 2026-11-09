@@ -1,224 +1,1157 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@600;700&display=swap');
 
 /* Match the lobby palette across desktop and phone gameplay. */
+
 .gamePage {
-	--page: #161922; --board: #0B0D12; --surface: #1D212B; --surface-raised: #252A36;
-	--border: #2F3545; --border-strong: #3A4154;
-	--text: #EDEFF5; --text-soft: #C9CDD9; --muted: #9AA1B5;
-	--track: var(--border); --grout: var(--surface); --cell: #3D424F;
-	--tile-outline: #EDEFF5; --stripe: rgba(13, 14, 19, 0.55);
-	--accent: #14B8A6; --leave-border: #4A3038; --leave-text: #F2A3A3;
-	--backdrop: rgba(13, 14, 19, 0.78); --error: #F2A3A3;
-	--logo-purple: #8B5CF6; --logo-orange: #F97316; --logo-teal: #14B8A6;
+	--page: #161922;
+	--board: #0B0D12;
+	--surface: #1D212B;
+	--surface-raised: #252A36;
+	--border: #2F3545;
+	--border-strong: #3A4154;
+	--text: #EDEFF5;
+	--text-soft: #C9CDD9;
+	--muted: #9AA1B5;
+	--track: var(--border);
+	--grout: var(--surface);
+	--cell: #3D424F;
+	--tile-outline: #EDEFF5;
+	--stripe: rgba(13, 14, 19, 0.55);
+	--accent: #14B8A6;
+	--leave-border: #4A3038;
+	--leave-text: #F2A3A3;
+	--backdrop: rgba(13, 14, 19, 0.78);
+	--error: #F2A3A3;
+	--logo-purple: #8B5CF6;
+	--logo-orange: #F97316;
+	--logo-teal: #14B8A6;
 	color-scheme: dark;
 }
 
 .gamePage:not(.phoneGame) {
-	--ui-scale: 1; --text-scale: 1; --side: calc(28px * var(--ui-scale));
-	color-scheme: dark; position: relative; isolation: isolate; z-index: 0;
-	height: 100vh; height: 100dvh; min-height: 100vh; min-height: 100dvh;
-	padding: 0; gap: 0; overflow: hidden; background: transparent; color: var(--text);
-	font-family: 'DM Sans', sans-serif; font-size: calc(14px * var(--text-scale));
+	--ui-scale: 1;
+	--text-scale: 1;
+	--side: calc(28px * var(--ui-scale));
+	color-scheme: dark;
+	position: relative;
+	isolation: isolate;
+	z-index: 0;
+	height: 100vh;
+	height: 100dvh;
+	min-height: 100vh;
+	min-height: 100dvh;
+	padding: 0;
+	gap: 0;
+	overflow: hidden;
+	background: transparent;
+	color: var(--text);
+	font-family: 'DM Sans', sans-serif;
+	font-size: calc(14px * var(--text-scale));
 }
-.gamePage:not(.phoneGame) *, .gamePage:not(.phoneGame) *::before, .gamePage:not(.phoneGame) *::after { box-sizing: border-box; }
+
+.gamePage:not(.phoneGame) *, .gamePage:not(.phoneGame) *::before, .gamePage:not(.phoneGame) *::after {
+	box-sizing: border-box;
+}
+
 .gamePage:not(.phoneGame) > .gameHeader,
 .gamePage:not(.phoneGame) > .gameMain,
 .gamePage:not(.phoneGame).gameLoading > .gameHeaderTitle,
-.gamePage:not(.phoneGame).gameLoading > .startPanel { position: relative; z-index: 1; }
-.gamePage:not(.phoneGame) button { font: inherit; color: var(--text); border: 1px solid var(--border-strong); border-radius: calc(4px * var(--ui-scale)); background: var(--surface-raised); box-shadow: none; }
-.gamePage:not(.phoneGame) button:not(.pieceCard):hover { border-color: color-mix(in srgb, var(--text) 25%, var(--border-strong)); }
-.gamePage:not(.phoneGame) button:focus-visible { outline: calc(2px * var(--ui-scale)) solid var(--accent); outline-offset: calc(2px * var(--ui-scale)); }
-.gamePage:not(.phoneGame) .gamePanelTitle { margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: calc(19px * var(--text-scale)); font-weight: 700; }
+.gamePage:not(.phoneGame).gameLoading > .startPanel {
+	position: relative;
+	z-index: 1;
+}
+
+.gamePage:not(.phoneGame) button {
+	font: inherit;
+	color: var(--text);
+	border: 1px solid var(--border-strong);
+	border-radius: calc(4px * var(--ui-scale));
+	background: var(--surface-raised);
+	box-shadow: none;
+}
+
+.gamePage:not(.phoneGame) button:not(.pieceCard):hover {
+	border-color: color-mix(in srgb, var(--text) 25%, var(--border-strong));
+}
+
+.gamePage:not(.phoneGame) button:focus-visible {
+	outline: calc(2px * var(--ui-scale)) solid var(--accent);
+	outline-offset: calc(2px * var(--ui-scale));
+}
+
+.gamePage:not(.phoneGame) .gamePanelTitle {
+	margin: 0;
+	font-family: 'Space Grotesk', sans-serif;
+	font-size: calc(19px * var(--text-scale));
+	font-weight: 700;
+}
 
 .gamePage:not(.phoneGame) .gameHeader {
-	display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); align-items: center;
-	gap: calc(20px * var(--ui-scale)); width: auto; min-width: 0; min-height: 0; margin: 0 var(--side); padding: calc(12px * var(--ui-scale)) calc(20px * var(--ui-scale));
-	border: 1px solid var(--border); border-top: 0; border-radius: 0 0 calc(14px * var(--ui-scale)) calc(14px * var(--ui-scale));
-	background: var(--page); box-shadow: none; backdrop-filter: none;
+	display: grid;
+	grid-template-columns: minmax(0,1fr) auto minmax(0,1fr);
+	align-items: center;
+	gap: calc(20px * var(--ui-scale));
+	width: auto;
+	min-width: 0;
+	min-height: 0;
+	margin: 0 var(--side);
+	padding: calc(12px * var(--ui-scale)) calc(20px * var(--ui-scale));
+	border: 1px solid var(--border);
+	border-top: 0;
+	border-radius: 0 0 calc(14px * var(--ui-scale)) calc(14px * var(--ui-scale));
+	background: var(--page);
+	box-shadow: none;
+	backdrop-filter: none;
 }
-.gamePage:not(.phoneGame) .gameHeaderTitle { display: flex; align-items: center; gap: calc(10px * var(--ui-scale)); margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: calc(22px * var(--text-scale)); font-weight: 700; line-height: 1.2; color: var(--text); text-shadow: none; }
-.gamePage:not(.phoneGame) .gameLogoMark { display: grid; grid-template-columns: repeat(2, calc(11px * var(--ui-scale))); grid-template-rows: repeat(2, calc(11px * var(--ui-scale))); gap: calc(1px * var(--ui-scale)); }
-.gamePage:not(.phoneGame) .gameLogoMark i { grid-column: 2; grid-row: 2; background: var(--logo-purple); border-radius: calc(1px * var(--ui-scale)); }
-.gamePage:not(.phoneGame) .gameLogoMark i:nth-child(2) { grid-column: 2; grid-row: 1; background: var(--logo-orange); }
-.gamePage:not(.phoneGame) .gameLogoMark i:nth-child(3) { grid-column: 1; grid-row: 2; background: var(--logo-teal); }
-.gamePage:not(.phoneGame) .turnBanner { grid-column: 2; position: relative; display: flex; align-items: center; gap: calc(12px * var(--ui-scale)); min-width: 0; padding: calc(10px * var(--ui-scale)) calc(14px * var(--ui-scale)) calc(10px * var(--ui-scale)) calc(18px * var(--ui-scale)); border: 1px solid var(--turn-color); border-radius: calc(4px * var(--ui-scale)); background: var(--surface); overflow: hidden; }
-.gamePage:not(.phoneGame) .turnBanner::before { content: ''; position: absolute; inset: 0 auto 0 0; width: calc(6px * var(--ui-scale)); background: var(--turn-color); }
-.gamePage:not(.phoneGame) .turnTitle { font-size: calc(15px * var(--text-scale)); font-weight: 700; white-space: nowrap; }
-.gamePage:not(.phoneGame) .turnTimerTrack { width: calc(110px * var(--ui-scale)); height: calc(4px * var(--ui-scale)); flex-shrink: 0; background: var(--border-strong); }
-.gamePage:not(.phoneGame) .turnTimerTrack > span { display: block; height: 100%; background: var(--turn-color); transition: width 250ms linear; }
-.gamePage:not(.phoneGame) .turnTimer { color: var(--turn-color); font-family: 'JetBrains Mono', monospace; font-size: calc(13px * var(--text-scale)); white-space: nowrap; }
-.gamePage:not(.phoneGame) .gameActions { grid-column: 3; justify-self: end; display: flex; align-items: center; gap: calc(10px * var(--ui-scale)); white-space: nowrap; }
-.gamePage:not(.phoneGame) .headerCode { display: flex; align-items: center; gap: calc(8px * var(--ui-scale)); color: var(--muted); font-size: calc(12px * var(--text-scale)); }
-.gamePage:not(.phoneGame) .headerCode strong { color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: calc(14px * var(--text-scale)); letter-spacing: calc(1px * var(--ui-scale)); font-weight: 500; }
-.gamePage:not(.phoneGame) .gameCopyButton { display: grid; place-items: center; width: calc(36px * var(--ui-scale)); height: calc(36px * var(--ui-scale)); padding: 0; }
-.gamePage:not(.phoneGame) .gameCopyButton svg { width: calc(16px * var(--ui-scale)); height: calc(16px * var(--ui-scale)); fill: none; stroke: currentColor; stroke-width: 1.5; }
-.gamePage:not(.phoneGame) .gameLeaveButton { height: calc(36px * var(--ui-scale)); padding: 0 calc(12px * var(--ui-scale)); border-color: var(--leave-border); color: var(--leave-text); font-weight: 600; }
 
-.gamePage:not(.phoneGame) .gameMain { flex: 1 1 0; display: grid; grid-template-columns: calc(390px * var(--ui-scale)) minmax(0, 1fr) calc(400px * var(--ui-scale)); grid-template-rows: minmax(0, 1fr); grid-template-areas: 'players board pieces'; align-items: start; gap: calc(24px * var(--ui-scale)); width: 100%; min-height: 0; padding: calc(24px * var(--ui-scale)) var(--side); }
-.gamePage:not(.phoneGame) .playerRankPanel, .gamePage:not(.phoneGame) .piecesRight { width: 100%; min-width: 0; max-height: 100%; padding: calc(20px * var(--ui-scale)); border: 1px solid var(--border); border-radius: calc(6px * var(--ui-scale)); background: var(--surface); overflow: auto; }
-.gamePage:not(.phoneGame) .playerRankPanel { grid-area: players; }
-.gamePage:not(.phoneGame) .piecesRight { grid-area: pieces; }
-.gamePage:not(.phoneGame) .playerPanelHeader, .gamePage:not(.phoneGame) .piecePanelHeader { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: calc(14px * var(--ui-scale)); }
+.gamePage:not(.phoneGame) .gameHeaderTitle {
+	display: flex;
+	align-items: center;
+	gap: calc(10px * var(--ui-scale));
+	margin: 0;
+	font-family: 'Space Grotesk', sans-serif;
+	font-size: calc(22px * var(--text-scale));
+	font-weight: 700;
+	line-height: 1.2;
+	color: var(--text);
+	text-shadow: none;
+}
 
-.gamePage:not(.phoneGame) .playerPanelGrid { display: flex; flex-direction: column; gap: calc(8px * var(--ui-scale)); }
-.gamePage:not(.phoneGame) .playerStatusCard { position: relative; display: grid; grid-template-columns: calc(30px * var(--ui-scale)) minmax(0,1fr) auto; align-items: center; gap: calc(8px * var(--ui-scale)) calc(14px * var(--ui-scale)); padding: calc(16px * var(--ui-scale)) calc(18px * var(--ui-scale)) calc(16px * var(--ui-scale)) calc(21px * var(--ui-scale)); border: 1px solid var(--border); border-radius: calc(4px * var(--ui-scale)); background: var(--surface-raised); overflow: hidden; }
-.gamePage:not(.phoneGame) .playerStatusCard::before { content: ''; position: absolute; inset: 0 auto 0 0; width: calc(3px * var(--ui-scale)); background: var(--player-color); }
-.gamePage:not(.phoneGame) .playerStatusActive { border-color: var(--player-color); }
-.gamePage:not(.phoneGame) .playerStatusColor { display: grid; place-items: center; width: calc(30px * var(--ui-scale)); height: calc(30px * var(--ui-scale)); border-radius: calc(2px * var(--ui-scale)); background: var(--player-color); }
-.gamePage:not(.phoneGame) .playerStatusColor svg { width: calc(20px * var(--ui-scale)); height: calc(20px * var(--ui-scale)); fill: none; stroke: color-mix(in srgb, var(--player-color) 35%, #000); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.gamePage:not(.phoneGame) .playerStatusName { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: calc(17px * var(--text-scale)); font-weight: 600; }
-.gamePage:not(.phoneGame) .playerStatusName small { color: var(--muted); font-size: inherit; font-weight: 500; }
-.gamePage:not(.phoneGame) .playerStatusBlocks { font-family: 'Space Grotesk', sans-serif; font-size: calc(24px * var(--text-scale)); font-weight: 700; }
-.gamePage:not(.phoneGame) .playerStatusBlocks small { margin-left: calc(3px * var(--ui-scale)); color: var(--muted); font-family: 'DM Sans', sans-serif; font-size: calc(13px * var(--text-scale)); font-weight: 500; }
-.gamePage:not(.phoneGame) .playerPiecesProgress { grid-column: 2 / -1; height: calc(3px * var(--ui-scale)); margin-top: calc(4px * var(--ui-scale)); background: var(--border-strong); }
-.gamePage:not(.phoneGame) .playerPiecesProgress span { display: block; height: 100%; background: var(--player-color); }
-.gamePage:not(.phoneGame) .playerStatusBody { grid-column: 2 / -1; display: flex; align-items: center; justify-content: space-between; }
-.gamePage:not(.phoneGame) .playerPiecesLeft { color: var(--muted); font-family: 'JetBrains Mono', monospace; font-size: calc(13px * var(--text-scale)); }
-.gamePage:not(.phoneGame) .viewPiecesButton { height: calc(28px * var(--ui-scale)); padding: 0 calc(10px * var(--ui-scale)); color: var(--text-soft); font-size: calc(13px * var(--text-scale)); }
-.gamePage:not(.phoneGame) .playerRemainingPieces { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: calc(6px * var(--ui-scale)); padding-top: calc(8px * var(--ui-scale)); }
-.gamePage:not(.phoneGame) .playerRemainingPieces .pieceCard { height: calc(42px * var(--ui-scale)); aspect-ratio: auto; }
+.gamePage:not(.phoneGame) .gameLogoMark {
+	display: grid;
+	grid-template-columns: repeat(2, calc(11px * var(--ui-scale)));
+	grid-template-rows: repeat(2, calc(11px * var(--ui-scale)));
+	gap: calc(1px * var(--ui-scale));
+}
+
+.gamePage:not(.phoneGame) .gameLogoMark i {
+	grid-column: 2;
+	grid-row: 2;
+	background: var(--logo-purple);
+	border-radius: calc(1px * var(--ui-scale));
+}
+
+.gamePage:not(.phoneGame) .gameLogoMark i:nth-child(2) {
+	grid-column: 2;
+	grid-row: 1;
+	background: var(--logo-orange);
+}
+
+.gamePage:not(.phoneGame) .gameLogoMark i:nth-child(3) {
+	grid-column: 1;
+	grid-row: 2;
+	background: var(--logo-teal);
+}
+
+.gamePage:not(.phoneGame) .turnBanner {
+	grid-column: 2;
+	position: relative;
+	display: flex;
+	align-items: center;
+	gap: calc(12px * var(--ui-scale));
+	min-width: 0;
+	padding: calc(10px * var(--ui-scale)) calc(14px * var(--ui-scale)) calc(10px * var(--ui-scale)) calc(18px * var(--ui-scale));
+	border: 1px solid var(--turn-color);
+	border-radius: calc(4px * var(--ui-scale));
+	background: var(--surface);
+	overflow: hidden;
+}
+
+.gamePage:not(.phoneGame) .turnBanner::before {
+	content: '';
+	position: absolute;
+	inset: 0 auto 0 0;
+	width: calc(6px * var(--ui-scale));
+	background: var(--turn-color);
+}
+
+.gamePage:not(.phoneGame) .turnTitle {
+	font-size: calc(15px * var(--text-scale));
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.gamePage:not(.phoneGame) .turnTimerTrack {
+	width: calc(110px * var(--ui-scale));
+	height: calc(4px * var(--ui-scale));
+	flex-shrink: 0;
+	background: var(--border-strong);
+}
+
+.gamePage:not(.phoneGame) .turnTimerTrack > span {
+	display: block;
+	height: 100%;
+	background: var(--turn-color);
+	transition: width 250ms linear;
+}
+
+.gamePage:not(.phoneGame) .turnTimer {
+	color: var(--turn-color);
+	font-family: 'JetBrains Mono', monospace;
+	font-size: calc(13px * var(--text-scale));
+	white-space: nowrap;
+}
+
+.gamePage:not(.phoneGame) .gameActions {
+	grid-column: 3;
+	justify-self: end;
+	display: flex;
+	align-items: center;
+	gap: calc(10px * var(--ui-scale));
+	white-space: nowrap;
+}
+
+.gamePage:not(.phoneGame) .headerCode {
+	display: flex;
+	align-items: center;
+	gap: calc(8px * var(--ui-scale));
+	color: var(--muted);
+	font-size: calc(12px * var(--text-scale));
+}
+
+.gamePage:not(.phoneGame) .headerCode strong {
+	color: var(--text);
+	font-family: 'JetBrains Mono', monospace;
+	font-size: calc(14px * var(--text-scale));
+	letter-spacing: calc(1px * var(--ui-scale));
+	font-weight: 500;
+}
+
+.gamePage:not(.phoneGame) .gameCopyButton {
+	display: grid;
+	place-items: center;
+	width: calc(36px * var(--ui-scale));
+	height: calc(36px * var(--ui-scale));
+	padding: 0;
+}
+
+.gamePage:not(.phoneGame) .gameCopyButton svg {
+	width: calc(16px * var(--ui-scale));
+	height: calc(16px * var(--ui-scale));
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 1.5;
+}
+
+.gamePage:not(.phoneGame) .gameLeaveButton {
+	height: calc(36px * var(--ui-scale));
+	padding: 0 calc(12px * var(--ui-scale));
+	border-color: var(--leave-border);
+	color: var(--leave-text);
+	font-weight: 600;
+}
+
+.gamePage:not(.phoneGame) .gameMain {
+	flex: 1 1 0;
+	display: grid;
+	grid-template-columns: calc(390px * var(--ui-scale)) minmax(0, 1fr) calc(400px * var(--ui-scale));
+	grid-template-rows: minmax(0, 1fr);
+	grid-template-areas: 'players board pieces';
+	align-items: start;
+	gap: calc(24px * var(--ui-scale));
+	width: 100%;
+	min-height: 0;
+	padding: calc(24px * var(--ui-scale)) var(--side);
+}
+
+.gamePage:not(.phoneGame) .playerRankPanel, .gamePage:not(.phoneGame) .piecesRight {
+	width: 100%;
+	min-width: 0;
+	max-height: 100%;
+	padding: calc(20px * var(--ui-scale));
+	border: 1px solid var(--border);
+	border-radius: calc(6px * var(--ui-scale));
+	background: var(--surface);
+	overflow: auto;
+}
+
+.gamePage:not(.phoneGame) .playerRankPanel {
+	grid-area: players;
+}
+
+.gamePage:not(.phoneGame) .piecesRight {
+	grid-area: pieces;
+}
+
+.gamePage:not(.phoneGame) .playerPanelHeader, .gamePage:not(.phoneGame) .piecePanelHeader {
+	display: flex;
+	justify-content: space-between;
+	align-items: baseline;
+	margin-bottom: calc(14px * var(--ui-scale));
+}
+
+.gamePage:not(.phoneGame) .playerPanelGrid {
+	display: flex;
+	flex-direction: column;
+	gap: calc(8px * var(--ui-scale));
+}
+
+.gamePage:not(.phoneGame) .playerStatusCard {
+	position: relative;
+	display: grid;
+	grid-template-columns: calc(30px * var(--ui-scale)) minmax(0,1fr) auto;
+	align-items: center;
+	gap: calc(8px * var(--ui-scale)) calc(14px * var(--ui-scale));
+	padding: calc(16px * var(--ui-scale)) calc(18px * var(--ui-scale)) calc(16px * var(--ui-scale)) calc(21px * var(--ui-scale));
+	border: 1px solid var(--border);
+	border-radius: calc(4px * var(--ui-scale));
+	background: var(--surface-raised);
+	overflow: hidden;
+}
+
+.gamePage:not(.phoneGame) .playerStatusCard::before {
+	content: '';
+	position: absolute;
+	inset: 0 auto 0 0;
+	width: calc(3px * var(--ui-scale));
+	background: var(--player-color);
+}
+
+.gamePage:not(.phoneGame) .playerStatusActive {
+	border-color: var(--player-color);
+}
+
+.gamePage:not(.phoneGame) .playerStatusColor {
+	display: grid;
+	place-items: center;
+	width: calc(30px * var(--ui-scale));
+	height: calc(30px * var(--ui-scale));
+	border-radius: calc(2px * var(--ui-scale));
+	background: var(--player-color);
+}
+
+.gamePage:not(.phoneGame) .playerStatusColor svg {
+	width: calc(20px * var(--ui-scale));
+	height: calc(20px * var(--ui-scale));
+	fill: none;
+	stroke: color-mix(in srgb, var(--player-color) 35%, #000);
+	stroke-width: 2;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
+.gamePage:not(.phoneGame) .playerStatusName {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-size: calc(17px * var(--text-scale));
+	font-weight: 600;
+}
+
+.gamePage:not(.phoneGame) .playerStatusName small {
+	color: var(--muted);
+	font-size: inherit;
+	font-weight: 500;
+}
+
+.gamePage:not(.phoneGame) .playerStatusBlocks {
+	font-family: 'Space Grotesk', sans-serif;
+	font-size: calc(24px * var(--text-scale));
+	font-weight: 700;
+}
+
+.gamePage:not(.phoneGame) .playerStatusBlocks small {
+	margin-left: calc(3px * var(--ui-scale));
+	color: var(--muted);
+	font-family: 'DM Sans', sans-serif;
+	font-size: calc(13px * var(--text-scale));
+	font-weight: 500;
+}
+
+.gamePage:not(.phoneGame) .playerPiecesProgress {
+	grid-column: 2 / -1;
+	height: calc(3px * var(--ui-scale));
+	margin-top: calc(4px * var(--ui-scale));
+	background: var(--border-strong);
+}
+
+.gamePage:not(.phoneGame) .playerPiecesProgress span {
+	display: block;
+	height: 100%;
+	background: var(--player-color);
+}
+
+.gamePage:not(.phoneGame) .playerStatusBody {
+	grid-column: 2 / -1;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.gamePage:not(.phoneGame) .playerPiecesLeft {
+	color: var(--muted);
+	font-family: 'JetBrains Mono', monospace;
+	font-size: calc(13px * var(--text-scale));
+}
+
+.gamePage:not(.phoneGame) .viewPiecesButton {
+	height: calc(28px * var(--ui-scale));
+	padding: 0 calc(10px * var(--ui-scale));
+	color: var(--text-soft);
+	font-size: calc(13px * var(--text-scale));
+}
+
+.gamePage:not(.phoneGame) .playerRemainingPieces {
+	grid-column: 1 / -1;
+	display: grid;
+	grid-template-columns: repeat(4,minmax(0,1fr));
+	gap: calc(6px * var(--ui-scale));
+	padding-top: calc(8px * var(--ui-scale));
+}
+
+.gamePage:not(.phoneGame) .playerRemainingPieces .pieceCard {
+	height: calc(42px * var(--ui-scale));
+	aspect-ratio: auto;
+}
+
 .gamePage:not(.phoneGame) .playerPiecePips,
 .gamePage:not(.phoneGame) .playerStatusChevron,
 .gamePage:not(.phoneGame) .playerPiecesPopover,
-.gamePage:not(.phoneGame) .portraitPieceHint { display: none; }
-
-.gamePage:not(.phoneGame) .boardStage { grid-area: board; container-type: size; width: 100%; height: 100%; min-width: 0; min-height: 0; }
-.gamePage:not(.phoneGame) .boardPanel { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: calc(14px * var(--ui-scale)); width: 100%; height: 100%; min-width: 0; min-height: 0; padding: 0; border: 0; background: transparent; }
-.gamePage:not(.phoneGame) .boardWrap { position: relative; flex: 0 0 auto; }
-.gamePage:not(.phoneGame) .boardTray { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
-.gamePage:not(.phoneGame) .boardTrayEdge { fill: var(--border); stroke: var(--border); stroke-linejoin: round; }
-.gamePage:not(.phoneGame) .boardTrayFill { fill: var(--surface); stroke: var(--surface); stroke-linejoin: round; }
-.gamePage:not(.phoneGame) .board { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(var(--board-columns), var(--board-cell-size)); grid-template-rows: repeat(var(--board-rows), var(--board-cell-size)); gap: var(--board-gap); width: fit-content; padding: var(--board-pad); border: 0; background: transparent; }
-.gamePage:not(.phoneGame) .tile { width: var(--board-cell-size); height: var(--board-cell-size); border: 0; border-radius: calc(2px * var(--ui-scale)); transition: opacity 80ms ease; }
-.gamePage:not(.phoneGame) .tileNonPlayable { background: color-mix(in srgb, var(--cell) 10%, var(--surface)) !important; }
-.gamePage:not(.phoneGame) .tile[data-last-move] { animation: gamePieceDrop 420ms cubic-bezier(.2,.9,.3,1.2) both; }
-@keyframes gamePieceDrop { from { transform: scale(1.35); opacity: 0; } to { transform: none; opacity: 1; } }
-.gamePage:not(.phoneGame) .boardLegend { display: flex; flex-wrap: wrap; justify-content: center; gap: calc(8px * var(--ui-scale)) calc(18px * var(--ui-scale)); width: fit-content; padding: calc(10px * var(--ui-scale)) calc(18px * var(--ui-scale)); border: 1px solid var(--border); border-radius: calc(6px * var(--ui-scale)); background: var(--surface); color: var(--text-soft); font-size: calc(13px * var(--text-scale)); }
-.gamePage:not(.phoneGame) .boardLegend > span { display: flex; align-items: center; gap: calc(7px * var(--ui-scale)); }
-.gamePage:not(.phoneGame) .boardLegend i { width: calc(14px * var(--ui-scale)); height: calc(14px * var(--ui-scale)); border-radius: calc(2px * var(--ui-scale)); }
-.gamePage:not(.phoneGame) .startingSquareLegend { background: color-mix(in srgb, var(--start-color) 28%, var(--cell)); box-shadow: inset 0 0 0 calc(2px * var(--ui-scale)) var(--start-color); }
-.gamePage:not(.phoneGame) .lastMoveLegend { background: var(--last-color); box-shadow: inset 0 0 0 calc(2px * var(--ui-scale)) color-mix(in srgb, var(--last-color) 45%, #fff); }
-
-.gamePage:not(.phoneGame) .piecePanelHeader { margin-bottom: calc(14px * var(--ui-scale)); }
-.gamePage:not(.phoneGame) .pieceCount { color: var(--muted); font-family: 'JetBrains Mono', monospace; font-size: calc(13px * var(--text-scale)); }
-.gamePage:not(.phoneGame) .pieceCardGrid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: calc(6px * var(--ui-scale)); }
-.gamePage:not(.phoneGame) .pieceCard { display: grid; place-items: center; width: 100%; aspect-ratio: 1; padding: 0; border: 1px solid var(--border); border-radius: calc(3px * var(--ui-scale)); background: var(--surface-raised); box-shadow: none; transition: border-color 100ms, background 100ms; }
-.gamePage:not(.phoneGame) .pieceCard:hover { transform: none; box-shadow: none; }
-.gamePage:not(.phoneGame) .pieceCard:disabled { opacity: 1; }
-.gamePage:not(.phoneGame) .pieceCard.selected { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--surface-raised)); }
-.gamePage:not(.phoneGame) .pieceCard.placed { opacity: .2; }
-.gamePage:not(.phoneGame) .pieceShape { position: relative; display: block; flex-shrink: 0; pointer-events: none; }
-.gamePage:not(.phoneGame) .pieceFinishTile { position: absolute; display: block; border-radius: calc(1px * var(--ui-scale)); }
-.gamePage:not(.phoneGame) .pieceAbilityCard { display: flex; gap: calc(14px * var(--ui-scale)); margin-top: calc(16px * var(--ui-scale)); padding: calc(14px * var(--ui-scale)); border: 1px solid var(--border); border-radius: calc(4px * var(--ui-scale)); background: var(--surface); }
-.gamePage:not(.phoneGame) .firstMoveCard { border-color: var(--me); }
-.gamePage:not(.phoneGame) .firstMoveSwatch { flex: 0 0 calc(26px * var(--ui-scale)); width: calc(26px * var(--ui-scale)); height: calc(26px * var(--ui-scale)); margin-top: calc(2px * var(--ui-scale)); border-radius: calc(3px * var(--ui-scale)); background: color-mix(in srgb, var(--start-color) 28%, var(--cell)); box-shadow: inset 0 0 0 calc(2px * var(--ui-scale)) var(--start-color); }
-.gamePage:not(.phoneGame) .firstMoveSwatch i { display: none; }
-.gamePage:not(.phoneGame) .abilitySwatch { display: grid; grid-template-columns: repeat(2,calc(18px * var(--ui-scale))); grid-template-rows: repeat(2,calc(18px * var(--ui-scale))); gap: calc(1px * var(--ui-scale)); flex-shrink: 0; }
-.gamePage:not(.phoneGame) .abilityTitle { font-size: calc(15px * var(--text-scale)); font-weight: 700; }
-.gamePage:not(.phoneGame) .abilityLabel { margin-top: calc(3px * var(--ui-scale)); color: var(--muted); font-size: calc(10px * var(--text-scale)); text-transform: uppercase; }
-.gamePage:not(.phoneGame) .pieceAbilityCard p { margin: calc(4px * var(--ui-scale)) 0 0; color: var(--text-soft); font-size: calc(13px * var(--text-scale)); line-height: 1.5; }
-.gamePage:not(.phoneGame) .pieceControls { margin-top: calc(20px * var(--ui-scale)); }
-.gamePage:not(.phoneGame) .pieceControls h3 { margin: 0 0 calc(6px * var(--ui-scale)); color: var(--muted); font-size: calc(11px * var(--text-scale)); letter-spacing: calc(1.2px * var(--ui-scale)); text-transform: uppercase; }
-.gamePage:not(.phoneGame) .pieceControlRow { display: flex; align-items: center; justify-content: space-between; padding: calc(9px * var(--ui-scale)) 0; font-size: calc(13px * var(--text-scale)); }
-.gamePage:not(.phoneGame) .pieceControlRow > span { display: flex; align-items: center; gap: calc(8px * var(--ui-scale)); }
-.gamePage:not(.phoneGame) .pieceControlRow svg { width: calc(18px * var(--ui-scale)); height: calc(18px * var(--ui-scale)); fill: none; stroke: var(--muted); stroke-width: 1.5; }
-.gamePage:not(.phoneGame) .controlKeys { color: var(--muted); }
-.gamePage:not(.phoneGame) kbd { padding: calc(3px * var(--ui-scale)) calc(6px * var(--ui-scale)); border: 1px solid var(--border-strong); border-bottom-width: calc(2px * var(--ui-scale)); border-radius: calc(3px * var(--ui-scale)); background: var(--surface-raised); color: var(--text-soft); font-family: 'JetBrains Mono', monospace; font-size: calc(12px * var(--text-scale)); white-space: nowrap; }
-
-.gamePage.gameLoading { align-items: center; justify-content: center; gap: calc(24px * var(--ui-scale)); padding: calc(24px * var(--ui-scale)) calc(16px * var(--ui-scale)); }
-.gamePage:not(.phoneGame) .startPanel, .gamePage:not(.phoneGame) .winnerModal, .gamePage:not(.phoneGame) .readyDial { border: 1px solid var(--border); border-radius: calc(6px * var(--ui-scale)); background: var(--surface); box-shadow: none; color: var(--text); }
-.gamePage:not(.phoneGame) .startPanel h2, .gamePage:not(.phoneGame) .winnerTitle { font-family: 'Space Grotesk', sans-serif; }
-.gamePage:not(.phoneGame) .statusMessageError { color: var(--error); }
-.gamePage:not(.phoneGame) > .modalBackdrop { position: fixed; inset: 0; z-index: 20; background: var(--backdrop); backdrop-filter: none; }
-.gamePage.desktopGameModalHost {
-	position: fixed; inset: 0; z-index: 100; display: block;
-	width: auto; height: auto; min-height: 0; padding: 0; overflow: visible;
-	background: transparent; pointer-events: none;
+.gamePage:not(.phoneGame) .portraitPieceHint {
+	display: none;
 }
-.gamePage.desktopGameModalHost > .modalBackdrop { position: absolute; inset: 0; z-index: 1; pointer-events: auto; }
-.gamePage:not(.phoneGame) .modalCloseButton, .gamePage:not(.phoneGame) .leaderboardRow, .gamePage:not(.phoneGame) .tieLabel { background: var(--surface-raised); }
-.gamePage:not(.phoneGame) .leaderboardRow { border: 1px solid var(--border); }
 
+.gamePage:not(.phoneGame) .boardStage {
+	grid-area: board;
+	container-type: size;
+	width: 100%;
+	height: 100%;
+	min-width: 0;
+	min-height: 0;
+}
+
+.gamePage:not(.phoneGame) .boardPanel {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: calc(14px * var(--ui-scale));
+	width: 100%;
+	height: 100%;
+	min-width: 0;
+	min-height: 0;
+	padding: 0;
+	border: 0;
+	background: transparent;
+}
+
+.gamePage:not(.phoneGame) .boardWrap {
+	position: relative;
+	flex: 0 0 auto;
+}
+
+.gamePage:not(.phoneGame) .boardTray {
+	position: absolute;
+	inset: 0;
+	z-index: 0;
+	width: 100%;
+	height: 100%;
+	overflow: visible;
+	pointer-events: none;
+}
+
+.gamePage:not(.phoneGame) .boardTrayEdge {
+	fill: var(--border);
+	stroke: var(--border);
+	stroke-linejoin: round;
+}
+
+.gamePage:not(.phoneGame) .boardTrayFill {
+	fill: var(--surface);
+	stroke: var(--surface);
+	stroke-linejoin: round;
+}
+
+.gamePage:not(.phoneGame) .board {
+	position: relative;
+	z-index: 1;
+	display: grid;
+	grid-template-columns: repeat(var(--board-columns), var(--board-cell-size));
+	grid-template-rows: repeat(var(--board-rows), var(--board-cell-size));
+	gap: var(--board-gap);
+	width: fit-content;
+	padding: var(--board-pad);
+	border: 0;
+	background: transparent;
+}
+
+.gamePage:not(.phoneGame) .tile {
+	width: var(--board-cell-size);
+	height: var(--board-cell-size);
+	border: 0;
+	border-radius: calc(2px * var(--ui-scale));
+	transition: opacity 80ms ease;
+}
+
+.gamePage:not(.phoneGame) .tileNonPlayable {
+	background: color-mix(in srgb, var(--cell) 10%, var(--surface)) !important;
+}
+
+.gamePage:not(.phoneGame) .tile[data-last-move] {
+	animation: gamePieceDrop 420ms cubic-bezier(.2,.9,.3,1.2) both;
+}
+
+@keyframes gamePieceDrop {
+	from {
+		transform: scale(1.35);
+		opacity: 0;
+	}
+
+	to {
+		transform: none;
+		opacity: 1;
+	}
+}
+
+.gamePage:not(.phoneGame) .boardLegend {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: calc(8px * var(--ui-scale)) calc(18px * var(--ui-scale));
+	width: fit-content;
+	padding: calc(10px * var(--ui-scale)) calc(18px * var(--ui-scale));
+	border: 1px solid var(--border);
+	border-radius: calc(6px * var(--ui-scale));
+	background: var(--surface);
+	color: var(--text-soft);
+	font-size: calc(13px * var(--text-scale));
+}
+
+.gamePage:not(.phoneGame) .boardLegend > span {
+	display: flex;
+	align-items: center;
+	gap: calc(7px * var(--ui-scale));
+}
+
+.gamePage:not(.phoneGame) .boardLegend i {
+	width: calc(14px * var(--ui-scale));
+	height: calc(14px * var(--ui-scale));
+	border-radius: calc(2px * var(--ui-scale));
+}
+
+.gamePage:not(.phoneGame) .startingSquareLegend {
+	background: color-mix(in srgb, var(--start-color) 28%, var(--cell));
+	box-shadow: inset 0 0 0 calc(2px * var(--ui-scale)) var(--start-color);
+}
+
+.gamePage:not(.phoneGame) .lastMoveLegend {
+	background: var(--last-color);
+	box-shadow: inset 0 0 0 calc(2px * var(--ui-scale)) color-mix(in srgb, var(--last-color) 45%, #fff);
+}
+
+.gamePage:not(.phoneGame) .piecePanelHeader {
+	margin-bottom: calc(14px * var(--ui-scale));
+}
+
+.gamePage:not(.phoneGame) .pieceCount {
+	color: var(--muted);
+	font-family: 'JetBrains Mono', monospace;
+	font-size: calc(13px * var(--text-scale));
+}
+
+.gamePage:not(.phoneGame) .pieceCardGrid {
+	display: grid;
+	grid-template-columns: repeat(4,minmax(0,1fr));
+	gap: calc(6px * var(--ui-scale));
+}
+
+.gamePage:not(.phoneGame) .pieceCard {
+	display: grid;
+	place-items: center;
+	width: 100%;
+	aspect-ratio: 1;
+	padding: 0;
+	border: 1px solid var(--border);
+	border-radius: calc(3px * var(--ui-scale));
+	background: var(--surface-raised);
+	box-shadow: none;
+	transition: border-color 100ms, background 100ms;
+}
+
+.gamePage:not(.phoneGame) .pieceCard:hover {
+	transform: none;
+	box-shadow: none;
+}
+
+.gamePage:not(.phoneGame) .pieceCard:disabled {
+	opacity: 1;
+}
+
+.gamePage:not(.phoneGame) .pieceCard.selected {
+	border-color: var(--accent);
+	background: color-mix(in srgb, var(--accent) 12%, var(--surface-raised));
+}
+
+.gamePage:not(.phoneGame) .pieceCard.placed {
+	opacity: .2;
+}
+
+.gamePage:not(.phoneGame) .pieceShape {
+	position: relative;
+	display: block;
+	flex-shrink: 0;
+	pointer-events: none;
+}
+
+.gamePage:not(.phoneGame) .pieceFinishTile {
+	position: absolute;
+	display: block;
+	border-radius: calc(1px * var(--ui-scale));
+}
+
+.gamePage:not(.phoneGame) .pieceAbilityCard {
+	display: flex;
+	gap: calc(14px * var(--ui-scale));
+	margin-top: calc(16px * var(--ui-scale));
+	padding: calc(14px * var(--ui-scale));
+	border: 1px solid var(--border);
+	border-radius: calc(4px * var(--ui-scale));
+	background: var(--surface);
+}
+
+.gamePage:not(.phoneGame) .firstMoveCard {
+	border-color: var(--me);
+}
+
+.gamePage:not(.phoneGame) .firstMoveSwatch {
+	flex: 0 0 calc(26px * var(--ui-scale));
+	width: calc(26px * var(--ui-scale));
+	height: calc(26px * var(--ui-scale));
+	margin-top: calc(2px * var(--ui-scale));
+	border-radius: calc(3px * var(--ui-scale));
+	background: color-mix(in srgb, var(--start-color) 28%, var(--cell));
+	box-shadow: inset 0 0 0 calc(2px * var(--ui-scale)) var(--start-color);
+}
+
+.gamePage:not(.phoneGame) .firstMoveSwatch i {
+	display: none;
+}
+
+.gamePage:not(.phoneGame) .abilitySwatch {
+	display: grid;
+	grid-template-columns: repeat(2,calc(18px * var(--ui-scale)));
+	grid-template-rows: repeat(2,calc(18px * var(--ui-scale)));
+	gap: calc(1px * var(--ui-scale));
+	flex-shrink: 0;
+}
+
+.gamePage:not(.phoneGame) .abilityTitle {
+	font-size: calc(15px * var(--text-scale));
+	font-weight: 700;
+}
+
+.gamePage:not(.phoneGame) .abilityLabel {
+	margin-top: calc(3px * var(--ui-scale));
+	color: var(--muted);
+	font-size: calc(10px * var(--text-scale));
+	text-transform: uppercase;
+}
+
+.gamePage:not(.phoneGame) .pieceAbilityCard p {
+	margin: calc(4px * var(--ui-scale)) 0 0;
+	color: var(--text-soft);
+	font-size: calc(13px * var(--text-scale));
+	line-height: 1.5;
+}
+
+.gamePage:not(.phoneGame) .pieceControls {
+	margin-top: calc(20px * var(--ui-scale));
+}
+
+.gamePage:not(.phoneGame) .pieceControls h3 {
+	margin: 0 0 calc(6px * var(--ui-scale));
+	color: var(--muted);
+	font-size: calc(11px * var(--text-scale));
+	letter-spacing: calc(1.2px * var(--ui-scale));
+	text-transform: uppercase;
+}
+
+.gamePage:not(.phoneGame) .pieceControlRow {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: calc(9px * var(--ui-scale)) 0;
+	font-size: calc(13px * var(--text-scale));
+}
+
+.gamePage:not(.phoneGame) .pieceControlRow > span {
+	display: flex;
+	align-items: center;
+	gap: calc(8px * var(--ui-scale));
+}
+
+.gamePage:not(.phoneGame) .pieceControlRow svg {
+	width: calc(18px * var(--ui-scale));
+	height: calc(18px * var(--ui-scale));
+	fill: none;
+	stroke: var(--muted);
+	stroke-width: 1.5;
+}
+
+.gamePage:not(.phoneGame) .controlKeys {
+	color: var(--muted);
+}
+
+.gamePage:not(.phoneGame) kbd {
+	padding: calc(3px * var(--ui-scale)) calc(6px * var(--ui-scale));
+	border: 1px solid var(--border-strong);
+	border-bottom-width: calc(2px * var(--ui-scale));
+	border-radius: calc(3px * var(--ui-scale));
+	background: var(--surface-raised);
+	color: var(--text-soft);
+	font-family: 'JetBrains Mono', monospace;
+	font-size: calc(12px * var(--text-scale));
+	white-space: nowrap;
+}
+
+.gamePage.gameLoading {
+	align-items: center;
+	justify-content: center;
+	gap: calc(24px * var(--ui-scale));
+	padding: calc(24px * var(--ui-scale)) calc(16px * var(--ui-scale));
+}
+
+.gamePage:not(.phoneGame) .startPanel, .gamePage:not(.phoneGame) .winnerModal, .gamePage:not(.phoneGame) .readyDial {
+	border: 1px solid var(--border);
+	border-radius: calc(6px * var(--ui-scale));
+	background: var(--surface);
+	box-shadow: none;
+	color: var(--text);
+}
+
+.gamePage:not(.phoneGame) .startPanel h2, .gamePage:not(.phoneGame) .winnerTitle {
+	font-family: 'Space Grotesk', sans-serif;
+}
+
+.gamePage:not(.phoneGame) .statusMessageError {
+	color: var(--error);
+}
+
+.gamePage:not(.phoneGame) > .modalBackdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 20;
+	background: var(--backdrop);
+	backdrop-filter: none;
+}
+
+.gamePage.desktopGameModalHost {
+	position: fixed;
+	inset: 0;
+	z-index: 100;
+	display: block;
+	width: auto;
+	height: auto;
+	min-height: 0;
+	padding: 0;
+	overflow: visible;
+	background: transparent;
+	pointer-events: none;
+}
+
+.gamePage.desktopGameModalHost > .modalBackdrop {
+	position: absolute;
+	inset: 0;
+	z-index: 1;
+	pointer-events: auto;
+}
+
+.gamePage:not(.phoneGame) .modalCloseButton, .gamePage:not(.phoneGame) .leaderboardRow, .gamePage:not(.phoneGame) .tieLabel {
+	background: var(--surface-raised);
+}
+
+.gamePage:not(.phoneGame) .leaderboardRow {
+	border: 1px solid var(--border);
+}
 
 @media (orientation: portrait) and (min-width: 700px) {
-	.gamePage:not(.phoneGame) { --side: 24px; --ui-scale: 1; --text-scale: 1; }
-	.gamePage:not(.phoneGame) .gameMain { grid-template-columns: minmax(0,1fr); grid-template-rows: auto minmax(0,1fr) auto; grid-template-areas: 'players' 'board' 'pieces'; align-content: stretch; align-items: start; gap: 0; padding: 24px; }
+	.gamePage:not(.phoneGame) {
+		--side: 24px;
+		--ui-scale: 1;
+		--text-scale: 1;
+	}
+
+	.gamePage:not(.phoneGame) .gameMain {
+		grid-template-columns: minmax(0,1fr);
+		grid-template-rows: auto minmax(0,1fr) auto;
+		grid-template-areas: 'players' 'board' 'pieces';
+		align-content: stretch;
+		align-items: start;
+		gap: 0;
+		padding: 24px;
+	}
+
 	.gamePage:not(.phoneGame) .playerRankPanel,
-	.gamePage:not(.phoneGame) .piecesRight { padding: 20px; margin: 0; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); box-shadow: none; backdrop-filter: none; }
-	.gamePage:not(.phoneGame) .playerRankPanel { position: relative; z-index: 5; gap: 0; overflow: visible; }
+	.gamePage:not(.phoneGame) .piecesRight {
+		padding: 20px;
+		margin: 0;
+		border: 1px solid var(--border);
+		border-radius: 6px;
+		background: var(--surface);
+		box-shadow: none;
+		backdrop-filter: none;
+	}
+
+	.gamePage:not(.phoneGame) .playerRankPanel {
+		position: relative;
+		z-index: 5;
+		gap: 0;
+		overflow: visible;
+	}
+
 	.gamePage:not(.phoneGame) .playerPanelHeader,
-	.gamePage:not(.phoneGame) .piecePanelHeader { display: flex; margin: 0 0 16px; }
-	.gamePage:not(.phoneGame) .gamePanelTitle { margin: 0; font: 700 24px/1.2 'Space Grotesk', sans-serif; }
-	.gamePage:not(.phoneGame) .playerPager { min-width: 0; }
-	.gamePage:not(.phoneGame) .playerPager.hasPages { display: grid; grid-template-columns: 32px minmax(0,1fr) 32px; align-items: center; gap: 8px; }
-	.gamePage:not(.phoneGame) .playerPanelGrid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; min-width: 0; }
-	.gamePage:not(.phoneGame) .playerPageArrow { width: 32px; height: 40px; padding: 0; font-size: 26px; }
-	.gamePage:not(.phoneGame) .playerPageArrow:disabled { opacity: .35; }
-	.gamePage:not(.phoneGame) .playerStatusCard { height: 120px; min-width: 0; grid-template-columns: 30px minmax(0,1fr) auto; grid-template-rows: 30px 3px 32px; gap: 8px 14px; padding: 16px 18px 16px 21px; overflow: visible; }
-	.gamePage:not(.phoneGame) .playerStatusCard::before { width: 3px; }
-	.gamePage:not(.phoneGame) .playerStatusColor { width: 30px; height: 30px; }
-	.gamePage:not(.phoneGame) .playerStatusColor svg { width: 20px; height: 20px; }
-	.gamePage:not(.phoneGame) .playerStatusName { font-size: 18px; font-weight: 600; }
-	.gamePage:not(.phoneGame) .playerStatusBlocks { font-size: 26px; white-space: nowrap; }
-	.gamePage:not(.phoneGame) .playerStatusBlocks small { font-size: 13px; }
-	.gamePage:not(.phoneGame) .playerPiecesProgress { height: 3px; margin: 0; }
-	.gamePage:not(.phoneGame) .playerStatusBody { min-height: 32px; }
-	.gamePage:not(.phoneGame) .playerPiecesLeft { font-size: 15px; }
-	.gamePage:not(.phoneGame) .viewPiecesButton { height: 32px; font-size: 14px; }
+	.gamePage:not(.phoneGame) .piecePanelHeader {
+		display: flex;
+		margin: 0 0 16px;
+	}
+
+	.gamePage:not(.phoneGame) .gamePanelTitle {
+		margin: 0;
+		font: 700 24px/1.2 'Space Grotesk', sans-serif;
+	}
+
+	.gamePage:not(.phoneGame) .playerPager {
+		min-width: 0;
+	}
+
+	.gamePage:not(.phoneGame) .playerPager.hasPages {
+		display: grid;
+		grid-template-columns: 32px minmax(0,1fr) 32px;
+		align-items: center;
+		gap: 8px;
+	}
+
+	.gamePage:not(.phoneGame) .playerPanelGrid {
+		display: grid;
+		grid-template-columns: repeat(3,minmax(0,1fr));
+		gap: 8px;
+		min-width: 0;
+	}
+
+	.gamePage:not(.phoneGame) .playerPageArrow {
+		width: 32px;
+		height: 40px;
+		padding: 0;
+		font-size: 26px;
+	}
+
+	.gamePage:not(.phoneGame) .playerPageArrow:disabled {
+		opacity: .35;
+	}
+
+	.gamePage:not(.phoneGame) .playerStatusCard {
+		height: 120px;
+		min-width: 0;
+		grid-template-columns: 30px minmax(0,1fr) auto;
+		grid-template-rows: 30px 3px 32px;
+		gap: 8px 14px;
+		padding: 16px 18px 16px 21px;
+		overflow: visible;
+	}
+
+	.gamePage:not(.phoneGame) .playerStatusCard::before {
+		width: 3px;
+	}
+
+	.gamePage:not(.phoneGame) .playerStatusColor {
+		width: 30px;
+		height: 30px;
+	}
+
+	.gamePage:not(.phoneGame) .playerStatusColor svg {
+		width: 20px;
+		height: 20px;
+	}
+
+	.gamePage:not(.phoneGame) .playerStatusName {
+		font-size: 18px;
+		font-weight: 600;
+	}
+
+	.gamePage:not(.phoneGame) .playerStatusBlocks {
+		font-size: 26px;
+		white-space: nowrap;
+	}
+
+	.gamePage:not(.phoneGame) .playerStatusBlocks small {
+		font-size: 13px;
+	}
+
+	.gamePage:not(.phoneGame) .playerPiecesProgress {
+		height: 3px;
+		margin: 0;
+	}
+
+	.gamePage:not(.phoneGame) .playerStatusBody {
+		min-height: 32px;
+	}
+
+	.gamePage:not(.phoneGame) .playerPiecesLeft {
+		font-size: 15px;
+	}
+
+	.gamePage:not(.phoneGame) .viewPiecesButton {
+		height: 32px;
+		font-size: 14px;
+	}
+
 	.gamePage:not(.phoneGame) .playerRemainingPieces,
 	.gamePage:not(.phoneGame) .playerPiecePips,
-	.gamePage:not(.phoneGame) .playerStatusChevron { display: none; }
-	.gamePage:not(.phoneGame) .playerStatusExpanded { z-index: 10; }
-	.gamePage:not(.phoneGame) .playerPiecesPopover { position: absolute; top: calc(100% + 4px); right: -1px; left: -1px; z-index: 30; display: block; padding: 14px; border: 1px solid var(--player-color); border-radius: 4px; background: var(--surface-raised); box-shadow: 0 18px 48px var(--backdrop); }
-	.gamePage:not(.phoneGame) .playerPiecesPopover > div { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 6px; }
-	.gamePage:not(.phoneGame) .playerPiecesPopover .pieceCard { min-width: 0; height: 46px; aspect-ratio: auto; }
-	.gamePage:not(.phoneGame) .boardStage { container-type: size; display: flex; flex-direction: column; justify-content: center; padding-block: 16px; }
-	.gamePage:not(.phoneGame) .boardPanel { flex: none; height: auto; margin-block: auto; gap: 0; border: 1px solid var(--border); background: var(--surface); }
+	.gamePage:not(.phoneGame) .playerStatusChevron {
+		display: none;
+	}
+
+	.gamePage:not(.phoneGame) .playerStatusExpanded {
+		z-index: 10;
+	}
+
+	.gamePage:not(.phoneGame) .playerPiecesPopover {
+		position: absolute;
+		top: calc(100% + 4px);
+		right: -1px;
+		left: -1px;
+		z-index: 30;
+		display: block;
+		padding: 14px;
+		border: 1px solid var(--player-color);
+		border-radius: 4px;
+		background: var(--surface-raised);
+		box-shadow: 0 18px 48px var(--backdrop);
+	}
+
+	.gamePage:not(.phoneGame) .playerPiecesPopover > div {
+		display: grid;
+		grid-template-columns: repeat(4,minmax(0,1fr));
+		gap: 6px;
+	}
+
+	.gamePage:not(.phoneGame) .playerPiecesPopover .pieceCard {
+		min-width: 0;
+		height: 46px;
+		aspect-ratio: auto;
+	}
+
+	.gamePage:not(.phoneGame) .boardStage {
+		container-type: size;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		padding-block: 16px;
+	}
+
+	.gamePage:not(.phoneGame) .boardPanel {
+		flex: none;
+		height: auto;
+		margin-block: auto;
+		gap: 0;
+		border: 1px solid var(--border);
+		background: var(--surface);
+	}
+
 	.gamePage:not(.phoneGame) .boardTray,
-	.gamePage:not(.phoneGame) .boardLegend { display: none; }
-	.gamePage:not(.phoneGame) .tile { border-radius: 2px; }
-	.gamePage:not(.phoneGame) .piecesRight { display: flex; flex-direction: column; gap: 0; min-height: 0; max-height: none; overflow: visible; }
-	.gamePage:not(.phoneGame) .pieceCount { display: none; }
-	.gamePage:not(.phoneGame) .piecesBody { display: grid; grid-template-columns: 546px minmax(0,1fr); gap: 20px; min-height: 0; align-items: start; }
-	.gamePage:not(.phoneGame) .pieceCardGrid { grid-column: 1; grid-row: 1; grid-template-columns: repeat(4,minmax(0,1fr)); grid-template-rows: repeat(4,100px); gap: 6px; }
-	.gamePage:not(.phoneGame) .pieceCardGrid .pieceCard { grid-template: minmax(0,1fr) / minmax(0,1fr); height: 100px; min-height: 0; aspect-ratio: auto; border-radius: 3px; }
-	.gamePage:not(.phoneGame) .pieceCardGrid .pieceShape { transform: scale(var(--piece-preview-scale, 1)); }
-	.gamePage:not(.phoneGame) .piecePanelAside { grid-column: 2; grid-row: 1; min-width: 0; }
-	.gamePage:not(.phoneGame) .pieceAbilityCard { display: flex; margin: 0; padding: 16px; gap: 16px; border-radius: 4px; }
+	.gamePage:not(.phoneGame) .boardLegend {
+		display: none;
+	}
+
+	.gamePage:not(.phoneGame) .tile {
+		border-radius: 2px;
+	}
+
+	.gamePage:not(.phoneGame) .piecesRight {
+		display: flex;
+		flex-direction: column;
+		gap: 0;
+		min-height: 0;
+		max-height: none;
+		overflow: visible;
+	}
+
+	.gamePage:not(.phoneGame) .pieceCount {
+		display: none;
+	}
+
+	.gamePage:not(.phoneGame) .piecesBody {
+		display: grid;
+		grid-template-columns: 546px minmax(0,1fr);
+		gap: 20px;
+		min-height: 0;
+		align-items: start;
+	}
+
+	.gamePage:not(.phoneGame) .pieceCardGrid {
+		grid-column: 1;
+		grid-row: 1;
+		grid-template-columns: repeat(4,minmax(0,1fr));
+		grid-template-rows: repeat(4,100px);
+		gap: 6px;
+	}
+
+	.gamePage:not(.phoneGame) .pieceCardGrid .pieceCard {
+		grid-template: minmax(0,1fr) / minmax(0,1fr);
+		height: 100px;
+		min-height: 0;
+		aspect-ratio: auto;
+		border-radius: 3px;
+	}
+
+	.gamePage:not(.phoneGame) .pieceCardGrid .pieceShape {
+		transform: scale(var(--piece-preview-scale, 1));
+	}
+
+	.gamePage:not(.phoneGame) .piecePanelAside {
+		grid-column: 2;
+		grid-row: 1;
+		min-width: 0;
+	}
+
+	.gamePage:not(.phoneGame) .pieceAbilityCard {
+		display: flex;
+		margin: 0;
+		padding: 16px;
+		gap: 16px;
+		border-radius: 4px;
+	}
+
 	.gamePage:not(.phoneGame) .firstMoveSwatch,
-	.gamePage:not(.phoneGame) .instructionSwatch { width: 32px; height: 32px; flex: 0 0 32px; }
-	.gamePage:not(.phoneGame) .abilitySwatch { grid-template: repeat(2,15.5px) / repeat(2,15.5px); gap: 1px; }
-	.gamePage:not(.phoneGame) .abilityTitle { font-size: 18px; font-weight: 700; }
-	.gamePage:not(.phoneGame) .abilityLabel { font-size: 12px; }
-	.gamePage:not(.phoneGame) .pieceAbilityCard p { font-size: 16px; line-height: 1.5; }
-	.gamePage:not(.phoneGame) .pieceControls { margin: 24px 0 0; padding: 0; border: 0; background: transparent; }
-	.gamePage:not(.phoneGame) .pieceControls h3 { display: block; margin: 0 0 6px; color: var(--muted); font-size: 12px; letter-spacing: 1.2px; }
-	.gamePage:not(.phoneGame) .pieceControlRow { flex-direction: row; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 0; font-size: 16px; }
-	.gamePage:not(.phoneGame) .pieceControlRow + .pieceControlRow { border-top: 1px solid var(--border); }
-	.gamePage:not(.phoneGame) .pieceControlRow > span:first-child { gap: 10px; white-space: nowrap; }
-	.gamePage:not(.phoneGame) .pieceControlRow svg { width: 22px; height: 22px; }
-	.gamePage:not(.phoneGame) .controlKeys { gap: 6px; font-size: 14px; }
-	.gamePage:not(.phoneGame) kbd { padding: 4px 8px; font-size: 14px; }
+	.gamePage:not(.phoneGame) .instructionSwatch {
+		width: 32px;
+		height: 32px;
+		flex: 0 0 32px;
+	}
+
+	.gamePage:not(.phoneGame) .abilitySwatch {
+		grid-template: repeat(2,15.5px) / repeat(2,15.5px);
+		gap: 1px;
+	}
+
+	.gamePage:not(.phoneGame) .abilityTitle {
+		font-size: 18px;
+		font-weight: 700;
+	}
+
+	.gamePage:not(.phoneGame) .abilityLabel {
+		font-size: 12px;
+	}
+
+	.gamePage:not(.phoneGame) .pieceAbilityCard p {
+		font-size: 16px;
+		line-height: 1.5;
+	}
+
+	.gamePage:not(.phoneGame) .pieceControls {
+		margin: 24px 0 0;
+		padding: 0;
+		border: 0;
+		background: transparent;
+	}
+
+	.gamePage:not(.phoneGame) .pieceControls h3 {
+		display: block;
+		margin: 0 0 6px;
+		color: var(--muted);
+		font-size: 12px;
+		letter-spacing: 1.2px;
+	}
+
+	.gamePage:not(.phoneGame) .pieceControlRow {
+		flex-direction: row;
+		align-items: center;
+		justify-content: space-between;
+		gap: 8px;
+		padding: 12px 0;
+		font-size: 16px;
+	}
+
+	.gamePage:not(.phoneGame) .pieceControlRow + .pieceControlRow {
+		border-top: 1px solid var(--border);
+	}
+
+	.gamePage:not(.phoneGame) .pieceControlRow > span:first-child {
+		gap: 10px;
+		white-space: nowrap;
+	}
+
+	.gamePage:not(.phoneGame) .pieceControlRow svg {
+		width: 22px;
+		height: 22px;
+	}
+
+	.gamePage:not(.phoneGame) .controlKeys {
+		gap: 6px;
+		font-size: 14px;
+	}
+
+	.gamePage:not(.phoneGame) kbd {
+		padding: 4px 8px;
+		font-size: 14px;
+	}
 }
 
 @media (orientation: portrait) and (min-width: 700px) and (max-width: 1000px) {
-	.gamePage:not(.phoneGame) .piecesBody { grid-template-columns: minmax(0,1.25fr) minmax(0,1fr); }
-	.gamePage:not(.phoneGame) .pieceControlRow { flex-wrap: wrap; }
-	.gamePage:not(.phoneGame) .playerStatusCard { gap: 8px; padding-inline: 10px; }
+	.gamePage:not(.phoneGame) .piecesBody {
+		grid-template-columns: minmax(0,1.25fr) minmax(0,1fr);
+	}
+
+	.gamePage:not(.phoneGame) .pieceControlRow {
+		flex-wrap: wrap;
+	}
+
+	.gamePage:not(.phoneGame) .playerStatusCard {
+		gap: 8px;
+		padding-inline: 10px;
+	}
 }
 
 /* Preserve the pre-existing small-window fallback; actual phones use PhoneGameLayout. */
+
 @media (max-width: 699px) {
-	.gamePage:not(.phoneGame) { height: auto; overflow: auto; }
-	.gamePage:not(.phoneGame) .gameHeader { grid-template-columns: minmax(0,1fr); }
-	.gamePage:not(.phoneGame) .gameHeaderTitle, .gamePage:not(.phoneGame) .gameActions { justify-self: center; }
-	.gamePage:not(.phoneGame) .turnBanner { grid-column: 1; grid-row: 3; justify-self: center; flex-wrap: wrap; }
-	.gamePage:not(.phoneGame) .gameActions { grid-column: 1; grid-row: 2; }
-	.gamePage:not(.phoneGame) .gameMain { display: flex; flex-wrap: wrap; justify-content: center; padding: calc(20px * var(--ui-scale)) calc(16px * var(--ui-scale)); }
-	.gamePage:not(.phoneGame) .boardStage { order: -1; width: 100%; height: min(75dvh, calc(720px * var(--ui-scale))); }
-	.gamePage:not(.phoneGame) .piecesRight, .gamePage:not(.phoneGame) .playerRankPanel { width: min(100%, calc(430px * var(--ui-scale))); overflow: visible; }
+	.gamePage:not(.phoneGame) {
+		height: auto;
+		overflow: auto;
+	}
+
+	.gamePage:not(.phoneGame) .gameHeader {
+		grid-template-columns: minmax(0,1fr);
+	}
+
+	.gamePage:not(.phoneGame) .gameHeaderTitle, .gamePage:not(.phoneGame) .gameActions {
+		justify-self: center;
+	}
+
+	.gamePage:not(.phoneGame) .turnBanner {
+		grid-column: 1;
+		grid-row: 3;
+		justify-self: center;
+		flex-wrap: wrap;
+	}
+
+	.gamePage:not(.phoneGame) .gameActions {
+		grid-column: 1;
+		grid-row: 2;
+	}
+
+	.gamePage:not(.phoneGame) .gameMain {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		padding: calc(20px * var(--ui-scale)) calc(16px * var(--ui-scale));
+	}
+
+	.gamePage:not(.phoneGame) .boardStage {
+		order: -1;
+		width: 100%;
+		height: min(75dvh, calc(720px * var(--ui-scale)));
+	}
+
+	.gamePage:not(.phoneGame) .piecesRight, .gamePage:not(.phoneGame) .playerRankPanel {
+		width: min(100%, calc(430px * var(--ui-scale)));
+		overflow: visible;
+	}
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.gamePage:not(.phoneGame) .tile, .gamePage:not(.phoneGame) .pieceCard, .gamePage:not(.phoneGame) .turnTimerTrack > span { transition: none; }
+	.gamePage:not(.phoneGame) .tile, .gamePage:not(.phoneGame) .pieceCard, .gamePage:not(.phoneGame) .turnTimerTrack > span {
+		transition: none;
+	}
 }

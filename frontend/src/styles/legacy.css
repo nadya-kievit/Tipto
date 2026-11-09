@@ -51,8 +51,7 @@ button:disabled {
 	position: relative;
 	display: grid;
 	grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-	grid-template-areas:
-		". turn ."
+	grid-template-areas: ". turn ."
 		"players board pieces";
 	align-content: safe center;
 	align-items: start;
@@ -584,7 +583,6 @@ button:disabled {
 }
 
 .playerTypeToggleBot {
-
 }
 
 .playerTypeToggleBot span:first-of-type {
@@ -1376,8 +1374,7 @@ button:disabled {
 @media (max-width: 1700px) {
 	.gameMain {
 		grid-template-columns: minmax(300px, 0.9fr) minmax(0, 1.3fr);
-		grid-template-areas:
-			"turn turn"
+		grid-template-areas: "turn turn"
 			"board board"
 			"players pieces";
 		justify-items: center;
@@ -1452,17 +1449,18 @@ button:disabled {
 
 	.gameMain {
 		grid-template-columns: minmax(0, 1fr);
-		grid-template-areas:
-			"turn"
+		grid-template-areas: "turn"
 			"board"
 			"pieces"
 			"players";
 	}
+
 	.playerRankPanel,
 	.piecesRight {
 		justify-self: center;
 		width: min(100%, 680px);
 	}
+
 	.createGamePage {
 		position: fixed;
 		top: 0;

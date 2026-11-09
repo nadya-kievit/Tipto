@@ -34,8 +34,19 @@
 	text-shadow: none;
 }
 
-.createGamePage.homeScreen .homeBrand { display: flex; flex-direction: column; align-items: center; gap: 10px; }
-.createGamePage.homeScreen .homeTagline { display: none; margin: 0; color: #9AA1B5; font-size: 13px; }
+.createGamePage.homeScreen .homeBrand {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 10px;
+}
+
+.createGamePage.homeScreen .homeTagline {
+	display: none;
+	margin: 0;
+	color: #9AA1B5;
+	font-size: 13px;
+}
 
 .createGamePage.homeScreen .homeLogoMark {
 	flex: 0 0 auto;
@@ -129,8 +140,13 @@
 }
 
 @keyframes homeButtonLoading {
-	0% { transform: translateX(-110%); }
-	100% { transform: translateX(270%); }
+	0% {
+		transform: translateX(-110%);
+	}
+
+	100% {
+		transform: translateX(270%);
+	}
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -244,13 +260,25 @@
 		touch-action: manipulation;
 	}
 
-	.createGamePage.homeScreen.phoneLandscape .homeBrand { grid-column: 1; align-self: center; }
-	.createGamePage.homeScreen.phoneLandscape .homeLogo { gap: 11px; font-size: 40px; }
+	.createGamePage.homeScreen.phoneLandscape .homeBrand {
+		grid-column: 1;
+		align-self: center;
+	}
+
+	.createGamePage.homeScreen.phoneLandscape .homeLogo {
+		gap: 11px;
+		font-size: 40px;
+	}
+
 	.createGamePage.homeScreen.phoneLandscape .homeLogoMark {
 		grid-template-columns: repeat(2, 14px);
 		grid-template-rows: repeat(2, 14px);
 	}
-	.createGamePage.homeScreen.phoneLandscape .homeTagline { display: block; }
+
+	.createGamePage.homeScreen.phoneLandscape .homeTagline {
+		display: block;
+	}
+
 	.createGamePage.homeScreen.phoneLandscape .homeCard {
 		grid-column: 2;
 		align-self: center;
@@ -259,10 +287,31 @@
 		gap: 10px;
 		padding: 14px;
 	}
+
 	.createGamePage.homeScreen.phoneLandscape .homeCreateButton,
-	.createGamePage.homeScreen.phoneLandscape .homeJoinButton { height: 40px; min-height: 40px; font-size: 13px; }
-	.createGamePage.homeScreen.phoneLandscape .homeJoinForm { gap: 10px; }
-	.createGamePage.homeScreen.phoneLandscape .codeInputGroup { gap: 4px; }
-	.createGamePage.homeScreen.phoneLandscape .codeInputGroup input { height: 40px; min-height: 40px; font-size: 18px; }
-	.createGamePage.homeScreen.phoneLandscape .homeDivider { gap: 8px; font-size: 11px; line-height: 14px; }
+	.createGamePage.homeScreen.phoneLandscape .homeJoinButton {
+		height: 40px;
+		min-height: 40px;
+		font-size: 13px;
+	}
+
+	.createGamePage.homeScreen.phoneLandscape .homeJoinForm {
+		gap: 10px;
+	}
+
+	.createGamePage.homeScreen.phoneLandscape .codeInputGroup {
+		gap: 4px;
+	}
+
+	.createGamePage.homeScreen.phoneLandscape .codeInputGroup input {
+		height: 40px;
+		min-height: 40px;
+		font-size: 18px;
+	}
+
+	.createGamePage.homeScreen.phoneLandscape .homeDivider {
+		gap: 8px;
+		font-size: 11px;
+		line-height: 14px;
+	}
 }
