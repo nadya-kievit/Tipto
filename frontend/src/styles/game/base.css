@@ -408,64 +408,6 @@
 	min-height: 0;
 }
 
-.gamePage .boardPanel {
-	width: max-content;
-	max-width: 100%;
-	min-width: 0;
-	padding: 24px;
-	border: 1px solid var(--border);
-	border-radius: 6px;
-	background: var(--surface);
-}
-
-.gamePage .board {
-	--board-cell-size: max(4px, min(
-		calc((100cqw - 690px - (var(--board-columns) - 1) * 1px) / var(--board-columns)),
-		calc((100cqh - 92px - (var(--board-rows) - 1) * 1px) / var(--board-rows))
-	));
-	display: grid;
-	grid-template-columns: repeat(var(--board-columns), var(--board-cell-size));
-	grid-template-rows: repeat(var(--board-rows), var(--board-cell-size));
-	gap: 1px;
-	width: fit-content;
-	padding: 0;
-	border: 0;
-	border-radius: 0;
-	background: transparent;
-	box-shadow: none;
-}
-
-.gamePage .tile {
-	width: var(--board-cell-size);
-	height: var(--board-cell-size);
-	border: 0;
-	border-radius: 1px;
-	transition: opacity 80ms ease;
-}
-
-.gamePage .startingTile {
-	border-radius: 0;
-}
-
-.gamePage .ownStartingTile {
-	z-index: 1;
-}
-
-.gamePage .startPositionMarker {
-	width: 10px;
-	height: 10px;
-	max-width: 50%;
-	max-height: 50%;
-	border: 0;
-	border-radius: 0;
-	background: var(--start-color);
-	box-shadow: none;
-}
-
-.gamePage .ownStartingTile .startPositionMarker {
-	box-shadow: none;
-}
-
 .gamePage .boardLegend {
 	display: flex;
 	justify-content: center;
@@ -893,12 +835,6 @@
 		height: min(75dvh, 720px);
 	}
 
-	.gamePage .board {
-		--board-cell-size: max(4px, min(
-			calc((100cqw - 50px - (var(--board-columns) - 1) * 1px) / var(--board-columns)),
-			calc((100cqh - 92px - (var(--board-rows) - 1) * 1px) / var(--board-rows))
-		));
-	}
 
 	.gamePage .piecesRight {
 		order: 0;

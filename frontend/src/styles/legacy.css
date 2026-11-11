@@ -1273,66 +1273,6 @@ button:disabled {
 	line-height: 1.25;
 }
 
-.board {
-	grid-area: board;
-	justify-self: center;
-	display: grid;
-	--board-cell-size: min(
-		35px,
-		calc(760px / var(--board-columns)),
-		calc((100vw - 72px) / var(--board-columns)),
-		calc((100vh - 190px) / var(--board-rows))
-	);
-	grid-template-columns: repeat(var(--board-columns), var(--board-cell-size));
-	grid-template-rows: repeat(var(--board-rows), var(--board-cell-size));
-	width: fit-content;
-	padding: 10px;
-	border-radius: 18px;
-	background: linear-gradient(145deg, #21182f, #151020);
-	border: 4px solid rgba(145, 92, 216, 0.42);
-	box-shadow: 0 20px 42px rgba(3, 1, 9, 0.58), 0 0 24px rgba(120, 71, 196, 0.16), inset 0 0 0 1px rgba(202, 177, 236, 0.12);
-}
-
-.tile {
-	width: var(--board-cell-size);
-	height: var(--board-cell-size);
-	box-sizing: border-box;
-	position: relative;
-	overflow: hidden;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	cursor: pointer;
-	user-select: none;
-	border-radius: 2px;
-	transition: background-color 0.12s ease, box-shadow 0.12s ease, transform 0.08s ease;
-}
-
-.tileNonPlayable {
-	border-color: transparent !important;
-	background: transparent !important;
-	box-shadow: none !important;
-	cursor: default;
-	pointer-events: none;
-}
-
-.startPositionMarker {
-	position: relative;
-	z-index: 3;
-	width: 38%;
-	height: 38%;
-	box-sizing: border-box;
-	border: 2px solid rgba(255, 255, 255, 0.9);
-	border-radius: 50%;
-	background: var(--start-color);
-	box-shadow: 0 0 0 2px rgba(8, 4, 14, 0.72), 0 0 8px var(--start-color);
-	pointer-events: none;
-}
-
-.ownStartingTile .startPositionMarker {
-	box-shadow: 0 0 0 2px #ffffff, 0 0 10px var(--start-color);
-}
-
 .glassPieceTile {
 	box-shadow: inset 1px 1px 2px rgba(255, 255, 255, 0.32), inset -1px -1px 2px rgba(0, 0, 0, 0.28), 0 1px 3px rgba(0, 0, 0, 0.3);
 }
@@ -1414,18 +1354,8 @@ button:disabled {
 		justify-items: center;
 	}
 
-	.turnBannerSlot,
-	.board {
+	.turnBannerSlot {
 		justify-self: center;
-	}
-
-	.board {
-		--board-cell-size: min(
-			35px,
-			calc(900px / var(--board-columns)),
-			calc((100vw - 72px) / var(--board-columns)),
-			calc((100vh - 190px) / var(--board-rows))
-		);
 	}
 
 	.piecesRight {

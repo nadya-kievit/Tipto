@@ -1,666 +1,139 @@
+/* Phone portrait only. Shared/desktop board presentation is intentionally untouched. */
 html:has(.phoneGame), body:has(.phoneGame), body:has(.phoneGame) #root {
-	height: 100%;
-	overflow: hidden;
-	overscroll-behavior: none;
+ height: 100%; overflow: hidden; overscroll-behavior: none; touch-action: manipulation;
 }
-
 .gamePage.phoneGame {
-	position: fixed;
-	inset: 0;
-	isolation: isolate;
-	display: flex;
-	flex-direction: column;
-	gap: 0;
-	width: 100%;
-	height: 100dvh;
-	min-height: 0;
-	padding: 0;
-	overflow: hidden;
-	overscroll-behavior: none;
-	touch-action: manipulation;
-}
-
-.phoneGame > header, .phoneGame > main, .phoneGame > section, .phonePlayersBar {
-	position: relative;
-	z-index: 1;
-}
-
-.phoneGame svg {
-	width: 18px;
-	height: 18px;
-	fill: none;
-	stroke: currentColor;
-	stroke-width: 1.8;
-	stroke-linecap: round;
-	stroke-linejoin: round;
-}
-
-.phoneGame button {
-	padding: 0;
-	color: var(--text);
-	background: var(--board);
-}
-
-.phoneGame .phoneGameHeader {
-	flex: none;
-	display: flex;
-	align-items: center;
-	gap: 10px;
-	height: calc(48px + env(safe-area-inset-top));
-	padding: env(safe-area-inset-top) max(10px, env(safe-area-inset-right)) 0 max(12px, env(safe-area-inset-left));
-	border-bottom: 1px solid var(--border);
-	background: var(--board);
-}
-
-.phoneGameHeader h1 {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	margin: 0;
-	font-family: 'Space Grotesk', sans-serif;
-	font-size: 18px;
-	line-height: 1;
-}
-
-.phoneGameLogoMark {
-	display: grid;
-	grid-template: repeat(2, 9px) / repeat(2, 9px);
-	gap: 1px;
-	flex: none;
-}
-
-.phoneGameLogoMark i {
-	grid-area: 2 / 2;
-	border-radius: 1px;
-	background: var(--logo-purple);
-}
-
-.phoneGameLogoMark i:nth-child(2) {
-	grid-area: 1 / 2;
-	background: var(--logo-orange);
-}
-
-.phoneGameLogoMark i:nth-child(3) {
-	grid-area: 2 / 1;
-	background: var(--logo-teal);
-}
-
-.phoneTurnPill {
-	position: relative;
-	flex: 1;
-	min-width: 0;
-	display: flex;
-	align-items: center;
-	gap: 10px;
-	height: 32px;
-	padding: 0 10px 0 14px;
-	border: 1px solid var(--turn-color);
-	border-radius: 4px;
-	overflow: hidden;
-}
-
-.phoneTurnPill::before {
-	content: '';
-	position: absolute;
-	inset: 0 auto 0 0;
-	width: 5px;
-	background: var(--turn-color);
-}
-
-.phoneTurnPill strong {
-	min-width: 0;
-	overflow: hidden;
-	font-size: 14px;
-	white-space: nowrap;
-	text-overflow: ellipsis;
-}
-
-.phoneTimerTrack {
-	flex: 1;
-	min-width: 20px;
-	height: 4px;
-	background: var(--border-strong);
-}
-
-.phoneTimerTrack i {
-	display: block;
-	height: 100%;
-	background: var(--turn-color);
-	transition: width 250ms linear;
-}
-
-.phoneTime {
-	margin-left: auto;
-	flex: none;
-	font: 12px 'JetBrains Mono', monospace;
-	color: var(--turn-color);
-	white-space: nowrap;
-}
-
-.phoneGame .phoneMenuButton {
-	display: grid;
-	place-items: center;
-	flex: none;
-	width: 36px;
-	height: 36px;
-}
-
-.phonePlayersBar {
-	display: flex;
-	flex: none;
-	gap: 6px;
-	height: 38px;
-	margin: 8px max(12px, env(safe-area-inset-right)) 0 max(12px, env(safe-area-inset-left));
-}
-
-.phonePlayerChips {
-	display: flex;
-	flex: 1;
-	min-width: 0;
-	gap: 6px;
-	overflow-x: auto;
-	scrollbar-width: none;
-}
-
-.phonePlayerChips::-webkit-scrollbar {
-	display: none;
-}
-
-.phoneGame .phonePlayerChip {
-	position: relative;
-	display: flex;
-	align-items: center;
-	gap: 7px;
-	flex: 1 0 100px;
-	min-width: 100px;
-	height: 38px;
-	padding: 0 9px 0 13px;
-	border-color: var(--border);
-	overflow: hidden;
-	text-align: left;
-}
-
-.phonePlayerChip::before, .phoneStandingRow::before {
-	content: '';
-	position: absolute;
-	inset: 0 auto 0 0;
-	width: 3px;
-	background: var(--pc);
-}
-
-.phoneGame .phonePlayerChip.active, .phoneGame .phoneStandingRow.active {
-	border-color: var(--pc);
-}
-
-.phonePlayerChip > i {
-	width: 14px;
-	height: 14px;
-	flex: none;
-	border-radius: 2px;
-	background: var(--pc);
-}
-
-.phonePlayerChip > span {
-	flex: 1;
-	min-width: 0;
-	font-size: 13px;
-	font-weight: 600;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-
-.phonePlayerChip b {
-	font: 700 15px 'Space Grotesk', sans-serif;
-}
-
-.phoneGame .phoneAllPlayers {
-	display: grid;
-	place-items: center;
-	flex: none;
-	width: 38px;
-	height: 38px;
-	color: var(--muted);
-}
-
-.phoneAllPlayers svg {
-	width: 16px;
-	height: 16px;
-}
-
-.phoneGame .phoneBoardZone {
-	display: grid;
-	place-items: center;
-	flex: 1;
-	min-height: 0;
-	min-width: 0;
-	width: 100%;
-	padding: 8px 4px;
-}
-
-.phoneGame .boardStage {
-	grid-area: auto;
-	container-type: normal;
-	width: 100%;
-	height: 100%;
-	min-height: 0;
-	display: grid;
-	place-items: center;
-}
-
-.phoneGame .boardPanel {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	width: 100%;
-	max-width: 100%;
-	padding: 0;
-	border: 0;
-	background: transparent;
-}
-
-.phoneGame .boardWrap {
-	position: relative;
-	width: max-content;
-}
-
-.phoneGame .boardTray {
-	position: absolute;
-	inset: 0;
-	z-index: 0;
-	width: 100%;
-	height: 100%;
-	overflow: visible;
-	pointer-events: none;
-}
-
-.phoneGame .boardTrayEdge {
-	fill: var(--border);
-	stroke: var(--border);
-	stroke-linejoin: round;
-}
-
-.phoneGame .boardTrayFill {
-	fill: var(--surface);
-	stroke: var(--surface);
-	stroke-linejoin: round;
-}
-
-.phoneGame .board {
-	--board-cell-size: var(--phone-cell);
-	--board-gap: var(--phone-gap);
-	--grout: var(--surface);
-	position: relative;
-	z-index: 1;
-	gap: var(--phone-gap);
-	padding: var(--phone-pad);
-	width: max-content;
-	touch-action: none;
-}
-
-.phoneGame .boardLegend {
-	display: none;
-}
-
-.phoneGame .tile {
-	border-radius: max(1px, round(nearest, calc(var(--phone-cell) * .11), 1px));
-	cursor: default;
-}
-
-.phoneGame .phoneDock {
-	flex: none;
-	width: 100%;
-	padding: 10px max(12px, env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
-	border-top: 1px solid var(--border);
-	background: var(--board);
-}
-
-.phoneStatus {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	height: 20px;
-	overflow: hidden;
-	white-space: nowrap;
-	font-size: 13px;
-	color: var(--text-soft);
-}
-
-.phoneStatus > span {
-	overflow: hidden;
-	text-overflow: ellipsis;
-}
-
-.phoneStatus.first, .phoneStatus b {
-	color: var(--text);
-}
-
-.phoneStartIcon {
-	flex: none;
-	display: inline-block;
-	width: 14px;
-	height: 14px;
-	border-radius: 2px;
-	background: color-mix(in srgb, var(--player-color) 28%, var(--cell));
-	box-shadow: inset 0 0 0 2px var(--player-color);
-}
-
-.phonePickRow {
-	display: flex;
-	gap: 8px;
-	height: 64px;
-	margin-top: 8px;
-}
-
-.phoneStageSlot {
-	flex: 1;
-	min-width: 0;
-	display: grid;
-	place-items: center;
-	border: 1px dashed var(--border-strong);
-	border-radius: 6px;
-	touch-action: none;
-	cursor: grab;
-	user-select: none;
-	color: var(--muted);
-	font-size: 13px;
-}
-
-.phoneStageSlot.waiting {
-	opacity: .5;
-}
-
-.phoneGame .phonePickRow button {
-	flex: none;
-	width: 52px;
-	display: grid;
-	place-items: center;
-	align-content: center;
-	gap: 3px;
-	border-radius: 6px;
-	color: var(--text-soft);
-	font-size: 10px;
-	font-weight: 600;
-	letter-spacing: .3px;
-}
-
-.phonePickRow button svg {
-	width: 22px;
-	height: 22px;
-	color: var(--text);
-}
-
-.phoneGame .phonePickRow button:disabled {
-	opacity: .35;
-}
-
-.phonePieceGrid {
-	display: grid;
-	grid-template-columns: repeat(8, minmax(0, 1fr));
-	grid-template-rows: repeat(2, 42px);
-	gap: 4px;
-	margin-top: 8px;
-}
-
-.phoneGame .phonePieceCard {
-	display: grid;
-	place-items: center;
-	min-width: 0;
-	border-color: var(--border);
-}
-
-.phoneGame .phonePieceCard.selected {
-	border-color: var(--player-color);
-	background: color-mix(in srgb, var(--player-color) 14%, var(--board));
-}
-
-.phoneGame .phonePieceCard.placed {
-	opacity: .2;
-	cursor: default;
-}
-
-.phonePieceShape {
-	display: block;
-	position: relative;
-	flex: none;
-	pointer-events: none;
-}
-
-.phonePieceShape > i {
-	display: block;
-	position: absolute;
-	box-sizing: border-box;
-}
-
-.phoneGame .phoneDragFollower, .phoneGame .phoneHoverPlacement {
-	position: fixed;
-	z-index: 10;
-	pointer-events: none;
-}
-
-.phoneGame .phoneDragFollower {
-	z-index: 11;
-	opacity: .55;
-}
-
-.phoneGame .phoneOutsideCatch {
-	position: absolute;
-	inset: 0;
-	z-index: 15;
-}
-
-.phoneGame .phoneMenu {
-	position: absolute;
-	z-index: 20;
-	top: calc(var(--phone-header-height, 100px) + 4px);
-	right: max(8px, env(safe-area-inset-right));
-	width: 250px;
-	padding: 14px;
-	border: 1px solid var(--border-strong);
-	border-radius: 8px;
-	background: color-mix(in srgb, var(--board) 96%, transparent);
-	box-shadow: 0 16px 40px rgba(0,0,0,.6);
-}
-
-.phoneMenu h3 {
-	margin: 0 0 8px;
-	font-size: 11px;
-	font-weight: 600;
-	letter-spacing: 1.4px;
-	color: var(--muted);
-	text-transform: uppercase;
-}
-
-.phoneRoomRow {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	margin-bottom: 14px;
-	color: var(--muted);
-	font-size: 12px;
-}
-
-.phoneRoomRow strong {
-	margin-left: 6px;
-	font: 500 15px 'JetBrains Mono', monospace;
-	letter-spacing: 1px;
-	color: var(--text);
-}
-
-.phoneGame .phoneRoomRow button {
-	display: grid;
-	place-items: center;
-	width: 34px;
-	height: 34px;
-}
-
-.phoneTileGuide {
-	display: grid;
-	gap: 9px;
-	margin-bottom: 14px;
-	font-size: 13px;
-	color: var(--text-soft);
-}
-
-.phoneTileGuide span {
-	display: flex;
-	align-items: center;
-	gap: 9px;
-}
-
-.phoneTileGuide i {
-	width: 14px;
-	height: 14px;
-	display: inline-block;
-	border-radius: 2px;
-}
-
-.phoneLastIcon {
-	background: var(--player-color);
-	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--player-color) 45%, #fff);
-}
-
-.phoneGame .phoneHeaderLeave {
-	width: 100%;
-	height: 40px;
-	border-color: var(--leave-border);
-	color: var(--leave-text);
-	background: transparent;
-	font-weight: 600;
-}
-
-.phoneGame .phoneStandings {
-	position: absolute;
-	z-index: 20;
-	left: 0;
-	right: 0;
-	bottom: 0;
-	max-height: 78%;
-	overflow: auto;
-	overscroll-behavior: contain;
-	padding: 8px max(12px, env(safe-area-inset-right)) calc(14px + env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
-	border-top: 1px solid var(--border-strong);
-	border-radius: 14px 14px 0 0;
-	background: color-mix(in srgb, var(--board) 97%, transparent);
-	box-shadow: 0 -16px 40px rgba(0,0,0,.5);
-}
-
-.phoneGrab {
-	width: 36px;
-	height: 4px;
-	margin: 0 auto 10px;
-	border-radius: 2px;
-	background: var(--border-strong);
-}
-
-.phoneStandings h2 {
-	margin: 0 0 10px;
-	font: 700 17px 'Space Grotesk', sans-serif;
-}
-
-.phoneStandingsList {
-	display: grid;
-	gap: 4px;
-}
-
-.phoneGame .phoneStandingRow {
-	position: relative;
-	display: grid;
-	grid-template-columns: 18px minmax(0, 1fr) auto auto 14px;
-	align-items: center;
-	gap: 10px;
-	height: 44px;
-	width: 100%;
-	padding: 0 12px 0 16px;
-	border-color: var(--border);
-	overflow: hidden;
-	text-align: left;
-}
-
-.phoneStandingRow > i {
-	width: 18px;
-	height: 18px;
-	border-radius: 2px;
-	background: var(--pc);
-}
-
-.phoneStandingName {
-	font-size: 14px;
-	font-weight: 600;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-
-.phonePips {
-	display: flex;
-	gap: 2px;
-}
-
-.phonePips i {
-	width: 5px;
-	height: 9px;
-	border-radius: 1px;
-	box-shadow: inset 0 0 0 1px var(--border-strong);
-}
-
-.phonePips i.filled {
-	background: var(--pc);
-	box-shadow: none;
-}
-
-.phoneStandingRow b {
-	font: 700 16px 'Space Grotesk', sans-serif;
-}
-
-.phoneStandingRow small {
-	margin-left: 2px;
-	font: 500 11px 'DM Sans', sans-serif;
-	color: var(--muted);
-}
-
-.phoneStandingRow svg {
-	width: 14px;
-	height: 14px;
-	color: var(--muted);
-	transition: transform 120ms;
-}
-
-.phoneStandingRow.open svg {
-	transform: rotate(180deg);
-}
-
-.phoneRemaining {
-	margin-bottom: 4px;
-	padding: 12px;
-	border: 1px solid var(--pc);
-	border-radius: 4px;
-	background: color-mix(in srgb, var(--board) 90%, transparent);
-}
-
-.phoneRemaining h4 {
-	margin: 0 0 10px;
-	font-size: 12px;
-	font-weight: 600;
-	color: var(--text-soft);
-}
-
-.phoneRemaining h4 b {
-	color: var(--text);
-}
-
-.phoneRemaining > div {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 6px;
-}
-
-.phoneRemainingCard {
-	display: grid;
-	place-items: center;
-	min-width: 40px;
-	min-height: 38px;
-	padding: 6px 8px;
-	border: 1px solid var(--border);
-	border-radius: 4px;
+ position: fixed; inset: 0; display: flex; flex-direction: column; gap: 0;
+ width: 100%; height: 100dvh; min-height: 0; padding: 0; overflow: hidden;
+ background: var(--page); color: var(--text); font-family: 'DM Sans', sans-serif;
+ touch-action: manipulation; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+ --stripe: rgba(13,14,19,.55);
+}
+.phoneGame *, .phoneGame *::before, .phoneGame *::after { box-sizing: border-box; }
+.gamePage.phoneGame {
+	--page: #161922; --surface: #1D212B; --surface-raised: #252A36;
+	--border: #2F3545; --border-strong: #3A4154; --text: #EDEFF5; --text-soft: #C9CDD9; --muted: #9AA1B5;
+	--cell: #3D424F; --leave-border: #4A3038; --leave-text: #F2A3A3;
+	--purple: #8e44ad; --orange: #f47c20; --red: #e34242; --blue: #0077ee; --green: #28a745; --yellow: #f3b51b;
+	--me: var(--purple);
+}
+.phoneGame button { font: inherit; color: inherit; border: 1px solid var(--border-strong); background: var(--surface-raised); border-radius: 4px; cursor: pointer; }
+.phoneGame svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.phoneGame .top { position: relative; flex: none; padding: 8px 8px 0; }
+.phoneGame .topRow { display: flex; gap: 6px; align-items: center; }
+.phoneGame .turn { --pc: var(--me); position: relative; flex: 1; min-width: 0; height: 42px; display: flex; align-items: center; gap: 8px; padding: 0 12px 0 14px; border: 1px solid var(--pc); border-radius: 4px; background: color-mix(in srgb, var(--pc) 10%, var(--surface)); font-size: 14px; font-weight: 600; overflow: hidden; }
+.phoneGame .turn::before { content: ''; position: absolute; inset: 0 auto 0 0; width: 3px; background: var(--pc); }
+.phoneGame .turn .lbl { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.phoneGame .dragHint { position: absolute; left: 0; right: 0; top: 8px; height: 42px; display: none; align-items: center; justify-content: space-between; background: var(--page); }
+.phoneGame.dragging .dragHint { display: flex; }
+.phoneGame .dh { --pcol: color-mix(in srgb, var(--me) calc(42% + 45% * var(--prox, 0)), var(--page)); flex: none; display: flex; align-items: center; gap: 6px; height: 32px; background: var(--pcol); color: var(--text); font-size: 14px; font-weight: 700; box-shadow: 0 0 calc(4px * var(--prox, 0)) color-mix(in srgb, var(--me) 30%, transparent); filter: brightness(calc(1 + .2 * var(--prox, 0))); transition: background 120ms, box-shadow 120ms; }
+.phoneGame .dh.pulse { animation: phonePulse 520ms ease-out; }
+.phoneGame .dh[data-side="flip"] { padding: 0 13px 0 10px; border-radius: 0 16px 16px 0; }
+.phoneGame .dh[data-side="rot"] { padding: 0 10px 0 13px; border-radius: 16px 0 0 16px; }
+.phoneGame .dh svg { width: 15px; height: 15px; stroke-width: 2.2; }
+.phoneGame .dh.near { --pcol: var(--me); box-shadow: 0 0 4px color-mix(in srgb, var(--me) 40%, transparent); }
+.phoneGame .dhText { flex: 1; min-width: 0; margin: 0 10px; text-align: center; color: var(--muted); font-size: 13px; font-style: italic; line-height: 1.25; }
+.phoneGame .dhText.rule { font-size: 12px; font-style: normal; color: var(--text-soft); }
+.phoneGame .plBtn { flex: none; height: 42px; display: flex; align-items: center; gap: 6px; padding: 0 9px; background: var(--surface); border-color: var(--border); font-size: 13px; font-weight: 600; }
+.phoneGame .plBtn svg { width: 16px; height: 16px; stroke: var(--text-soft); }
+.phoneGame .plBtn b { font-family: 'Space Grotesk', sans-serif; font-size: 15px; }
+.phoneGame .plBtn small { color: var(--muted); font-size: 12px; font-weight: 600; }
+.phoneGame .plist { position: absolute; z-index: 25; top: calc(100% + 4px); left: 8px; right: 8px; padding: 6px; border: 1px solid var(--border-strong); border-radius: 6px; background: var(--surface-raised); box-shadow: 0 14px 36px rgba(0,0,0,.55); }
+.phoneGame .plist[hidden], .phoneGame .menu[hidden] { display: none; }
+.phoneGame .prow { --pc: var(--muted); position: relative; width: 100%; height: 44px; display: flex; align-items: center; gap: 10px; padding: 0 10px 0 14px; border: 0; border-radius: 4px; background: transparent; font-size: 14px; font-weight: 600; text-align: left; }
+.phoneGame .prow + .prow, .phoneGame .pieces + .prow { margin-top: 2px; }
+.phoneGame .prow::before { content: ''; position: absolute; left: 4px; top: 10px; bottom: 10px; width: 3px; border-radius: 2px; background: var(--pc); }
+.phoneGame .prow.active { background: color-mix(in srgb, var(--pc) 12%, transparent); }
+.phoneGame .prow.open { background: color-mix(in srgb, var(--pc) 16%, transparent); }
+.phoneGame .prow .rk { width: 14px; color: var(--muted); font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 400; }
+.phoneGame .prow .nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.phoneGame .prow .tag { padding: 2px 6px; border-radius: 3px; background: color-mix(in srgb, var(--pc) 30%, transparent); color: var(--text); font-size: 10px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; }
+.phoneGame .prow .left { margin-left: auto; color: var(--muted); font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 400; }
+.phoneGame .prow .pts { width: 34px; text-align: right; font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 700; }
+.phoneGame .prow .cvSpace { width: 12px; }
+.phoneGame .pieces { --me: var(--pc); display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; padding: 6px 8px 8px 14px; }
+.phoneGame .pieces > div { height: 40px; display: grid; place-items: center; border-radius: 3px; background: var(--surface); }
+.phoneGame .more { flex: none; width: 50px; height: 42px; display: flex; align-items: center; justify-content: center; gap: 4px; background: var(--surface); border-color: var(--border); }
+.phoneGame .logo { display: grid; grid-template-columns: repeat(2, 8px); grid-template-rows: repeat(2, 8px); }
+.phoneGame .logo b { width: 8px; height: 8px; }
+.phoneGame .brand { display: flex; align-items: center; gap: 8px; margin: 0 0 14px; padding-bottom: 12px; border-bottom: 1px solid var(--border); font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; }
+.phoneGame .brand .logo { grid-template-columns: repeat(2, 10px); grid-template-rows: repeat(2, 10px); }
+.phoneGame .brand .logo b { width: 10px; height: 10px; }
+.phoneGame .sbar { position: relative; height: 2px; margin: 0; border-radius: 1px; background: color-mix(in srgb, var(--border) 70%, transparent); touch-action: none; }
+.phoneGame .sbar[hidden] { visibility: hidden; display: block; }
+.phoneGame .sbar::before { content: ''; position: absolute; inset: -8px 0; }
+.phoneGame .sbar i { position: absolute; top: 0; bottom: 0; left: 0; border-radius: 1px; background: color-mix(in srgb, var(--me) 75%, transparent); }
+.phoneGame .menu { position: absolute; z-index: 30; top: calc(100% + 4px); left: 8px; width: 236px; padding: 14px; border: 1px solid var(--border-strong); border-radius: 6px; background: var(--surface-raised); box-shadow: 0 14px 36px rgba(0,0,0,.55); }
+.phoneGame .menu h5 { margin: 0 0 8px; color: var(--muted); font-size: 11px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase; }
+.phoneGame .code { display: flex; align-items: center; gap: 8px; }
+.phoneGame .code span { color: var(--muted); font-size: 13px; }
+.phoneGame .code b { font-family: 'JetBrains Mono', monospace; font-size: 17px; font-weight: 500; letter-spacing: 1px; }
+.phoneGame .code button { margin-left: auto; width: 32px; height: 32px; display: grid; place-items: center; background: var(--surface); }
+.phoneGame .code svg { width: 15px; height: 15px; stroke: var(--text-soft); }
+.phoneGame .leaveBtn { width: 100%; height: 38px; margin-top: 14px; border-color: var(--leave-border); background: transparent; color: var(--leave-text); font-size: 14px; font-weight: 600; }
+.phoneGame .boardZone { position: relative; flex: 1; min-height: 0; display: grid; place-items: center; padding: 8px 6px; }
+.phoneGame .phoneBoard { position: relative; display: grid; gap: 2px; }
+.phoneGame .c { width: var(--cs); height: var(--cs); border-radius: 2px; }
+.phoneGame .c.on { background: var(--cell); }
+.phoneGame .c.start { background: color-mix(in srgb, var(--pc) 28%, var(--cell)); box-shadow: inset 0 0 0 2px var(--pc); }
+.phoneGame .ghost { position: absolute; left: 0; top: 0; border-radius: 2px; pointer-events: none; background: color-mix(in srgb, var(--me) 55%, var(--cell)); }
+.phoneGame .trayZone { position: relative; flex: none; padding: 4px 0 max(6px, calc(env(safe-area-inset-bottom) - 18px)); }
+.phoneGame .tray { display: grid; grid-auto-flow: column; grid-template-rows: repeat(2, var(--row, 66px)); grid-auto-columns: var(--col, 80px); gap: 2px 6px; padding: 0 10px; overflow-x: auto; overscroll-behavior-x: none; scrollbar-width: none; touch-action: pan-x; }
+.phoneGame .tray::-webkit-scrollbar { display: none; }
+.phoneGame .trayBar { margin: 6px 10px 0; }
+.phoneGame .pc { display: grid; place-items: center; cursor: grab; transition: opacity 120ms; }
+.phoneGame .pc .shape { transition: transform 90ms, filter 90ms; }
+.phoneGame .pc.touch .shape { transform: scale(1.1); filter: brightness(1.15); }
+.phoneGame .pc.lifted { opacity: .15; }
+.phoneGame .pc.lifted.home { opacity: .5; }
+.phoneGame .shape { position: relative; display: block; }
+.phoneGame .shape i { position: absolute; border-radius: 1px; }
+.phoneGame .shape.anim-rot { animation: phoneSpin 220ms cubic-bezier(.2,.8,.3,1); }
+.phoneGame .shape.anim-flip { animation: phoneMirror 260ms cubic-bezier(.2,.8,.3,1); }
+@keyframes phoneSpin { from { transform: rotate(-90deg); } to { transform: none; } }
+@keyframes phoneMirror { from { transform: scaleX(-1); } to { transform: none; } }
+.phoneGame .portal { --prox: 0; --pcol: color-mix(in srgb, var(--me) calc(42% + 45% * var(--prox, 0)), var(--page)); position: fixed; z-index: 60; width: 3px; pointer-events: none; opacity: 0;
+	background: var(--pcol); filter: brightness(calc(1 + .2 * var(--prox)));
+	box-shadow: 0 0 calc(4px * var(--prox)) color-mix(in srgb, var(--me) 30%, transparent);
+	transition: opacity 150ms, background 120ms; }
+.phoneGame.dragging .portal { opacity: 1; }
+.phoneGame .portal.near { --pcol: var(--me); --prox: 1; }
+.phoneGame .portal.pulse { animation: phonePulse 520ms ease-out; }
+@keyframes phonePulse { 40% { box-shadow: 0 0 5px color-mix(in srgb, var(--me) 50%, transparent); filter: brightness(1.15); } }
+.phoneGame .float { position: fixed; left: 0; top: 0; z-index: 50; pointer-events: none; will-change: transform; transform-origin: 0 0; filter: drop-shadow(0 6px 8px rgba(0,0,0,.4)); }
+
+.phoneGame .float.back { transition: transform 180ms ease-in, opacity 180ms; opacity: 0; }
+.phoneGame button { padding: 0; }
+.phoneGame .more { padding: 0; }
+.phoneGame .plBtn { padding: 0 9px; }
+.phoneGame .prow { padding: 0 10px 0 14px; }
+.phoneGame .pc { border: 0; border-radius: 0; background: transparent; touch-action: pan-x; }
+.phoneGame .phoneBoard { flex: none; margin: 0; padding: 0; border: 0; gap: 2px; }
+.phoneGame .boardZone { width: 100%; }
+.phoneGame .shape > i { display: block; }
+.phoneGame .ghostLayer { position: absolute; inset: 0; pointer-events: none; }
+.phoneGame .float[hidden], .phoneGame .ghostLayer[hidden] { display: none; }
+.phoneGame .portal[data-side="flip"] { left: 0; }
+.phoneGame .portal[data-side="rot"] { right: 0; }
+.phoneGame .dragHint { z-index: 61; }
+.phoneGame.dragging .topRow { visibility: hidden; }
+.phoneGame .dh { position: relative; isolation: isolate; background: none; box-shadow: none; filter: none; }
+.phoneGame .dh::before { content: ''; position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: var(--pcol); filter: brightness(calc(1 + .2 * var(--prox, 0))); box-shadow: 0 0 calc(4px * var(--prox, 0)) color-mix(in srgb, var(--me) 30%, transparent); }
+.phoneGame .dh.pulse { animation: none; }
+.phoneGame .dh.pulse::before { animation: phonePulse 520ms ease-out; }
+.phoneGame .dh.near::before { background: var(--me); }
+.phoneGame .dhText.rule { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.phoneGame .trayZone[aria-disabled="true"] .tray { opacity: .35; }
+.phoneGame .logo b:nth-child(2) { background: #f47c20; }
+.phoneGame .logo b:nth-child(3) { background: #14b8a6; }
+.phoneGame .logo b:nth-child(4) { background: #8b5cf6; }
+.phoneGame .more svg, .phoneGame .plBtn > svg:last-child, .phoneGame .prow > svg { width: 12px; height: 12px; stroke: var(--muted); }
+.phoneGame .more[aria-expanded="true"] > svg, .phoneGame .plBtn[aria-expanded="true"] > svg:last-child { transform: rotate(180deg); }
+.phoneGame .phoneTime { margin-left: auto; color: var(--text-soft); font: 500 13px 'JetBrains Mono', monospace; }
+.phoneGame .phoneTimerTrack { position: absolute; left: 3px; right: 0; bottom: 0; height: 3px; background: color-mix(in srgb, var(--pc) 25%, transparent); }
+.phoneGame .phoneTimerTrack i { display: block; height: 100%; background: var(--pc); transition: width 250ms linear; }
+.phoneGame .plist { max-height: calc(100dvh - 62px); overflow-y: auto; overscroll-behavior: contain; }
+.phoneGame .sbar[hidden] { display: block; visibility: hidden; }
+@media (prefers-reduced-motion: reduce) {
+ .phoneGame .shape, .phoneGame .portal, .phoneGame .dh::before { animation: none !important; transition: none !important; }
 }

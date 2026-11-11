@@ -5,18 +5,18 @@
 .gamePage {
 	--page: #161922;
 	--board: #0B0D12;
-	--surface: #1D212B;
+	--surface: var(--board-surface-color);
 	--surface-raised: #252A36;
-	--border: #2F3545;
+	--border: var(--board-border-color);
 	--border-strong: #3A4154;
 	--text: #EDEFF5;
 	--text-soft: #C9CDD9;
 	--muted: #9AA1B5;
 	--track: var(--border);
 	--grout: var(--surface);
-	--cell: #3D424F;
+	--cell: var(--board-cell-color);
 	--tile-outline: #EDEFF5;
-	--stripe: rgba(13, 14, 19, 0.55);
+	--stripe: var(--board-stripe-color);
 	--accent: #14B8A6;
 	--leave-border: #4A3038;
 	--leave-text: #F2A3A3;
@@ -419,89 +419,6 @@
 	height: 100%;
 	min-width: 0;
 	min-height: 0;
-}
-
-.gamePage:not(.phoneGame) .boardPanel {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-	gap: calc(14px * var(--ui-scale));
-	width: 100%;
-	height: 100%;
-	min-width: 0;
-	min-height: 0;
-	padding: 0;
-	border: 0;
-	background: transparent;
-}
-
-.gamePage:not(.phoneGame) .boardWrap {
-	position: relative;
-	flex: 0 0 auto;
-}
-
-.gamePage:not(.phoneGame) .boardTray {
-	position: absolute;
-	inset: 0;
-	z-index: 0;
-	width: 100%;
-	height: 100%;
-	overflow: visible;
-	pointer-events: none;
-}
-
-.gamePage:not(.phoneGame) .boardTrayEdge {
-	fill: var(--border);
-	stroke: var(--border);
-	stroke-linejoin: round;
-}
-
-.gamePage:not(.phoneGame) .boardTrayFill {
-	fill: var(--surface);
-	stroke: var(--surface);
-	stroke-linejoin: round;
-}
-
-.gamePage:not(.phoneGame) .board {
-	position: relative;
-	z-index: 1;
-	display: grid;
-	grid-template-columns: repeat(var(--board-columns), var(--board-cell-size));
-	grid-template-rows: repeat(var(--board-rows), var(--board-cell-size));
-	gap: var(--board-gap);
-	width: fit-content;
-	padding: var(--board-pad);
-	border: 0;
-	background: transparent;
-}
-
-.gamePage:not(.phoneGame) .tile {
-	width: var(--board-cell-size);
-	height: var(--board-cell-size);
-	border: 0;
-	border-radius: calc(2px * var(--ui-scale));
-	transition: opacity 80ms ease;
-}
-
-.gamePage:not(.phoneGame) .tileNonPlayable {
-	background: color-mix(in srgb, var(--cell) 10%, var(--surface)) !important;
-}
-
-.gamePage:not(.phoneGame) .tile[data-last-move] {
-	animation: gamePieceDrop 420ms cubic-bezier(.2,.9,.3,1.2) both;
-}
-
-@keyframes gamePieceDrop {
-	from {
-		transform: scale(1.35);
-		opacity: 0;
-	}
-
-	to {
-		transform: none;
-		opacity: 1;
-	}
 }
 
 .gamePage:not(.phoneGame) .boardLegend {
@@ -940,23 +857,11 @@
 		padding-block: 16px;
 	}
 
-	.gamePage:not(.phoneGame) .boardPanel {
-		flex: none;
-		height: auto;
-		margin-block: auto;
-		gap: 0;
-		border: 1px solid var(--border);
-		background: var(--surface);
-	}
 
-	.gamePage:not(.phoneGame) .boardTray,
 	.gamePage:not(.phoneGame) .boardLegend {
 		display: none;
 	}
 
-	.gamePage:not(.phoneGame) .tile {
-		border-radius: 2px;
-	}
 
 	.gamePage:not(.phoneGame) .piecesRight {
 		display: flex;

@@ -13,7 +13,7 @@ import PhoneGameLayout from '../components/game/layout/PhoneGameLayout'
 import { PLAYER_COLOR_HEX, getPlayerColorHex } from '../game/playerColors'
 import { canPlacePieceInAnyOrientation, closestLegalPlacement } from '../game/placementRules'
 import { horizontalFlip, wheelRotation } from '../game/piecePresentation'
-import { getNewGameNotice } from '../game/gameNotices'
+import { getNewGameNotice, readDismissedGameNotices, saveDismissedGameNotices } from '../game/gameNotices'
 import useUiScale from '../hooks/useUiScale'
 import '../styles/game/base.css'
 import '../styles/game/desktop.css'
@@ -46,6 +46,7 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 	const [hoverCells, setHoverCells] = useState([])
 	const [pendingPlacement, setPendingPlacement] = useState(null)
 	const [lastMessage, setLastMessage] = useState('')
+	const [dismissedMessages, setDismissedMessages] = useState(() => readDismissedGameNotices(gameId, credentials?.playerId))
 	const [isQuitting, setIsQuitting] = useState(false)
 	const [isRestarting, setIsRestarting] = useState(false)
 	const [closedWinnerTurnNumber, setClosedWinnerTurnNumber] = useState(null)
@@ -494,7 +495,14 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 		return null
 	}
 
-	const notice = <GameNotice message={lastMessage} onDismiss={() => setLastMessage('')} />
+	const dismissMessage = () => {
+		const dismissed = new Set(dismissedMessages)
+		dismissed.add(lastMessage)
+		saveDismissedGameNotices(gameId, credentials?.playerId, dismissed)
+		setDismissedMessages(dismissed)
+		setLastMessage('')
+	}
+	const notice = <GameNotice message={getNewGameNotice('', lastMessage, dismissedMessages)} onDismiss={dismissMessage} />
 	const winnerModal = (
 		<WinnerModal
 			isOpen={isFinished && !isWinnerModalClosed}
@@ -585,7 +593,6 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 					currentPlayerId={me?.id}
 					preview={{ color: me?.color, ability: selectedPiece?.ability }}
 					lastMove={game.moveHistory.at(-1)}
-					desktopPresentation
 				/>
 
 				<PiecePanel

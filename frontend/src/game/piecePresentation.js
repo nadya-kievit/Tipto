@@ -4,10 +4,11 @@ const FINISH_SIZES = {
 	list: { outline: 1, stripe: 1, repeat: 3 },
 }
 
-export function tileFinish(color, ability, context = 'board', isLastMove = false) {
-	const size = FINISH_SIZES[context] || FINISH_SIZES.board
+export function tileFinish(color, ability, context = 'board', isLastMove = false, boardMetrics = null) {
+	const size = context === 'board' && boardMetrics ? boardMetrics : FINISH_SIZES[context] || FINISH_SIZES.board
+	const bevel = size.bevel ?? 2
 	let background = color
-	let boxShadow = 'inset 0 2px 0 rgba(255,255,255,0.22), inset 0 -2px 0 rgba(0,0,0,0.2)'
+	let boxShadow = `inset 0 ${bevel}px 0 rgba(255,255,255,0.22), inset 0 -${bevel}px 0 rgba(0,0,0,0.2)`
 	if (ability === 'scout') {
 		background = `color-mix(in srgb, ${color} 16%, var(--cell))`
 		boxShadow = `inset 0 0 0 ${size.outline}px ${color}`

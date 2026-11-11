@@ -1,15 +1,15 @@
 import { useLayoutEffect, useRef, useState } from 'react'
-import { getPlayerColorHex } from '../../../game/playerColors'
-import { tileFinish } from '../../../game/piecePresentation'
+import { boardMetricsForCell, fitBoardMetrics } from '../../../game/boardPresentation'
+import '../../../styles/game/board.css'
 import Tile from './Tile'
 
 function Board({
 	board, boardRotation = 0, onTileClick, onBoardPointerMove, onBoardLeave,
 	hoverCells, pendingPlacement, players, currentPlayerId, preview, lastMove,
-	desktopPresentation = false, trayPresentation = false, lastMoveWidth = 2, trayMetrics = null,
+	onMetricsChange,
 }) {
 	const stageRef = useRef(null)
-	const [tray, setTray] = useState({ cell: 20, gap: 2, pad: 10 })
+	const [tray, setTray] = useState(() => boardMetricsForCell(20))
 	const height = board.length
 	const width = board[0]?.length || 0
 	const viewHeight = boardRotation % 180 === 0 ? height : width
@@ -22,72 +22,21 @@ function Board({
 	const abilities = new Map(players.flatMap(player => player.pieces
 		.filter(piece => piece.placed && piece.ability)
 		.map(piece => [`${player.id}-${piece.name}`, piece.ability])))
-	const framedPresentation = desktopPresentation || trayPresentation
 	useLayoutEffect(() => {
-		if (!framedPresentation || !stageRef.current) return undefined
 		const stage = stageRef.current
 		const update = () => {
-			if (trayPresentation && !desktopPresentation) {
-				const boardElement = stage.querySelector('[data-game-board]')
-				const tile = boardElement?.querySelector('.tile')
-				if (!boardElement || !tile) return
-				const boardStyle = getComputedStyle(boardElement)
-				const next = trayMetrics || {
-					cell: tile.getBoundingClientRect().width,
-					gap: Number.parseFloat(boardStyle.columnGap) || 0,
-					pad: Number.parseFloat(boardStyle.paddingLeft) || 0,
-				}
-				setTray(current => current.cell === next.cell && current.gap === next.gap && current.pad === next.pad ? current : next)
-				return
-			}
-			const legend = stage.querySelector('.boardLegend')
-			const scale = Number.parseFloat(getComputedStyle(stage.closest('.gamePage')).getPropertyValue('--ui-scale')) || 1
-			const availableWidth = stage.clientWidth
-			let availableHeight = stage.clientHeight - (legend?.offsetHeight || 0) - 14 * scale
-			if (window.matchMedia('(orientation: portrait) and (min-width: 700px)').matches) {
-				const main = stage.closest('.gameMain')
-				const playersPanel = main?.querySelector('.playerRankPanel')
-				const piecesPanel = main?.querySelector('.piecesRight')
-				if (main && playersPanel && piecesPanel) {
-					const mainStyle = getComputedStyle(main)
-					availableHeight = main.clientHeight
-						- Number.parseFloat(mainStyle.paddingTop)
-						- Number.parseFloat(mainStyle.paddingBottom)
-						- playersPanel.getBoundingClientRect().height
-						- piecesPanel.getBoundingClientRect().height
-						- 32
-				}
-			}
-			const portraitComputer = window.matchMedia('(orientation: portrait) and (min-width: 700px)').matches
-			const widthFactor = viewWidth + Math.max(0, viewWidth - 1) * 0.075 + 1
-			const heightFactor = viewHeight + Math.max(0, viewHeight - 1) * 0.075 + 1
-			let cell = Math.max(4, Math.floor(Math.min(availableWidth / widthFactor, availableHeight / heightFactor)))
-			if (portraitComputer) {
-				// Fit the rounded gap/padding and the tray's 1px outer outline, too.
-				const fits = size => {
-					const gap = Math.max(2, Math.round(size * 0.075))
-					const padding = 2 * Math.round(size * 0.5) + 2
-					return viewWidth * size + Math.max(0, viewWidth - 1) * gap + padding <= availableWidth
-						&& viewHeight * size + Math.max(0, viewHeight - 1) * gap + padding <= availableHeight
-				}
-				while (cell > 4 && !fits(cell)) cell -= 1
-			}
-			const next = { cell, gap: Math.max(portraitComputer ? 2 : Math.round(2 * scale), Math.round(cell * 0.075)), pad: Math.round(cell * 0.5) }
-			setTray(current => current.cell === next.cell && current.gap === next.gap && current.pad === next.pad ? current : next)
+			const style = getComputedStyle(stage)
+			const width = stage.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight)
+			const height = stage.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom)
+			const next = fitBoardMetrics(width, height, viewHeight, viewWidth)
+			if (next) setTray(current => current.cell === next.cell ? current : next)
 		}
 		update()
 		const observer = new ResizeObserver(update)
 		observer.observe(stage)
-		const legend = stage.querySelector('.boardLegend')
-		if (legend) observer.observe(legend)
-		const main = stage.closest('.gameMain')
-		const playersPanel = main?.querySelector('.playerRankPanel')
-		const piecesPanel = main?.querySelector('.piecesRight')
-		if (main) observer.observe(main)
-		if (playersPanel) observer.observe(playersPanel)
-		if (piecesPanel) observer.observe(piecesPanel)
 		return () => observer.disconnect()
-	}, [desktopPresentation, framedPresentation, trayPresentation, trayMetrics, viewHeight, viewWidth, board])
+	}, [viewHeight, viewWidth])
+	useLayoutEffect(() => { onMetricsChange?.(tray) }, [onMetricsChange, tray])
 	function viewToBoard(row, col) {
 		switch (boardRotation) {
 			case 90: return { row: height - 1 - col, col: row }
@@ -135,22 +84,16 @@ function Board({
 			startPlayer={startPlayer} isOwnStart={startPlayer?.id === currentPlayerId}
 			ability={pending ? pendingPlacement.ability : abilities.get(value.pieceId)}
 			preview={preview} isPending={pending} isLastMove={Boolean(value.occupied && lastCells.has(key))}
-			lastMoveEdges={lastEdges} lastMoveWidth={lastMoveWidth} desktopPresentation={framedPresentation} />
+			lastMoveEdges={lastEdges} metrics={tray} />
 	}))
-	const boardGrid = <div className="board" data-game-board onClick={onTileClick} onPointerMove={handlePointerMove} onPointerLeave={onBoardLeave}
-		style={desktopPresentation ? { '--board-cell-size': `${tray.cell}px`, '--board-gap': `${tray.gap}px`, '--board-pad': `${tray.pad}px` } : undefined}>{tiles}</div>
-	const trayWidth = viewWidth * tray.cell + Math.max(0, viewWidth - 1) * tray.gap + 2 * tray.pad
-	const trayHeight = viewHeight * tray.cell + Math.max(0, viewHeight - 1) * tray.gap + 2 * tray.pad
 	return (
-		<div className="boardStage" ref={stageRef} style={{ '--board-columns': viewWidth, '--board-rows': viewHeight }}>
-			<section className="boardPanel" aria-label="Game board">
-				{framedPresentation ? <div className="boardWrap">
-					<svg className="boardTray" aria-hidden="true" viewBox={`0 0 ${trayWidth} ${trayHeight}`}>
-						<rect className="boardTrayEdge" width={trayWidth} height={trayHeight} rx={2} strokeWidth={0} />
-						<rect className="boardTrayFill" x={1} y={1} width={trayWidth - 2} height={trayHeight - 2} rx={1} strokeWidth={0} />
-					</svg>
-					{boardGrid}
-				</div> : boardGrid}
+		<div className="boardStage" ref={stageRef}>
+			<section className="gameBoardSurface" aria-label="Game board" style={{
+				'--board-columns': viewWidth, '--board-rows': viewHeight,
+				'--board-cell-size': `${tray.cell}px`, '--board-gap': `${tray.gap}px`,
+				'--board-pad': `${tray.pad}px`, '--board-frame': `${tray.frame}px`, '--board-radius': `${tray.radius}px`,
+			}}>
+				<div className="board gameBoardGrid" data-game-board onClick={onTileClick} onPointerMove={handlePointerMove} onPointerLeave={onBoardLeave}>{tiles}</div>
 			</section>
 		</div>
 	)

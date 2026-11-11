@@ -1,0 +1,76 @@
+/* Shared palette also reaches desktop previews portalled outside gamePage. */
+:root {
+	--board-cell-color: #3D424F;
+	--board-surface-color: #1D212B;
+	--board-border-color: #2F3545;
+	--board-stripe-color: rgba(13, 14, 19, 0.55);
+}
+
+.gameBoardSurface, .gameBoardPiece {
+	--cell: var(--board-cell-color);
+	--surface: var(--board-surface-color);
+	--border: var(--board-border-color);
+	--stripe: var(--board-stripe-color);
+}
+
+/* All board appearance lives here. Page layouts only size the boardStage slot. */
+.gameBoardSurface {
+	position: relative;
+	flex: none;
+	box-sizing: border-box;
+	width: max-content;
+	max-width: 100%;
+	margin: auto;
+	padding: 0;
+	border: 0;
+	background: var(--surface);
+	box-shadow: inset 0 0 0 var(--board-frame) var(--border);
+	border-radius: var(--board-radius);
+}
+
+.gameBoardGrid.board {
+	position: relative;
+	display: grid;
+	grid-area: auto;
+	grid-template-columns: repeat(var(--board-columns), var(--board-cell-size));
+	grid-template-rows: repeat(var(--board-rows), var(--board-cell-size));
+	gap: var(--board-gap);
+	width: max-content;
+	padding: calc(var(--board-pad) + var(--board-frame));
+	border: 0;
+	border-radius: 0;
+	background: transparent;
+	box-shadow: none;
+	touch-action: none;
+}
+
+.gameBoardTile {
+	box-sizing: border-box;
+	position: relative;
+	display: block;
+	flex: none;
+	border: 0;
+	overflow: hidden;
+	user-select: none;
+	transition: opacity 80ms ease;
+}
+
+.gameBoardTile[data-last-move] {
+	animation: gamePieceDrop 420ms cubic-bezier(.2,.9,.3,1.2) both;
+}
+
+.gameBoardPiece {
+	position: relative;
+	display: block;
+	flex: none;
+	pointer-events: none;
+}
+
+@keyframes gamePieceDrop {
+	from { transform: scale(1.35); opacity: 0; }
+	to { transform: none; opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.gameBoardTile { transition: none; animation: none; }
+}

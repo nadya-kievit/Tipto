@@ -1,12 +1,15 @@
 import { useLayoutEffect, useRef } from 'react'
 import { getPlayerColorHex } from '../../../game/playerColors'
-import { displayCells, tileFinish } from '../../../game/piecePresentation'
+import { displayCells } from '../../../game/piecePresentation'
+import { boardMetricsForCell } from '../../../game/boardPresentation'
+import BoardPiece from '../board/BoardPiece'
 
 function CursorPiece({ piece, rotation, flipped, color, positionRef, cellSize = 28 }) {
 	const elementRef = useRef(null)
+	const metrics = boardMetricsForCell(cellSize)
 	const cells = displayCells(piece.cells, rotation, flipped)
-	const width = (Math.max(...cells.map(([, col]) => col)) + 1) * (cellSize + 1) - 1
-	const height = (Math.max(...cells.map(([row]) => row)) + 1) * (cellSize + 1) - 1
+	const width = (Math.max(...cells.map(([, col]) => col)) + 1) * (cellSize + metrics.gap) - metrics.gap
+	const height = (Math.max(...cells.map(([row]) => row)) + 1) * (cellSize + metrics.gap) - metrics.gap
 
 	useLayoutEffect(() => {
 		const element = elementRef.current
@@ -33,12 +36,7 @@ function CursorPiece({ piece, rotation, flipped, color, positionRef, cellSize = 
 			position: 'fixed', top: 0, left: 0, width, height, zIndex: 1000,
 			pointerEvents: 'none', willChange: 'transform', opacity: 0.6,
 		}}>
-			{cells.map(([row, col], index) => <i key={index} className="pieceFinishTile" style={{
-				position: 'absolute', boxSizing: 'border-box', borderRadius: 1,
-				width: cellSize, height: cellSize,
-				top: row * (cellSize + 1), left: col * (cellSize + 1),
-				...tileFinish(getPlayerColorHex(color), piece.ability),
-			}} />)}
+			<BoardPiece piece={{ ...piece, rotation, flipped }} metrics={metrics} color={getPlayerColorHex(color)} />
 		</div>
 	)
 }
