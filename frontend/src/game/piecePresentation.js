@@ -1,11 +1,11 @@
 const FINISH_SIZES = {
-	board: { outline: 3, stripe: 2, repeat: 7 },
 	tray: { outline: 2, stripe: 1, repeat: 5 },
 	list: { outline: 1, stripe: 1, repeat: 3 },
 }
 
-export function tileFinish(color, ability, context = 'board', isLastMove = false, boardMetrics = null) {
-	const size = context === 'board' && boardMetrics ? boardMetrics : FINISH_SIZES[context] || FINISH_SIZES.board
+// Compact tray/list pieces have their own finish; board tiles use board.css.
+export function tileFinish(color, ability, context = 'tray', isLastMove = false) {
+	const size = FINISH_SIZES[context] || FINISH_SIZES.tray
 	const bevel = size.bevel ?? 2
 	let background = color
 	let boxShadow = `inset 0 ${bevel}px 0 rgba(255,255,255,0.22), inset 0 -${bevel}px 0 rgba(0,0,0,0.2)`

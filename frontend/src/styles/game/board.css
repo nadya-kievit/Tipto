@@ -4,9 +4,28 @@
 	--board-surface-color: #1D212B;
 	--board-border-color: #2F3545;
 	--board-stripe-color: rgba(13, 14, 19, 0.55);
+	/* Ratios relative to one cell; the fitter reads these same geometry values. */
+	--board-gap-ratio: 0.075;
+	--board-pad-ratio: 0.5;
+	--board-frame-ratio: 0.02;
+	--board-radius-ratio: 0.04;
+	--board-bevel-ratio: 0.04;
+	--board-outline-ratio: 0.06;
+	--board-stripe-ratio: 0.04;
+	--board-repeat-ratio: 0.14;
+	--board-edge-ratio: 0.04;
 }
 
 .gameBoardSurface, .gameBoardPiece {
+	--board-gap: calc(var(--board-cell-size) * var(--board-gap-ratio));
+	--board-pad: calc(var(--board-cell-size) * var(--board-pad-ratio));
+	--board-frame: calc(var(--board-cell-size) * var(--board-frame-ratio));
+	--board-radius: calc(var(--board-cell-size) * var(--board-radius-ratio));
+	--board-bevel: calc(var(--board-cell-size) * var(--board-bevel-ratio));
+	--board-outline: calc(var(--board-cell-size) * var(--board-outline-ratio));
+	--board-stripe: calc(var(--board-cell-size) * var(--board-stripe-ratio));
+	--board-repeat: calc(var(--board-cell-size) * var(--board-repeat-ratio));
+	--board-edge: calc(var(--board-cell-size) * var(--board-edge-ratio));
 	--cell: var(--board-cell-color);
 	--surface: var(--board-surface-color);
 	--border: var(--board-border-color);
@@ -45,6 +64,12 @@
 }
 
 .gameBoardTile {
+	width: var(--board-cell-size);
+	height: var(--board-cell-size);
+	border-radius: var(--board-radius);
+	background: var(--tile-color);
+	box-shadow: inset 0 var(--board-bevel) 0 rgba(255,255,255,0.22),
+		inset 0 calc(-1 * var(--board-bevel)) 0 rgba(0,0,0,0.2);
 	box-sizing: border-box;
 	position: relative;
 	display: block;
@@ -55,13 +80,54 @@
 	transition: opacity 80ms ease;
 }
 
+.gameBoardTile[data-occupied="true"][data-ability="scout"] {
+	background: color-mix(in srgb, var(--tile-color) 16%, var(--cell));
+	box-shadow: inset 0 0 0 var(--board-outline) var(--tile-color);
+}
+
+.gameBoardTile[data-occupied="true"][data-ability="connector"] {
+	background: repeating-linear-gradient(135deg, var(--stripe) 0 var(--board-stripe),
+		transparent var(--board-stripe) var(--board-repeat)), var(--tile-color);
+	box-shadow: none;
+}
+
+.gameBoardTile[data-occupied="false"] {
+	background: var(--cell);
+	box-shadow: none;
+}
+
+.gameBoardTile[data-occupied="false"][data-playable="false"] {
+	background: color-mix(in srgb, var(--cell) 10%, var(--surface));
+}
+
+.gameBoardTile[data-start="true"] {
+	background: color-mix(in srgb, var(--tile-start-color) 28%, var(--cell));
+	box-shadow: inset 0 0 0 var(--board-edge) var(--tile-start-color);
+}
+
+.gameBoardTile::after {
+	--highlight: color-mix(in srgb, var(--tile-color) 45%, #fff);
+	content: '';
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	box-shadow: inset 0 calc(var(--tile-edge-top) * var(--board-edge)) 0 0 var(--highlight),
+		inset calc(-1 * var(--tile-edge-right) * var(--board-edge)) 0 0 0 var(--highlight),
+		inset 0 calc(-1 * var(--tile-edge-bottom) * var(--board-edge)) 0 0 var(--highlight),
+		inset calc(var(--tile-edge-left) * var(--board-edge)) 0 0 0 var(--highlight);
+}
+
 .gameBoardTile[data-last-move] {
 	animation: gamePieceDrop 420ms cubic-bezier(.2,.9,.3,1.2) both;
 }
 
 .gameBoardPiece {
 	position: relative;
-	display: block;
+	display: grid;
+	grid-template-columns: repeat(var(--board-columns), var(--board-cell-size));
+	grid-template-rows: repeat(var(--board-rows), var(--board-cell-size));
+	gap: var(--board-gap);
+	width: max-content;
 	flex: none;
 	pointer-events: none;
 }

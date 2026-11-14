@@ -1,15 +1,9 @@
 import { useLayoutEffect, useRef } from 'react'
 import { getPlayerColorHex } from '../../../game/playerColors'
-import { displayCells } from '../../../game/piecePresentation'
-import { boardMetricsForCell } from '../../../game/boardPresentation'
 import BoardPiece from '../board/BoardPiece'
 
 function CursorPiece({ piece, rotation, flipped, color, positionRef, cellSize = 28 }) {
 	const elementRef = useRef(null)
-	const metrics = boardMetricsForCell(cellSize)
-	const cells = displayCells(piece.cells, rotation, flipped)
-	const width = (Math.max(...cells.map(([, col]) => col)) + 1) * (cellSize + metrics.gap) - metrics.gap
-	const height = (Math.max(...cells.map(([row]) => row)) + 1) * (cellSize + metrics.gap) - metrics.gap
 
 	useLayoutEffect(() => {
 		const element = elementRef.current
@@ -17,7 +11,7 @@ function CursorPiece({ piece, rotation, flipped, color, positionRef, cellSize = 
 		const paint = () => {
 			frame = null
 			const { x, y } = positionRef.current
-			element.style.transform = `translate3d(${x - width / 2}px, ${y - height / 2}px, 0)`
+			element.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%)`
 		}
 		const move = event => {
 			positionRef.current = { x: event.clientX, y: event.clientY }
@@ -29,14 +23,14 @@ function CursorPiece({ piece, rotation, flipped, color, positionRef, cellSize = 
 			window.removeEventListener('pointermove', move)
 			cancelAnimationFrame(frame)
 		}
-	}, [height, positionRef, width])
+	}, [positionRef])
 
 	return (
 		<div ref={elementRef} className="gameHeldPiece" data-held-piece aria-hidden="true" style={{
-			position: 'fixed', top: 0, left: 0, width, height, zIndex: 1000,
+			position: 'fixed', top: 0, left: 0, width: 'max-content', zIndex: 1000,
 			pointerEvents: 'none', willChange: 'transform', opacity: 0.6,
 		}}>
-			<BoardPiece piece={{ ...piece, rotation, flipped }} metrics={metrics} color={getPlayerColorHex(color)} />
+			<BoardPiece piece={{ ...piece, rotation, flipped }} cellSize={cellSize} color={getPlayerColorHex(color)} />
 		</div>
 	)
 }

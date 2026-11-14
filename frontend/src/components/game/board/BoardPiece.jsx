@@ -1,13 +1,15 @@
 import { displayCells } from '../../../game/piecePresentation'
 import BoardTile from './BoardTile'
+import '../../../styles/game/board.css'
 
-export default function BoardPiece({ piece, metrics, color }) {
+export default function BoardPiece({ piece, cellSize, color }) {
 	const cells = displayCells(piece.cells, piece.rotation, piece.flipped)
 	const rows = Math.max(...cells.map(([row]) => row)) + 1
 	const cols = Math.max(...cells.map(([, col]) => col)) + 1
-	const stride = metrics.cell + metrics.gap
-	return <span className="gameBoardPiece" aria-hidden="true" style={{ width: cols * stride - metrics.gap, height: rows * stride - metrics.gap }}>
-		{cells.map(([row, col], index) => <BoardTile key={index} as="i" metrics={metrics} color={color} ability={piece.ability}
-			style={{ position: 'absolute', top: row * stride, left: col * stride }} />)}
+	return <span className="gameBoardPiece" aria-hidden="true" style={{
+		'--board-cell-size': `${cellSize}px`, '--board-columns': cols, '--board-rows': rows,
+	}}>
+		{cells.map(([row, col], index) => <BoardTile key={index} as="i" color={color} ability={piece.ability}
+			style={{ gridRow: row + 1, gridColumn: col + 1 }} />)}
 	</span>
 }

@@ -1,33 +1,39 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { boardMetricsForCell, fitBoardMetrics } from '../src/game/boardPresentation.js'
+import { readFileSync } from 'node:fs'
+import { fitBoardCell } from '../src/game/boardGeometry.js'
 import { tileFinish } from '../src/game/piecePresentation.js'
 
-test('boards of every shape fit the available slot, including their frame', () => {
-	for (const [width, height] of [[351, 316], [366, 480], [1000, 800], [1, 1]]) {
-		for (const [rows, cols] of [[12, 12], [16, 17], [17, 16], [25, 25]]) {
-			const m = fitBoardMetrics(width, height, rows, cols)
-			assert.ok(m && m.cell > 0)
-			assert.ok(cols * m.cell + (cols - 1) * m.gap + 2 * (m.pad + m.frame) <= width)
-			assert.ok(rows * m.cell + (rows - 1) * m.gap + 2 * (m.pad + m.frame) <= height)
+const css = readFileSync(new URL('../src/styles/game/board.css', import.meta.url), 'utf8')
+const ratios = Object.fromEntries(['gap', 'pad', 'frame'].map(name =>
+	[name, Number(css.match(new RegExp(`--board-${name}-ratio:\\s*([\\d.]+)`))[1])]))
+
+test('boards of every shape fit the available slot using stylesheet spacing', () => {
+	for (const spacing of [ratios, { gap: 0.15, pad: 0.75, frame: 0.05 }]) {
+		for (const [width, height] of [[351, 316], [366, 480], [1000, 800], [1, 1]]) {
+			for (const [rows, cols] of [[12, 12], [16, 17], [17, 16], [25, 25]]) {
+				const cell = fitBoardCell(width, height, rows, cols, spacing)
+				assert.ok(cell > 0)
+				const extent = count => cell * (count + (count - 1) * spacing.gap + 2 * (spacing.pad + spacing.frame))
+				assert.ok(extent(cols) <= width)
+				assert.ok(extent(rows) <= height)
+				// The next layout increment must exceed at least one available dimension.
+				const nextScale = (cell + 1 / 64) / cell
+				assert.ok(extent(cols) * nextScale > width || extent(rows) * nextScale > height)
+			}
 		}
 	}
-	assert.equal(fitBoardMetrics(0, 100, 12, 12), null)
 })
 
-test('phone and desktop decorations have the same proportions', () => {
-	const desktop = boardMetricsForCell(50)
-	const phone = boardMetricsForCell(20)
-	for (const key of Object.keys(desktop)) assert.ok(Math.abs(phone[key] / desktop[key] - 0.4) < 1e-12, key)
-	assert.equal(desktop.radius, 2)
-	assert.equal(desktop.bevel, 2)
-	assert.equal(desktop.outline, 3)
+test('empty slots and invalid board dimensions do not produce a cell size', () => {
+	for (const dimensions of [[0, 100, 12, 12], [100, 0, 12, 12], [100, 100, 0, 12], [100, 100, 12, -1]]) {
+		assert.equal(fitBoardCell(...dimensions, ratios), null)
+	}
 })
 
-test('board finishes scale highlights, Scout outlines and Connector stripes; tray finishes stay unchanged', () => {
-	const metrics = boardMetricsForCell(25)
-	assert.match(tileFinish('#8e44ad', null, 'board', false, metrics).boxShadow, /inset 0 1px/)
-	assert.match(tileFinish('#8e44ad', 'scout', 'board', false, metrics).boxShadow, /1.5px/)
-	assert.match(tileFinish('#8e44ad', 'connector', 'board', false, metrics).background, /0 1px, transparent 1px 3.5px/)
-	assert.deepEqual(tileFinish('#8e44ad', 'scout', 'tray', false, metrics), tileFinish('#8e44ad', 'scout', 'tray'))
+test('compact tray and list finishes retain their existing sizes', () => {
+	assert.match(tileFinish('#8e44ad', null, 'tray').boxShadow, /inset 0 2px/)
+	assert.match(tileFinish('#8e44ad', 'scout', 'tray').boxShadow, /0 2px/)
+	assert.match(tileFinish('#8e44ad', 'connector', 'tray').background, /0 1px, transparent 1px 5px/)
+	assert.match(tileFinish('#8e44ad', 'scout', 'list').boxShadow, /0 1px/)
 })

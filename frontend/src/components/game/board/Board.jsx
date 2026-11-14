@@ -1,15 +1,14 @@
 import { useLayoutEffect, useRef, useState } from 'react'
-import { boardMetricsForCell, fitBoardMetrics } from '../../../game/boardPresentation'
+import { fitBoardCell } from '../../../game/boardGeometry'
 import '../../../styles/game/board.css'
 import Tile from './Tile'
 
 function Board({
 	board, boardRotation = 0, onTileClick, onBoardPointerMove, onBoardLeave,
 	hoverCells, pendingPlacement, players, currentPlayerId, preview, lastMove,
-	onMetricsChange,
 }) {
 	const stageRef = useRef(null)
-	const [tray, setTray] = useState(() => boardMetricsForCell(20))
+	const [cellSize, setCellSize] = useState(20)
 	const height = board.length
 	const width = board[0]?.length || 0
 	const viewHeight = boardRotation % 180 === 0 ? height : width
@@ -28,15 +27,16 @@ function Board({
 			const style = getComputedStyle(stage)
 			const width = stage.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight)
 			const height = stage.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom)
-			const next = fitBoardMetrics(width, height, viewHeight, viewWidth)
-			if (next) setTray(current => current.cell === next.cell ? current : next)
+			const ratios = Object.fromEntries(['gap', 'pad', 'frame'].map(name =>
+				[name, Number.parseFloat(style.getPropertyValue(`--board-${name}-ratio`))]))
+			const next = fitBoardCell(width, height, viewHeight, viewWidth, ratios)
+			if (next) setCellSize(next)
 		}
 		update()
 		const observer = new ResizeObserver(update)
 		observer.observe(stage)
 		return () => observer.disconnect()
 	}, [viewHeight, viewWidth])
-	useLayoutEffect(() => { onMetricsChange?.(tray) }, [onMetricsChange, tray])
 	function viewToBoard(row, col) {
 		switch (boardRotation) {
 			case 90: return { row: height - 1 - col, col: row }
@@ -84,14 +84,13 @@ function Board({
 			startPlayer={startPlayer} isOwnStart={startPlayer?.id === currentPlayerId}
 			ability={pending ? pendingPlacement.ability : abilities.get(value.pieceId)}
 			preview={preview} isPending={pending} isLastMove={Boolean(value.occupied && lastCells.has(key))}
-			lastMoveEdges={lastEdges} metrics={tray} />
+			lastMoveEdges={lastEdges} />
 	}))
 	return (
 		<div className="boardStage" ref={stageRef}>
 			<section className="gameBoardSurface" aria-label="Game board" style={{
 				'--board-columns': viewWidth, '--board-rows': viewHeight,
-				'--board-cell-size': `${tray.cell}px`, '--board-gap': `${tray.gap}px`,
-				'--board-pad': `${tray.pad}px`, '--board-frame': `${tray.frame}px`, '--board-radius': `${tray.radius}px`,
+				'--board-cell-size': `${cellSize}px`,
 			}}>
 				<div className="board gameBoardGrid" data-game-board onClick={onTileClick} onPointerMove={handlePointerMove} onPointerLeave={onBoardLeave}>{tiles}</div>
 			</section>
