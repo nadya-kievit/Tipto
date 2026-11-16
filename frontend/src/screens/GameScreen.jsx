@@ -8,7 +8,6 @@ import PiecePanel from '../components/game/pieces/PiecePanel'
 import PlayerRank from '../components/game/players/PlayerRank'
 import TurnBanner from '../components/game/players/TurnBanner'
 import WinnerModal from '../components/game/overlays/WinnerModal'
-import GameNotice from '../components/game/overlays/GameNotice'
 import PhoneGameLayout from '../components/game/layout/PhoneGameLayout'
 import { PLAYER_COLOR_HEX, getPlayerColorHex } from '../game/playerColors'
 import { canPlacePieceInAnyOrientation, closestLegalPlacement } from '../game/placementRules'
@@ -502,7 +501,13 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 		setDismissedMessages(dismissed)
 		setLastMessage('')
 	}
-	const notice = <GameNotice message={getNewGameNotice('', lastMessage, dismissedMessages)} onDismiss={dismissMessage} />
+	const noticeMessage = getNewGameNotice('', lastMessage, dismissedMessages)
+	const notice = noticeMessage ? (
+		<div className="gameNotice" role="status">
+			<span>{noticeMessage}</span>
+			<button type="button" onClick={dismissMessage} aria-label="Dismiss message">Dismiss</button>
+		</div>
+	) : null
 	const winnerModal = (
 		<WinnerModal
 			isOpen={isFinished && !isWinnerModalClosed}

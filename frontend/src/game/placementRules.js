@@ -1,4 +1,24 @@
+import { displayCells } from './piecePresentation.js'
+
+const EDGE_NEIGHBORS = [[-1, 0], [1, 0], [0, -1], [0, 1]]
+const CORNER_NEIGHBORS = [[-1, -1], [-1, 1], [1, -1], [1, 1]]
+
+function touchesOwnPiece(board, cells, playerId, directions) {
+	return cells.some(({ row, col }) => directions.some(([dr, dc]) =>
+		board[row + dr]?.[col + dc]?.player === playerId))
+}
+
+function reservedStartingSquares(players, playerId) {
+	return new Set(players
+		.filter(other => other.id !== playerId && other.startPosition && !other.pieces.some(piece => piece.placed))
+		.map(other => `${other.startPosition.row},${other.startPosition.col}`))
+}
+
 export function isValidPlacement(board, cells, player, isFirstMove, players, ability) {
+	return validatePlacement(board, cells, player, isFirstMove, reservedStartingSquares(players, player.id), ability)
+}
+
+function validatePlacement(board, cells, player, isFirstMove, reservedStarts, ability) {
 	const boardHeight = board.length
 	const boardWidth = board[0]?.length || 0
 	if (!cells.length || cells.some(cell =>
@@ -8,17 +28,6 @@ export function isValidPlacement(board, cells, player, isFirstMove, players, abi
 		board[cell.row][cell.col].occupied
 	)) return false
 
-	const reservedStarts = new Set(
-		players
-			.filter(otherPlayer =>
-				otherPlayer.id !== player.id &&
-				otherPlayer.startPosition &&
-				!otherPlayer.pieces.some(piece => piece.placed)
-			)
-			.map(otherPlayer =>
-				`${otherPlayer.startPosition.row},${otherPlayer.startPosition.col}`
-			)
-	)
 	if (cells.some(cell => reservedStarts.has(`${cell.row},${cell.col}`))) return false
 
 	if (isFirstMove) {
@@ -28,57 +37,10 @@ export function isValidPlacement(board, cells, player, isFirstMove, players, abi
 		)
 	}
 
-	let touchesOwnPieceDiagonally = false
-	let touchesOwnPieceAlongEdge = false
-
-	for (const cell of cells) {
-		const sideNeighbors = [
-			[cell.row - 1, cell.col],
-			[cell.row + 1, cell.col],
-			[cell.row, cell.col - 1],
-			[cell.row, cell.col + 1],
-		]
-
-		if (sideNeighbors.some(([row, col]) =>
-			row >= 0 && row < boardHeight &&
-			col >= 0 && col < boardWidth &&
-			board[row][col].player === player.id
-		)) {
-			touchesOwnPieceAlongEdge = true
-			if (ability !== 'connector') return false
-		}
-
-		const diagonalNeighbors = [
-			[cell.row - 1, cell.col - 1],
-			[cell.row - 1, cell.col + 1],
-			[cell.row + 1, cell.col - 1],
-			[cell.row + 1, cell.col + 1],
-		]
-
-		if (diagonalNeighbors.some(([row, col]) =>
-			row >= 0 && row < boardHeight &&
-			col >= 0 && col < boardWidth &&
-			board[row][col].player === player.id
-		)) touchesOwnPieceDiagonally = true
-	}
-
+	const touchesEdge = touchesOwnPiece(board, cells, player.id, EDGE_NEIGHBORS)
+	if (touchesEdge && ability !== 'connector') return false
 	if (ability === 'scout') return true
-	if (ability === 'connector') return touchesOwnPieceAlongEdge || touchesOwnPieceDiagonally
-	return touchesOwnPieceDiagonally
-}
-
-
-export function rotationForCells(cells, rotation, flipped = false) {
-	return cells.map(([row, col]) => {
-		const transformedCol = flipped ? -col : col
-
-		switch (rotation) {
-			case 90: return [-transformedCol, row]
-			case 180: return [-row, -transformedCol]
-			case 270: return [transformedCol, -row]
-			default: return [row, transformedCol]
-		}
-	})
+	return (ability === 'connector' && touchesEdge) || touchesOwnPiece(board, cells, player.id, CORNER_NEIGHBORS)
 }
 
 
@@ -99,31 +61,15 @@ function distanceToCell(pointerRow, pointerCol, row, col) {
 }
 
 
-export function closestLegalPlacement(
-	board,
-	piece,
-	player,
-	boardRotation,
-	isFirstMove,
-	players,
-	pointerRow,
-	pointerCol,
-) {
-	if (!board.length || !piece || !player) return []
-
+// Row/column order preserves distance ties. Availability searches can stop at the first result.
+function* legalPlacements(board, piece, player, boardRotation, isFirstMove, reservedStarts) {
 	const boardHeight = board.length
 	const boardWidth = board[0]?.length || 0
 	const viewHeight = boardRotation % 180 === 0 ? boardHeight : boardWidth
 	const viewWidth = boardRotation % 180 === 0 ? boardWidth : boardHeight
-	const rotatedCells = rotationForCells(piece.cells, piece.rotation, piece.flipped)
-	const minRow = Math.min(...rotatedCells.map(cell => cell[0]))
-	const minCol = Math.min(...rotatedCells.map(cell => cell[1]))
-	const normalizedCells = rotatedCells.map(([row, col]) => [row - minRow, col - minCol])
+	const normalizedCells = displayCells(piece.cells, piece.rotation, piece.flipped)
 	const pieceRows = Math.max(...normalizedCells.map(cell => cell[0])) + 1
 	const pieceCols = Math.max(...normalizedCells.map(cell => cell[1])) + 1
-	let nearestCells = []
-	let nearestCellDistance = Infinity
-	let nearestCentreDistance = Infinity
 
 	for (let anchorRow = 0; anchorRow <= viewHeight - pieceRows; anchorRow += 1) {
 		for (let anchorCol = 0; anchorCol <= viewWidth - pieceCols; anchorCol += 1) {
@@ -136,20 +82,34 @@ export function closestLegalPlacement(
 				boardWidth,
 			))
 
-			if (!isValidPlacement(board, cells, player, isFirstMove, players, piece.ability)) continue
-
-			const cellDistance = Math.min(...viewCells.map(cell =>
-				distanceToCell(pointerRow, pointerCol, cell.row, cell.col)))
-			const centreRow = viewCells.reduce((total, cell) => total + cell.row + 0.5, 0) / viewCells.length
-			const centreCol = viewCells.reduce((total, cell) => total + cell.col + 0.5, 0) / viewCells.length
-			const centreDistance = (centreRow - pointerRow) ** 2 + (centreCol - pointerCol) ** 2
-
-			if (cellDistance < nearestCellDistance ||
-				(cellDistance === nearestCellDistance && centreDistance < nearestCentreDistance)) {
-				nearestCellDistance = cellDistance
-				nearestCentreDistance = centreDistance
-				nearestCells = cells
+			if (validatePlacement(board, cells, player, isFirstMove, reservedStarts, piece.ability)) {
+				yield { cells, viewCells }
 			}
+		}
+	}
+
+}
+
+
+export function closestLegalPlacement(board, piece, player, boardRotation, isFirstMove, players, pointerRow, pointerCol) {
+	if (!board.length || !piece || !player) return []
+
+	const reservedStarts = reservedStartingSquares(players, player.id)
+	let nearestCells = []
+	let nearestCellDistance = Infinity
+	let nearestCentreDistance = Infinity
+
+	for (const { cells, viewCells } of legalPlacements(board, piece, player, boardRotation, isFirstMove, reservedStarts)) {
+		const cellDistance = Math.min(...viewCells.map(cell => distanceToCell(pointerRow, pointerCol, cell.row, cell.col)))
+		const centreRow = viewCells.reduce((total, cell) => total + cell.row + 0.5, 0) / viewCells.length
+		const centreCol = viewCells.reduce((total, cell) => total + cell.col + 0.5, 0) / viewCells.length
+		const centreDistance = (centreRow - pointerRow) ** 2 + (centreCol - pointerCol) ** 2
+
+		if (cellDistance < nearestCellDistance ||
+			(cellDistance === nearestCellDistance && centreDistance < nearestCentreDistance)) {
+			nearestCellDistance = cellDistance
+			nearestCentreDistance = centreDistance
+			nearestCells = cells
 		}
 	}
 
@@ -157,66 +117,19 @@ export function closestLegalPlacement(
 }
 
 
-export function canPlacePieceInOrientation(
-	board,
-	piece,
-	rotation,
-	flipped,
-	player,
-	boardRotation,
-	isFirstMove,
-	players,
-) {
-	const boardHeight = board.length
-	const boardWidth = board[0]?.length || 0
-	const viewHeight = boardRotation % 180 === 0 ? boardHeight : boardWidth
-	const viewWidth = boardRotation % 180 === 0 ? boardWidth : boardHeight
-	const rotatedCells = rotationForCells(piece.cells, rotation, flipped)
-	const minRow = Math.min(...rotatedCells.map(cell => cell[0]))
-	const minCol = Math.min(...rotatedCells.map(cell => cell[1]))
-	const pieceRows = Math.max(...rotatedCells.map(cell => cell[0])) - minRow + 1
-	const pieceCols = Math.max(...rotatedCells.map(cell => cell[1])) - minCol + 1
-
-	for (let anchorRow = 0; anchorRow <= viewHeight - pieceRows; anchorRow += 1) {
-		for (let anchorCol = 0; anchorCol <= viewWidth - pieceCols; anchorCol += 1) {
-			const cells = rotatedCells.map(cell => viewToBoard(
-				anchorRow + cell[0] - minRow,
-				anchorCol + cell[1] - minCol,
-				boardRotation,
-				boardHeight,
-				boardWidth,
-			))
-
-			if (isValidPlacement(board, cells, player, isFirstMove, players, piece.ability)) {
-				return true
-			}
-		}
-	}
-
-	return false
+export function canPlacePieceInOrientation(board, piece, rotation, flipped, player, boardRotation, isFirstMove, players) {
+	const reservedStarts = reservedStartingSquares(players, player.id)
+	const orientedPiece = { ...piece, rotation, flipped }
+	return !legalPlacements(board, orientedPiece, player, boardRotation, isFirstMove, reservedStarts).next().done
 }
 
 
-export function canPlacePieceInAnyOrientation(
-	board,
-	piece,
-	player,
-	boardRotation,
-	isFirstMove,
-	players,
-) {
+export function canPlacePieceInAnyOrientation(board, piece, player, boardRotation, isFirstMove, players) {
+	const reservedStarts = reservedStartingSquares(players, player.id)
 	for (const flipped of [false, true]) {
 		for (const rotation of [0, 90, 180, 270]) {
-			if (canPlacePieceInOrientation(
-				board,
-				piece,
-				rotation,
-				flipped,
-				player,
-				boardRotation,
-				isFirstMove,
-				players,
-			)) return true
+			const orientedPiece = { ...piece, rotation, flipped }
+			if (!legalPlacements(board, orientedPiece, player, boardRotation, isFirstMove, reservedStarts).next().done) return true
 		}
 	}
 

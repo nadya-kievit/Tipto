@@ -78,6 +78,67 @@ test('closest placement updates over a non-playable board hole', () => {
 	assert.deepEqual(cells, [{ row: 2, col: 3 }])
 })
 
+test('searches preserve every rotation and flip of an asymmetric piece', () => {
+	const poses = [
+		[0, false, [[0, 0], [1, 0], [1, 1]]],
+		[90, false, [[1, 0], [1, 1], [0, 1]]],
+		[180, false, [[1, 1], [0, 1], [0, 0]]],
+		[270, false, [[0, 1], [0, 0], [1, 0]]],
+		[0, true, [[0, 1], [1, 1], [1, 0]]],
+		[90, true, [[0, 0], [0, 1], [1, 1]]],
+		[180, true, [[1, 0], [0, 0], [0, 1]]],
+		[270, true, [[1, 1], [1, 0], [0, 0]]],
+	]
+	for (const [rotation, flipped, offsets] of poses) {
+		const board = makeBoard(7, 5)
+		board.flat().forEach(cell => { cell.playable = false })
+		const expected = offsets.map(([row, col]) => ({ row: row + 1, col: col + 2 }))
+		expected.forEach(({ row, col }) => { board[row][col].playable = true })
+		const piece = { cells: [[0, 0], [1, 0], [1, 1]], rotation, flipped, ability: 'scout' }
+		assert.deepEqual(closestLegalPlacement(board, piece, ownPlayer, 0, false, [], 1.5, 2.5), expected)
+		assert.equal(canPlacePieceInOrientation(board, piece, rotation, flipped, ownPlayer, 0, false, []), true)
+		assert.equal(canPlacePieceInOrientation(board, piece, (rotation + 180) % 360, flipped, ownPlayer, 0, false, []), false)
+	}
+})
+
+test('searches map rotated rectangular boards back to board coordinates', () => {
+	const placements = [
+		[0, [{ row: 1, col: 2 }, { row: 2, col: 2 }, { row: 2, col: 3 }]],
+		[90, [{ row: 2, col: 1 }, { row: 2, col: 2 }, { row: 1, col: 2 }]],
+		[180, [{ row: 3, col: 4 }, { row: 2, col: 4 }, { row: 2, col: 3 }]],
+		[270, [{ row: 2, col: 5 }, { row: 2, col: 4 }, { row: 3, col: 4 }]],
+	]
+	for (const [boardRotation, expected] of placements) {
+		const board = makeBoard(7, 5)
+		board.flat().forEach(cell => { cell.playable = false })
+		expected.forEach(({ row, col }) => { board[row][col].playable = true })
+		const piece = { cells: [[0, 0], [1, 0], [1, 1]], rotation: 0, flipped: false, ability: 'scout' }
+		assert.deepEqual(closestLegalPlacement(board, piece, ownPlayer, boardRotation, false, [], 1.5, 2.5), expected)
+		assert.equal(canPlacePieceInOrientation(board, piece, 0, false, ownPlayer, boardRotation, false, []), true)
+	}
+})
+
+test('equally close occupied cells prefer the nearest piece centre', () => {
+	const piece = { cells: [[0, 0], [0, 1]], ability: 'scout' }
+	assert.deepEqual(closestLegalPlacement(makeBoard(4, 1), piece, ownPlayer, 0, false, [], 0.5, 1.9),
+		[{ row: 0, col: 1 }, { row: 0, col: 2 }])
+})
+
+test('exact distance ties keep the first placement in row and column order', () => {
+	const piece = { cells: [[0, 0]], ability: 'scout' }
+	assert.deepEqual(closestLegalPlacement(makeBoard(2, 2), piece, ownPlayer, 0, false, [], 1, 1),
+		[{ row: 0, col: 0 }])
+})
+
+test('a later edge contact invalidates a normal or Scout piece despite an earlier corner contact', () => {
+	const board = makeBoard(3, 3)
+	board[0][0] = { occupied: true, player: ownPlayer.id }
+	const cells = [{ row: 1, col: 1 }, { row: 1, col: 0 }]
+	for (const ability of abilities) {
+		assert.equal(isValidPlacement(board, cells, ownPlayer, false, [], ability), ability === 'connector')
+	}
+})
+
 const layouts = JSON.parse(readFileSync(new URL('../../backend/app/game/board_layouts_15.json', import.meta.url), 'utf8'))
 for (const config of layouts.boards) {
 	for (const ability of ['scout', 'connector']) {
