@@ -1,0 +1,917 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta http-equiv="Cache-Control" content="no-store">
+<meta http-equiv="Pragma" content="no-cache">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tipto phone 6 players</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+	--page: #161922; --surface: #1D212B; --surface-raised: #252A36;
+	--border: #2F3545; --border-strong: #3A4154; --text: #EDEFF5; --text-soft: #C9CDD9; --muted: #9AA1B5;
+	--cell: #3D424F; --leave-border: #4A3038; --leave-text: #F2A3A3;
+	--purple: #8e44ad; --orange: #f47c20; --red: #e34242; --blue: #0077ee; --green: #28a745; --yellow: #f3b51b; --teal: #17a2b8;
+	--me: var(--purple);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--page); color: var(--text); font-family: 'DM Sans', sans-serif; touch-action: manipulation; overscroll-behavior: none; }
+body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+button { font: inherit; color: inherit; border: 1px solid var(--border-strong); background: var(--surface-raised); border-radius: 4px; cursor: pointer; }
+svg { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---------- Top bar: Tipto menu, whose turn + timer, players button ---------- */
+.top { position: relative; flex: none; padding: 8px 8px 0; }
+.topRow { display: flex; gap: 6px; align-items: center; }
+.turn { --pc: var(--me); position: relative; flex: 1; min-width: 0; height: 42px; display: flex; align-items: center; gap: 8px; padding: 0 12px 0 14px; border: 1px solid var(--pc); border-radius: 4px; background: color-mix(in srgb, var(--pc) 10%, var(--surface)); font-size: 14px; font-weight: 600; overflow: hidden; }
+.turn::before { content: ''; position: absolute; inset: 0 auto 0 0; width: 3px; background: var(--pc); }
+.turn .lbl { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.turn .time { margin-left: auto; color: var(--text-soft); font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 500; }
+.timer { position: absolute; left: 3px; right: 0; bottom: 0; height: 3px; background: color-mix(in srgb, var(--pc) 25%, transparent); }
+.timer i { display: block; height: 100%; background: var(--pc); transform-origin: left; animation: drain 60s linear forwards; }
+@keyframes drain { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+/* While dragging, the top row shows which side does what: push the piece left to flip, right to rotate */
+.dragHint { position: absolute; left: 0; right: 0; top: 8px; height: 42px; display: none; align-items: center; justify-content: space-between; background: var(--page); }
+.dragging .dragHint { display: flex; }
+/* The tab and its portal line are ONE element: the line is the tab's ::after, so colour, glow, brightness and the
+   flash are a single filter over both and there is no seam between them. */
+.dh { --pcol: color-mix(in srgb, var(--me) calc(42% + 45% * var(--prox, 0)), var(--page)); position: relative; flex: none; display: flex; align-items: center; gap: 6px; height: 32px; background: var(--pcol); color: var(--text); font-size: 14px; font-weight: 700; filter: drop-shadow(0 0 calc(3px * var(--prox, 0)) color-mix(in srgb, var(--me) 22%, transparent)) brightness(calc(1 + .12 * var(--prox, 0))); transition: background 120ms, filter 120ms; }
+.dh::after { content: ''; position: absolute; top: 100%; width: 3px; height: var(--lh, 0px); background: inherit; pointer-events: none; transform: scaleX(calc(1 + .7 * var(--amt, 0))); } /* thickens from 3px to at most about 5px */
+#hFlip::after { left: 0; transform-origin: left center; } #hRot::after { right: 0; transform-origin: right center; }
+.dragHint { z-index: 60; }
+.dh.pulse { animation: pulse 520ms ease-out; }
+#hFlip { padding: 0 13px 0 10px; border-radius: 0 16px 16px 0; }
+#hRot { padding: 0 10px 0 13px; border-radius: 16px 0 0 16px; }
+.dh svg { width: 15px; height: 15px; stroke-width: 2.2; }
+.dh.near { --pcol: var(--me); filter: drop-shadow(0 0 4px color-mix(in srgb, var(--me) 40%, transparent)) brightness(1.12); }
+.dhText { flex: 1; min-width: 0; margin: 0 10px; text-align: center; color: var(--muted); font-size: 13px; font-style: italic; line-height: 1.25; }
+.dhText.rule { font-size: 12px; font-style: normal; color: var(--text-soft); }
+.dhText.rule b { color: var(--text); }
+.plBtn { flex: none; height: 42px; display: flex; align-items: center; gap: 6px; padding: 0 9px; background: var(--surface); border-color: var(--border); font-size: 13px; font-weight: 600; }
+.plBtn svg { width: 16px; height: 16px; stroke: var(--text-soft); }
+.plBtn b { font-family: 'Space Grotesk', sans-serif; font-size: 15px; }
+.plBtn small { color: var(--muted); font-size: 12px; font-weight: 600; }
+.plBtn .mcv { width: 12px; height: 12px; stroke: var(--muted); stroke-width: 2.5; transition: transform 150ms; }
+.plBtn[aria-expanded="true"] .mcv { transform: rotate(180deg); }
+
+/* Players list: drops down under the top row; tap an opponent to see their pieces */
+.plist { position: absolute; z-index: 25; top: calc(100% + 4px); left: 8px; right: 8px; padding: 6px; border: 1px solid var(--border-strong); border-radius: 6px; background: var(--surface-raised); box-shadow: 0 14px 36px rgba(0,0,0,.55); }
+.plist[hidden], .menu[hidden] { display: none; }
+.prow { --pc: var(--muted); position: relative; width: 100%; height: 44px; display: flex; align-items: center; gap: 10px; padding: 0 10px 0 14px; border: 0; border-radius: 4px; background: transparent; font-size: 14px; font-weight: 600; text-align: left; }
+.prow + .prow, .pieces + .prow { margin-top: 2px; }
+.prow::before { content: ''; position: absolute; left: 4px; top: 10px; bottom: 10px; width: 3px; border-radius: 2px; background: var(--pc); }
+.prow.active { background: color-mix(in srgb, var(--pc) 12%, transparent); }
+.prow.open { background: color-mix(in srgb, var(--pc) 16%, transparent); }
+.prow .rk { width: 14px; color: var(--muted); font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 400; }
+.prow .nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prow .tag { padding: 2px 6px; border-radius: 3px; background: color-mix(in srgb, var(--pc) 30%, transparent); color: var(--text); font-size: 10px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; }
+.prow .left { margin-left: auto; color: var(--muted); font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 400; }
+.prow .pts { width: 34px; text-align: right; font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 700; }
+.prow .cv { flex: none; width: 12px; height: 12px; stroke: var(--muted); stroke-width: 2.5; transition: transform 150ms; }
+.prow.open .cv { transform: rotate(180deg); }
+.prow .cvSpace { width: 12px; }
+.pieces { --me: var(--pc); display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; padding: 6px 8px 8px 14px; }
+.pieces span { height: 40px; display: grid; place-items: center; border-radius: 3px; background: var(--surface); }
+
+.more { flex: none; width: 50px; height: 42px; display: flex; align-items: center; justify-content: center; gap: 4px; background: var(--surface); border-color: var(--border); }
+.logo { display: grid; grid-template-columns: repeat(2, 8px); grid-template-rows: repeat(2, 8px); }
+.logo b { width: 8px; height: 8px; }
+.more .mcv { width: 12px; height: 12px; stroke: var(--muted); stroke-width: 2.5; transition: transform 150ms; }
+.more[aria-expanded="true"] .mcv { transform: rotate(180deg); }
+.brand { display: flex; align-items: center; gap: 8px; margin: 0 0 14px; padding-bottom: 12px; border-bottom: 1px solid var(--border); font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; }
+.brand .logo { grid-template-columns: repeat(2, 10px); grid-template-rows: repeat(2, 10px); }
+.brand .logo b { width: 10px; height: 10px; }
+
+.sbar { position: relative; height: 2px; margin: 0; border-radius: 1px; background: color-mix(in srgb, var(--border) 70%, transparent); touch-action: none; }
+.sbar[hidden] { visibility: hidden; display: block; }
+.sbar::before { content: ''; position: absolute; inset: -8px 0; }
+.sbar i { position: absolute; top: 0; bottom: 0; left: 0; border-radius: 1px; background: color-mix(in srgb, var(--me) 75%, transparent); }
+
+.menu { position: absolute; z-index: 30; top: calc(100% + 4px); left: 8px; width: 236px; padding: 14px; border: 1px solid var(--border-strong); border-radius: 6px; background: var(--surface-raised); box-shadow: 0 14px 36px rgba(0,0,0,.55); }
+.menu h5 { margin: 0 0 8px; color: var(--muted); font-size: 11px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase; }
+.code { display: flex; align-items: center; gap: 8px; }
+.code span { color: var(--muted); font-size: 13px; }
+.code b { font-family: 'JetBrains Mono', monospace; font-size: 17px; font-weight: 500; letter-spacing: 1px; }
+.code button { margin-left: auto; width: 32px; height: 32px; display: grid; place-items: center; background: var(--surface); }
+.code svg { width: 15px; height: 15px; stroke: var(--text-soft); }
+.leaveBtn { width: 100%; height: 38px; margin-top: 14px; border-color: var(--leave-border); background: transparent; color: var(--leave-text); font-size: 14px; font-weight: 600; }
+
+/* ---------- Board: edge to edge, cropped to the playable shape, as big as fits ---------- */
+.boardZone { position: relative; flex: 1; min-height: 0; }
+/* The view is a window onto the board. The board is laid out at zoomed size (22px squares) and moved / scaled
+   with one transform: scale < 1 = overview of the whole board, scale 1 = zoomed in. */
+.view { position: absolute; inset: 8px 6px; overflow: hidden; touch-action: none; }
+.board { position: absolute; left: 0; top: 0; display: grid; gap: var(--gap); transform-origin: 0 0; will-change: transform; }
+/* Minimap: whole board + a rectangle for the current view. Tap = overview, drag = move the view. */
+.mini { position: absolute; right: 10px; bottom: 12px; z-index: 5; display: none; padding: 3px; border: 1px solid var(--border-strong); border-radius: 6px; background: color-mix(in srgb, var(--page) 86%, transparent); touch-action: none; }
+body.zoomed .mini { display: block; }
+.mini.left { right: auto; left: 10px; }
+/* while carrying a piece the minimap is a faint, untouchable overlay (and hops aside when the piece nears it) */
+body.dragging .mini { opacity: 0; pointer-events: none; } /* the minimap disappears while a piece is carried */
+.dh.dim { opacity: .35; } .portal.dim { opacity: .25 !important; }
+/* Viewfinder shown on the zoomed-out board while carrying a piece */
+.vf { --p: 0; position: fixed; left: 0; top: 0; z-index: 45; pointer-events: none; padding: 3px; border-radius: 10px;
+	background: conic-gradient(from 0deg, var(--me) calc(var(--p) * 1turn), color-mix(in srgb, var(--me) 35%, transparent) 0);
+	-webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
+.vf[hidden] { display: none; }
+.mini canvas { display: block; }
+.miniX { position: absolute; top: 3px; right: 3px; width: 20px; height: 20px; display: grid; place-items: center; border-radius: 4px; background: color-mix(in srgb, var(--surface-raised) 92%, transparent); color: var(--text); pointer-events: none; }
+.miniX svg { width: 13px; height: 13px; stroke-width: 2.4; }
+
+.c { width: var(--cs); height: var(--cs); border-radius: 2px; }
+.c.on { background: var(--cell); }
+.c.start { background: color-mix(in srgb, var(--pc) 28%, var(--cell)); box-shadow: inset 0 0 0 2px var(--pc); }
+.c.filled { background: var(--pc); box-shadow: inset 0 2px 0 rgba(255,255,255,.22), inset 0 -2px 0 rgba(0,0,0,.2); }
+.c.filled.scout { background: color-mix(in srgb, var(--pc) 16%, var(--cell)); box-shadow: inset 0 0 0 2px var(--pc); }
+.c.filled.connector { background: repeating-linear-gradient(135deg, rgba(13,14,19,.55) 0 1px, transparent 1px 5px), var(--pc); box-shadow: none; }
+.ghost { position: absolute; left: 0; top: 0; border-radius: 2px; pointer-events: none; background: color-mix(in srgb, var(--me) 55%, var(--cell)); } /* drop spot on the board: a dimmer copy of the piece */
+
+/* ---------- Tray: loose pieces, no boxes. Swipe sideways to scroll, drag up to pick one up, tap to rotate. ---------- */
+.trayZone { position: relative; flex: none; padding: 4px 0 max(6px, calc(env(safe-area-inset-bottom) - 18px)); }
+.tray.waiting { opacity: .45; }
+.tray { display: grid; grid-auto-flow: column; grid-template-rows: repeat(2, var(--row, 66px)); grid-auto-columns: var(--col, 80px); gap: 2px 6px; padding: 0 10px; overflow-x: auto; overscroll-behavior-x: none; scrollbar-width: none; touch-action: pan-x; }
+.tray::-webkit-scrollbar { display: none; }
+.tray .sbar { margin: 0; }
+.trayBar { margin: 6px 10px 0; }
+.pc { display: grid; place-items: center; cursor: grab; transition: opacity 120ms; }
+.pc .shape { transition: transform 90ms, filter 90ms; }
+.pc.touch .shape { transform: scale(1.1); filter: brightness(1.15); } /* instant feedback before we know if it is a drag */
+.pc.lifted { opacity: .15; }
+.pc.lifted.home { opacity: .5; } /* drop spot in the tray: a dimmer copy of the piece */
+.shape { position: relative; display: block; }
+.shape i { position: absolute; border-radius: 1px; background: var(--me); box-shadow: inset 0 2px 0 rgba(255,255,255,.22), inset 0 -2px 0 rgba(0,0,0,.2); }
+.shape i.scout { background: color-mix(in srgb, var(--me) 16%, var(--cell)); box-shadow: inset 0 0 0 2px var(--me); }
+.shape i.connector { background: repeating-linear-gradient(135deg, rgba(13,14,19,.55) 0 1px, transparent 1px 5px), var(--me); box-shadow: none; }
+.pc .mark { position: absolute; }
+.shape.anim-rot { animation: spin 220ms cubic-bezier(.2,.8,.3,1); }
+.shape.anim-flip { animation: mirror 260ms cubic-bezier(.2,.8,.3,1); }
+@keyframes spin { from { transform: rotate(-90deg); } to { transform: none; } }
+@keyframes mirror { from { transform: scaleX(-1); } to { transform: none; } }
+.hint { margin: 2px 10px 0; color: var(--muted); font-size: 11px; text-align: center; }
+
+/* Portals: glowing lines down the board's left and right sides, shown only while dragging. Pushing the piece on
+   past the board's edge breaks it through: right rotates, left flips (and keeps going while held). The line brightens as you push. */
+/* Portal lines: a soft steady glow; they brighten as the piece gets close (--prox 0..1), light fully when the
+   piece turns, and pulse once when a drag starts */
+.portal { --prox: 0; --pcol: color-mix(in srgb, var(--me) calc(42% + 45% * var(--prox, 0)), var(--page)); position: fixed; z-index: 60; width: 3px; pointer-events: none; opacity: 0;
+	background: var(--pcol); filter: brightness(calc(1 + .2 * var(--prox)));
+	box-shadow: 0 0 calc(4px * var(--prox)) color-mix(in srgb, var(--me) 30%, transparent);
+	transition: opacity 150ms, background 120ms; }
+.dragging .portal { opacity: 1; }
+.portal { transform: scaleX(calc(1 + 1.3 * var(--amt, 0))); } /* the line thickens as the piece is pushed into it */
+#pFlip { transform-origin: left center; } #pRot { transform-origin: right center; }
+.portal.near { --pcol: var(--me); --prox: 1; box-shadow: 0 0 7px color-mix(in srgb, var(--me) 55%, transparent); }
+.portal { display: none !important; } /* superseded: the line is now part of each tab (.dh::after) */
+/* flash when a turn happens, tab and line together: a firm one for the first turn, a gentler one for turns repeated while held */
+@keyframes fire { 0% { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--me) 60%, transparent)) brightness(1.4); } 100% { filter: drop-shadow(0 0 4px color-mix(in srgb, var(--me) 40%, transparent)) brightness(1.12); } }
+@keyframes fireSoft { 0% { filter: drop-shadow(0 0 4px color-mix(in srgb, var(--me) 45%, transparent)) brightness(1.25); } 100% { filter: drop-shadow(0 0 4px color-mix(in srgb, var(--me) 40%, transparent)) brightness(1.12); } }
+.dh.fire { animation: fire 200ms ease-out; } .dh.fireSoft { animation: fireSoft 200ms ease-out; }
+.portal.pulse { animation: pulse 520ms ease-out; }
+@keyframes pulse { 40% { filter: drop-shadow(0 0 3px color-mix(in srgb, var(--me) 35%, transparent)) brightness(1.08); } }
+
+/* Floating piece: board-square size, held above the finger so it stays visible */
+/* Same styling as the tray pieces (the .shape rules above); it is just scaled to the board's zoom */
+.float { position: fixed; left: 0; top: 0; z-index: 50; pointer-events: none; transform-origin: 0 0; filter: drop-shadow(0 6px 8px rgba(0,0,0,.4)); }
+.float.back { transition: transform 180ms ease-in, opacity 180ms; opacity: 0; }
+</style>
+</head>
+<body>
+<header class="top">
+	<div class="topRow">
+		<button class="more" id="more" aria-label="Tipto menu" aria-expanded="false"><i class="logo"><b></b><b style="background:#f47c20"></b><b style="background:#14b8a6"></b><b style="background:#8b5cf6"></b></i><svg class="mcv" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
+		<div class="turn" id="turn"><span class="lbl">Your turn</span></div>
+		<button class="plBtn" id="plBtn" aria-label="Players" aria-expanded="false"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.6"/><path d="M15.5 14.2c3 .2 5.5 2.6 5.5 5.8"/></svg><small id="plRank">#2</small><b id="plScore">35</b><svg class="mcv" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
+	</div>
+	<div class="dragHint" aria-hidden="true">
+		<span class="dh" id="hFlip"><svg viewBox="0 0 24 24"><path d="M12 3v18M9 7 4 12l5 5zM15 7l5 5-5 5z"/></svg>Flip</span>
+		<span class="dhText" id="dhText">Hold the piece against an edge</span>
+		<span class="dh" id="hRot">Rotate<svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg></span>
+	</div>
+	<div class="plist" id="plist" hidden></div>
+	<div class="menu" id="menu" hidden>
+		<div class="brand"><i class="logo"><b></b><b style="background:#f47c20"></b><b style="background:#14b8a6"></b><b style="background:#8b5cf6"></b></i>Tipto</div>
+		<h5>Room</h5>
+		<div class="code"><span>Code</span><b>409172</b><button aria-label="Copy code"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg></button></div>
+		<button class="leaveBtn">Leave room</button>
+	</div>
+</header>
+
+<main class="boardZone" id="boardZone">
+	<div class="view" id="view"><div class="board" id="board"></div></div>
+	<div class="mini" id="mini"><canvas id="miniCanvas"></canvas><span class="miniX"><svg viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-7 7M10 20H4v-6M4 20l7-7"/></svg></span></div>
+</main>
+<div class="portal" id="pRot"></div>
+<div class="portal" id="pFlip"></div>
+
+<section class="trayZone" id="trayZone">
+	<div class="tray" id="tray"></div>
+	<div class="sbar trayBar" id="trayBar"><i></i></div>
+</section>
+
+<script>
+// ---------- Data ----------
+const TRAY = [
+	{ c: [[0,0],[1,0],[2,0],[3,0],[3,1]] },
+	{ c: [[0,0],[0,1],[1,1]] },
+	{ c: [[0,0],[1,0],[0,1],[0,2],[1,2]], kind: 'connector' },
+	{ c: [[1,0],[1,1],[0,2],[1,2],[2,2]] },
+	{ c: [[0,0],[0,1],[1,1],[1,2],[2,2]] },
+	{ c: [[1,0],[0,1],[1,1],[0,2],[1,2]] },
+	{ c: [[1,0],[0,1],[1,1],[2,1],[2,2]] },
+	{ c: [[0,0],[1,0],[0,1],[1,1]] },
+	{ c: [[0,0],[1,0],[2,0],[2,1]] },
+	{ c: [[1,0],[0,1],[1,1],[2,1]] },
+	{ c: [[0,0],[1,0],[1,1],[2,1]] },
+	{ c: [[0,0]], kind: 'scout' },
+	{ c: [[0,0],[1,0]] },
+	{ c: [[0,0],[1,0],[2,0]] },
+	{ c: [[0,0],[1,0],[2,0],[3,0]] },
+	{ c: [[0,0],[1,0],[2,0],[3,0],[4,0]] },
+];
+const SPECIAL = {
+	scout: '<b>Scout</b>: goes anywhere. Move the view first.',
+	connector: '<b>Connector</b>: may touch yours along an edge',
+};
+// Irregular board, already cropped to its playable shape ('#' = playable)
+const MASK = [
+	'.............#####.................',
+	'............#######................',
+	'............#######................',
+	'............########...............',
+	'...........############............',
+	'..........###############..######..',
+	'........###########.#############..',
+	'.......#####.#####...############..',
+	'.##########..#####......#########..',
+	'##########...#####........#######..',
+	'########......####........#######..',
+	'#######.......####........#######..',
+	'#########.....#####........######..',
+	'############.#######.........###...',
+	'#####################........###...',
+	'.#####..##############.......###...',
+	'..........############.......###...',
+	'............##########.......####..',
+	'.............#########.......####..',
+	'.............#########.......####..',
+	'...........###########.......####..',
+	'..........###########........######',
+	'.........###########........#######',
+	'.......######...............#######',
+	'..##########...............########',
+	'.#########.................########',
+	'.########................##########',
+	'.#######................##########.',
+	'.##########...........######.......',
+	'.############........######........',
+	'.########################..........',
+	'..#####..###############...........',
+	'...........###########.............',
+	'..............########.............',
+	'..............########.............',
+	'..............########.............',
+	'...............######..............',
+];
+const COLS = MASK[0].length, ROWS = MASK.length;
+const START = { '5,11': 'purple', '16,5': 'blue', '29,12': 'yellow', '6,27': 'teal', '17,33': 'red' };
+const filled = { '29,24': { color: 'orange', kind: 'connector' }, '30,24': { color: 'orange', kind: 'connector' }, '30,25': { color: 'orange', kind: 'connector' }, '31,25': { color: 'orange', kind: 'connector' } }; // Bot 1's first move
+
+const ALL = [ // start of a 6-player game: everyone on 0; in this mockup it stays your turn so you can keep placing
+	{ n: 'Bot 1', c: 'orange', s: 0, placed: [2] },
+	{ n: 'Bot 2', c: 'yellow', s: 0, placed: [] },
+	{ n: 'Bot 3', c: 'teal', s: 0, placed: [] },
+	{ n: 'You', c: 'purple', you: true, s: 0, placed: [], active: true },
+	{ n: 'Bot 4', c: 'blue', s: 0, placed: [] },
+	{ n: 'Bot 5', c: 'red', s: 0, placed: [] },
+];
+
+// ---------- Helpers ----------
+const $ = id => document.getElementById(id);
+const norm = c => { const mx = Math.min(...c.map(p => p[0])), my = Math.min(...c.map(p => p[1])); return c.map(([x, y]) => [x - mx, y - my]); };
+const dims = c => [Math.max(...c.map(p => p[0])) + 1, Math.max(...c.map(p => p[1])) + 1];
+function shapeHTML(c, kind, size, gap = 1, cls = '', bridge = false) {
+	const [w, h] = dims(c);
+	const has = new Set(c.map(p => p.join(',')));
+	// bridge: fill the gaps between neighbouring tiles with the page background (only between tiles, never the empty corners)
+	const fills = !bridge ? '' : c.map(([x, y]) => {
+		const L = x * (size + gap), Tp = y * (size + gap), out = [];
+		if (has.has(`${x + 1},${y}`)) out.push(`left:${L + size}px;top:${Tp}px;width:${gap}px;height:${size}px`);
+		if (has.has(`${x},${y + 1}`)) out.push(`left:${L}px;top:${Tp + size}px;width:${size}px;height:${gap}px`);
+		if (has.has(`${x + 1},${y}`) && has.has(`${x},${y + 1}`) && has.has(`${x + 1},${y + 1}`)) out.push(`left:${L + size}px;top:${Tp + size}px;width:${gap}px;height:${gap}px`);
+		return out.map(s => `<b style="position:absolute;background:var(--page);${s}"></b>`).join('');
+	}).join('');
+	return `<span class="shape ${cls}" style="width:${w * size + (w - 1) * gap}px;height:${h * size + (h - 1) * gap}px">${fills}${c.map(([x, y]) => `<i class="${kind || ''}" style="width:${size}px;height:${size}px;left:${x * (size + gap)}px;top:${y * (size + gap)}px"></i>`).join('')}</span>`;
+}
+
+// ---------- Players ----------
+const list = ALL.slice().sort((a, b) => b.s - a.s); // leader first
+const plist = $('plist'), plBtn = $('plBtn');
+let openName = null;
+const me = list.find(p => p.you);
+$('plRank').textContent = '#' + (list.indexOf(me) + 1); $('plScore').textContent = me.s;
+const cur = list.find(p => p.active);
+$('turn').style.setProperty('--pc', `var(--${cur.c})`);
+$('turn').querySelector('.lbl').textContent = cur.you ? 'Your turn' : `${cur.n}'s turn`;
+function renderList() {
+	plist.innerHTML = list.map((p, k) => {
+		const open = p.n === openName;
+		const row = `<button class="prow ${p.active ? 'active' : ''} ${open ? 'open' : ''}" style="--pc:var(--${p.c})" data-name="${p.n}">
+			<span class="rk">${k + 1}</span><span class="nm">${p.n}</span>${p.active ? '<span class="tag">Turn</span>' : ''}
+			<span class="left">${16 - p.placed.length} left</span><span class="pts">${p.s}</span>
+			${p.you ? '<span class="cvSpace"></span>' : '<svg class="cv" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>'}</button>`;
+		const pieces = open ? `<div class="pieces" style="--pc:var(--${p.c})">${TRAY.map((t, i) => p.placed.includes(i) ? '' : `<span>${shapeHTML(t.c, t.kind, 7)}</span>`).join('')}</div>` : '';
+		return row + pieces;
+	}).join('');
+}
+const setList = open => { plist.hidden = !open; plBtn.setAttribute('aria-expanded', open); if (!open) openName = null; if (open) renderList(); };
+
+// ---------- Menu ----------
+const more = $('more'), menu = $('menu');
+const setMenu = open => { menu.hidden = !open; more.setAttribute('aria-expanded', open); };
+function closePopups() { setMenu(false); setList(false); }
+document.addEventListener('click', e => {
+	if (e.target.closest('#more')) { const o = menu.hidden; closePopups(); setMenu(o); return; }
+	if (e.target.closest('#plBtn')) { const o = plist.hidden; closePopups(); setList(o); return; }
+	const row = e.target.closest('.prow');
+	if (row) { const p = list.find(x => x.n === row.dataset.name); if (!p.you) { openName = openName === p.n ? null : p.n; renderList(); } return; }
+	if (!e.target.closest('#menu') && !e.target.closest('#plist')) closePopups();
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closePopups(); });
+
+// ---------- Scroll bars (thumb = visible share, follows the scroll; drag or tap the track) ----------
+function scrollBar(bar, el) {
+	const thumb = bar.querySelector('i');
+	const draw = () => {
+		const max = el.scrollWidth - el.clientWidth;
+		bar.hidden = max <= 1;
+		const tw = bar.clientWidth * el.clientWidth / el.scrollWidth;
+		thumb.style.width = tw + 'px';
+		thumb.style.transform = `translateX(${max > 0 ? el.scrollLeft / max * (bar.clientWidth - tw) : 0}px)`;
+	};
+	el.addEventListener('scroll', draw); addEventListener('resize', draw);
+	const to = x => { const r = bar.getBoundingClientRect(); return (x - r.left) / r.width * el.scrollWidth - el.clientWidth / 2; };
+	let on = false;
+	bar.addEventListener('pointerdown', e => { on = true; bar.setPointerCapture(e.pointerId); el.scrollLeft = to(e.clientX); });
+	bar.addEventListener('pointermove', e => { if (on) el.scrollLeft = to(e.clientX); });
+	bar.addEventListener('pointerup', () => on = false);
+	return draw;
+}
+
+// ---------- Board ----------
+const boardEl = $('board');
+const areasLayer = document.createElement('div'); areasLayer.style.cssText = 'position:absolute;inset:0;pointer-events:none';
+const CELL = 22, GAP = 2;          // board squares are always laid out at zoomed size
+const STEP = CELL + GAP;
+const ZOOM = 0.8; // zoomed-in scale: 17.6px squares, so more of the board fits on screen
+const BW = COLS * STEP - GAP, BH = ROWS * STEP - GAP; // board size at scale 1
+const viewEl = $('view');
+const MY_START = Object.keys(START).find(k => START[k] === 'purple').split(',').map(Number);
+// view.s = scale, view.tx / view.ty = board offset inside the view (px), view.mode = 'over' | 'zoom'
+const view = { s: 1, tx: 0, ty: 0, mode: 'over', s0: 1 };
+// Give any height the board can't use (it is limited by the screen width) to the tray, so pieces get bigger
+// without the board getting smaller. Squares grow from 11px up to 16px.
+function fitTray() {
+	tray.style.setProperty('--row', '66px'); tray.style.setProperty('--col', '80px'); T = 11;
+	const z = $('boardZone'), boardW = z.clientWidth - 12, cell = Math.floor((boardW - (COLS - 1) * GAP) / COLS);
+	const boardH = ROWS * cell + (ROWS - 1) * GAP, extra = z.clientHeight - 16 - boardH;
+	T = Math.max(11, Math.min(16, Math.floor((Math.max(0, extra - 10) / 2 + 54) / 5)));
+	const apply = () => { tray.style.setProperty('--row', (5 * T + 12) + 'px'); tray.style.setProperty('--col', (5 * T + 24) + 'px'); };
+	apply();
+	// Never let the tray push the page past the screen (which would shrink the board)
+	const fits = () => z.clientHeight - 16 >= boardH && $('trayZone').getBoundingClientRect().bottom <= innerHeight + 0.5;
+	while (!fits() && T > 11) { T--; apply(); }
+}
+function applyView() {
+	boardEl.style.transform = `translate(${view.tx}px, ${view.ty}px) scale(${view.s})`;
+	document.body.classList.toggle('ov', view.mode === 'over');
+	document.body.classList.toggle('zoomed', view.mode === 'zoom');
+	drawMini();
+}
+function clampAt(sc, tx, ty) {
+	const vw = viewEl.clientWidth, vh = viewEl.clientHeight, w = BW * sc, h = BH * sc;
+	return [w <= vw ? (vw - w) / 2 : Math.min(0, Math.max(vw - w, tx)), h <= vh ? (vh - h) / 2 : Math.min(0, Math.max(vh - h, ty))];
+}
+function clampView() { [view.tx, view.ty] = clampAt(view.s, view.tx, view.ty); }
+function setMode(m) { view.mode = m; document.body.classList.toggle('ov', m === 'over'); document.body.classList.toggle('zoomed', m === 'zoom'); }
+// Move to a target view. Animated: the scale changes geometrically and one board point (the focus) travels in a
+// straight line on screen, so the zoom glides toward that point instead of wobbling.
+let viewAnim = 0;
+function goView(mode, s1, tx1, ty1, focus, animate, done) {
+	cancelAnimationFrame(viewAnim);
+	const s0 = view.s, tx0 = view.tx, ty0 = view.ty;
+	view.mode = mode; view.s = s1; view.tx = tx1; view.ty = ty1; clampView();
+	const end = { s: view.s, tx: view.tx, ty: view.ty };
+	if (!animate || (Math.abs(s0 - end.s) < .001 && Math.abs(tx0 - end.tx) < 1 && Math.abs(ty0 - end.ty) < 1)) { applyView(); done && done(); return; }
+	document.body.classList.toggle('ov', mode === 'over'); document.body.classList.toggle('zoomed', mode === 'zoom');
+	view.s = s0; view.tx = tx0; view.ty = ty0; // stay at the starting view until the first animation frame
+	const fx0 = focus[0] * s0 + tx0, fy0 = focus[1] * s0 + ty0, fx1 = focus[0] * end.s + end.tx, fy1 = focus[1] * end.s + end.ty;
+	const t0 = performance.now(), D = 600;
+	const frame = now => {
+		let t = Math.min(1, (now - t0) / D); t = t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; // ease in-out
+		const sc = s0 * Math.pow(end.s / s0, t);
+		view.s = sc; view.tx = fx0 + (fx1 - fx0) * t - focus[0] * sc; view.ty = fy0 + (fy1 - fy0) * t - focus[1] * sc;
+		boardEl.style.transform = `translate(${view.tx}px, ${view.ty}px) scale(${view.s})`;
+		if (drag && drag.zooming) placeFloat(); // the carried piece scales in the very same frame as the board
+		if (t < 1) { viewAnim = requestAnimationFrame(frame); return; }
+		view.s = end.s; view.tx = end.tx; view.ty = end.ty; applyView(); done && done();
+	};
+	viewAnim = requestAnimationFrame(frame);
+}
+// Overview: the whole board, centred (zooms out from whatever is in the middle of the screen)
+function showOverview(animate, done) {
+	const focus = [(viewEl.clientWidth / 2 - view.tx) / view.s, (viewEl.clientHeight / 2 - view.ty) / view.s];
+	view.s0 = Math.min(viewEl.clientWidth / BW, viewEl.clientHeight / BH);
+	goView('over', view.s0, 0, 0, focus, animate, done);
+}
+// Zoom in, centred on a board point (in board px at scale 1)
+function zoomTo(bx, by, animate, done) {
+	goView('zoom', ZOOM, viewEl.clientWidth / 2 - bx * ZOOM, viewEl.clientHeight / 2 - by * ZOOM, [bx, by], animate, done);
+}
+// Where the board (gr) and its visible part (br) are on screen right now
+function boardRects() {
+	const vr = viewEl.getBoundingClientRect();
+	const gr = { left: vr.left + view.tx, top: vr.top + view.ty, right: vr.left + view.tx + BW * view.s, bottom: vr.top + view.ty + BH * view.s };
+	const br = { left: Math.max(gr.left, vr.left), right: Math.min(gr.right, vr.right), top: Math.max(gr.top, vr.top), bottom: Math.min(gr.bottom, vr.bottom) };
+	return { gr, br };
+}
+function layoutView(keep) {
+	if (view.mode === 'zoom' && keep) { clampView(); applyView(); } else showOverview(false);
+}
+
+// ---------- Your areas: clusters of your pieces (or your starting square) ----------
+let areas = [], lastCell = null;
+function findAreas() {
+	const mine = Object.keys(filled).filter(k => filled[k].color === 'purple').map(k => k.split(',').map(Number));
+	const pts = mine.length ? mine : [MY_START];
+	const groups = [];
+	pts.forEach(pt => {
+		const near = groups.filter(g => g.some(q => Math.max(Math.abs(q[0] - pt[0]), Math.abs(q[1] - pt[1])) <= 5));
+		const merged = [pt].concat(...near);
+		near.forEach(g => groups.splice(groups.indexOf(g), 1));
+		groups.push(merged);
+	});
+	areas = groups.map(g => {
+		const xs = g.map(q => q[0]), ys = g.map(q => q[1]), pad = 3;
+		const x0 = Math.max(0, Math.min(...xs) - pad), x1 = Math.min(COLS - 1, Math.max(...xs) + pad);
+		const y0 = Math.max(0, Math.min(...ys) - pad), y1 = Math.min(ROWS - 1, Math.max(...ys) + pad);
+		return { x0, y0, x1, y1, cx: (x0 + x1 + 1) / 2 * STEP, cy: (y0 + y1 + 1) / 2 * STEP, cells: g };
+	});
+}
+// The area you played in last (or your only one)
+function currentArea() {
+	if (lastCell) { const a = areas.find(a => a.cells.some(q => q[0] === lastCell[0] && q[1] === lastCell[1])); if (a) return a; }
+	return areas[0];
+}
+function zoomToArea(animate) { const a = currentArea(); zoomTo(a.cx, a.cy, animate); }
+
+// ---------- Placement rules (as in the real game) ----------
+const isMine = (x, y) => { const f = filled[`${x},${y}`]; return !!f && f.color === 'purple'; };
+function legalAt(shape, gx, gy, kind) {
+	const cells = shape.map(([sx, sy]) => [sx + gx, sy + gy]);
+	if (!cells.every(([x, y]) => MASK[y] && MASK[y][x] === '#' && !filled[`${x},${y}`])) return false;
+	const hasPieces = Object.values(filled).some(f => f.color === 'purple');
+	if (!hasPieces) return cells.some(([x, y]) => x === MY_START[0] && y === MY_START[1]); // first move covers your start
+	const edge = cells.some(([x, y]) => isMine(x + 1, y) || isMine(x - 1, y) || isMine(x, y + 1) || isMine(x, y - 1));
+	const corner = cells.some(([x, y]) => isMine(x + 1, y + 1) || isMine(x - 1, y - 1) || isMine(x + 1, y - 1) || isMine(x - 1, y + 1));
+	if (kind === 'scout') return !edge;            // anywhere, but never edge-to-edge with your own
+	if (kind === 'connector') return edge || corner; // may touch along an edge too
+	return corner && !edge;                          // normal: corner contact, no shared edge
+}
+
+// ---------- Minimap ----------
+const miniCanvas = $('miniCanvas'), MK = 2.4; // px per board square
+function drawMini() {
+	const dpr = window.devicePixelRatio || 1, w = COLS * MK, h = ROWS * MK;
+	if (miniCanvas.width !== Math.round(w * dpr)) { miniCanvas.width = Math.round(w * dpr); miniCanvas.height = Math.round(h * dpr); miniCanvas.style.width = w + 'px'; miniCanvas.style.height = h + 'px'; }
+	const g = miniCanvas.getContext('2d'), css = getComputedStyle(document.documentElement);
+	const col = n => css.getPropertyValue('--' + n).trim();
+	g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
+	for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
+		if (MASK[y][x] !== '#') continue;
+		const f = filled[`${x},${y}`], st = START[`${x},${y}`];
+		g.fillStyle = f ? col(f.color) : st ? col(st) : '#4a5060';
+		g.fillRect(x * MK, y * MK, MK - .4, MK - .4);
+	}
+	// current view
+	const k = MK / STEP, vx = -view.tx / view.s * k, vy = -view.ty / view.s * k, vw = viewEl.clientWidth / view.s * k, vh = viewEl.clientHeight / view.s * k;
+	// no white frame when the view already covers the whole board (nothing to point at)
+	if (vw < w - 1.5 || vh < h - 1.5) { g.strokeStyle = '#fff'; g.lineWidth = 1.5; g.strokeRect(Math.max(.75, vx), Math.max(.75, vy), Math.min(w - 1.5, vw), Math.min(h - 1.5, vh)); }
+}
+// Minimap: tap = overview; drag = move the view there
+(() => {
+	const mini = $('mini'); let down = null;
+	const go = e => { const r = miniCanvas.getBoundingClientRect(); zoomTo((e.clientX - r.left) / MK * STEP, (e.clientY - r.top) / MK * STEP, false); };
+	mini.addEventListener('pointerdown', e => { e.stopPropagation(); if (drag) return; try { mini.setPointerCapture(e.pointerId); } catch (err) {} down = { x: e.clientX, y: e.clientY, moved: false }; });
+	mini.addEventListener('pointermove', e => { if (!down) return; if (!down.moved && Math.hypot(e.clientX - down.x, e.clientY - down.y) > 5) down.moved = true; if (down.moved) go(e); });
+	mini.addEventListener('pointerup', e => { if (!down) return; if (!down.moved) showOverview(true); down = null; });
+	mini.addEventListener('pointercancel', () => { down = null; });
+})();
+
+// ---------- One-finger view control: in the overview a tap zooms in there; when zoomed a drag pans ----------
+(() => {
+	let down = null;
+	viewEl.addEventListener('pointerdown', e => {
+		if (drag || pending) return;
+		try { viewEl.setPointerCapture(e.pointerId); } catch (err) {}
+		down = { id: e.pointerId, x: e.clientX, y: e.clientY, tx: view.tx, ty: view.ty, moved: false };
+	});
+	viewEl.addEventListener('pointermove', e => {
+		if (!down || e.pointerId !== down.id) return;
+		const dx = e.clientX - down.x, dy = e.clientY - down.y;
+		if (!down.moved && Math.hypot(dx, dy) > 6) down.moved = true;
+		if (down.moved && view.mode === 'zoom') { view.tx = down.tx + dx; view.ty = down.ty + dy; clampView(); applyView(); }
+	});
+	viewEl.addEventListener('pointerup', e => {
+		if (!down || e.pointerId !== down.id) return;
+		if (!down.moved) {
+			if (view.mode === 'over') { const r = viewEl.getBoundingClientRect(); zoomTo((e.clientX - r.left - view.tx) / view.s, (e.clientY - r.top - view.ty) / view.s, true); }
+			else showOverview(true);
+		}
+		down = null;
+	});
+	viewEl.addEventListener('pointercancel', () => { down = null; });
+})();
+
+function renderBoard() {
+	let html = '';
+	for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) {
+		const k = `${x},${y}`;
+		if (MASK[y][x] !== '#') { html += '<span class="c"></span>'; continue; }
+		if (filled[k]) html += `<span class="c filled ${filled[k].kind || ''}" style="--pc:var(--${filled[k].color})"></span>`;
+		else if (START[k]) html += `<span class="c start" style="--pc:var(--${START[k]})"></span>`;
+		else html += '<span class="c on"></span>';
+	}
+	boardEl.innerHTML = html;
+	boardEl.style.setProperty('--cs', CELL + 'px'); boardEl.style.setProperty('--gap', GAP + 'px');
+	boardEl.style.gridTemplateColumns = `repeat(${COLS}, ${CELL}px)`;
+	boardEl.appendChild(areasLayer); boardEl.appendChild(ghostLayer);
+	findAreas();
+}
+
+// ---------- Tray ----------
+const tray = $('tray');
+const shapes = TRAY.map(p => p.c.map(q => [...q]));
+const placed = new Set();
+let T = 11; // tray square size (grows when there is spare height)
+function renderTray() {
+	tray.innerHTML = TRAY.map((p, i) => placed.has(i) ? '' : `<div class="pc" data-i="${i}">${shapeHTML(shapes[i], p.kind, T)}</div>`).join('');
+	drawTrayBar();
+}
+function redrawPiece(i, anim) {
+	const el = tray.querySelector(`.pc[data-i="${i}"]`);
+	if (el) el.innerHTML = shapeHTML(shapes[i], TRAY[i].kind, T, 1, anim || '');
+}
+const rotate = i => { shapes[i] = norm(shapes[i].map(([x, y]) => [-y, x])); };
+const flip = i => { shapes[i] = norm(shapes[i].map(([x, y]) => [-x, y])); };
+
+// ---------- Gestures ----------
+// Touching a piece picks it up immediately: it grows to board-square size and floats above the finger.
+// A sideways swipe that starts in the tray is a scroll instead: the piece drops back and the tray scrolls.
+// Portals run down the board's left and right sides. They react to the PIECE, not the finger: the piece stops at
+// the board's edge (so aiming at edge columns and overshooting is safe), and pushing on past the edge by PUSH px of
+// finger movement breaks it through the portal: right rotates, left flips. Holding it there pauses 0.6s, then keeps turning every 0.4s. The portal brightens as you push.
+// Ease off from the edge and push again to turn again.
+// Dropping anywhere other than a valid board spot returns it.
+const floatEl = document.createElement('div'); floatEl.className = 'float'; floatEl.hidden = true; document.body.appendChild(floatEl);
+const ghostLayer = document.createElement('div');
+let drag = null, frame = 0, seenPortals = false;
+// Amplified drag: the piece starts just above the finger and moves GAIN times as far as the finger does,
+// so the whole board is reachable with a small thumb movement. It is pinned so it cannot leave the board's sides or top.
+const GAIN = 1.7;
+const START_GAP = 16;   // bottom of the piece sits about this far above the finger at pickup
+const START_HALF = 40;  // fixed half-height used for the start position, so turning never makes the piece jump
+const PUSH = 10;         // extra push (piece px, about 6px of finger) past the board's side edge needed to go through a portal
+
+// Telling a scroll from a pickup: on touch the piece only lifts slightly in the tray. The big floating piece
+// appears once the finger moves upward or stays put for PICK_DELAY ms. Moving sideways first means a scroll.
+const PICK_DELAY = 120;
+let pending = null;
+function cancelPending() { if (!pending) return; clearTimeout(pending.timer); pending.el.classList.remove('touch'); pending = null; }
+function promote() {
+	if (!pending) return;
+	const { i, el, id, sx, sy, x, y } = pending;
+	clearTimeout(pending.timer); el.classList.remove('touch'); pending = null;
+	startDrag(i, el, id, sx, sy);
+	drag.x = x; drag.y = y; drag.committed = y !== sy || x !== sx; schedule();
+}
+const MY_TURN = true;
+tray.addEventListener('pointerdown', e => {
+	if (!MY_TURN) return;
+	const el = e.target.closest('.pc'); if (!el || drag || pending) return;
+	el.classList.add('touch');
+	pending = { i: +el.dataset.i, el, id: e.pointerId, sx: e.clientX, sy: e.clientY, x: e.clientX, y: e.clientY, timer: setTimeout(promote, PICK_DELAY) };
+});
+addEventListener('pointermove', e => {
+	if (pending && e.pointerId === pending.id) {
+		const dx = e.clientX - pending.sx, dy = e.clientY - pending.sy;
+		pending.x = e.clientX; pending.y = e.clientY;
+		if (Math.abs(dx) > 6 && Math.abs(dx) > Math.abs(dy)) { cancelPending(); return; } // a tray scroll
+		if (dy < -6) promote(); // moving up: a drag
+		return;
+	}
+	if (!drag || e.pointerId !== drag.id) return;
+	if (!drag.committed) {
+		const dx = e.clientX - drag.sx, dy = e.clientY - drag.sy;
+		if (Math.hypot(dx, dy) > 8) drag.committed = true;
+	}
+	drag.x = e.clientX; drag.y = e.clientY; schedule();
+});
+addEventListener('pointerup', e => { if (pending && e.pointerId === pending.id) { cancelPending(); return; } if (drag && e.pointerId === drag.id) endDrag(); });
+addEventListener('pointercancel', e => { if (pending && e.pointerId === pending.id) { cancelPending(); return; } if (drag && e.pointerId === drag.id) dropBack(); });
+// Once the drag is committed, stop the browser from scrolling the tray or the page underneath
+document.addEventListener('touchmove', e => { if (drag) e.preventDefault(); }, { passive: false }); // once enlarged, it never turns into a scroll
+
+function placePortals() {
+	const br = drag.br;
+	// each tab draws its own line down the board's side (its ::after), so tab and line are one shape
+	['hFlip', 'hRot'].forEach(id => {
+		const el = $(id), h = Math.max(0, br.bottom - el.getBoundingClientRect().bottom);
+		el.style.setProperty('--lh', h + 'px');
+	});
+}
+function piecePos() {
+	const { x, y, sx, sy, pw, ph, br } = drag;
+	const raw = sx + (x - sx) * GAIN;
+	let cy = sy - START_GAP - START_HALF + (y - sy) * GAIN;
+	cy = Math.max(br.top + ph / 2, cy);
+	// The piece always stops at the board edge; the portal tabs are drawn on top, so it slides under them
+	const minX = br.left + pw / 2, maxX = br.right - pw / 2;
+	const cx = Math.min(maxX, Math.max(minX, raw));
+	// How far past the side edge the piece is being pushed, in finger px (negative = left, positive = right)
+	drag.push = raw - cx; // in piece px (the finger moves 1/GAIN of this)
+	return [cx - pw / 2, cy - ph / 2];
+}
+function schedule() { if (!frame) frame = requestAnimationFrame(tick); }
+// Viewfinder: outline that fills clockwise (--p, 0..1) while you hold still
+const vfEl = document.createElement('div'); vfEl.className = 'vf'; vfEl.hidden = true; document.body.appendChild(vfEl);
+function showVf(x, y, w, h, p) {
+	vfEl.hidden = false;
+	vfEl.style.transform = `translate3d(${x}px, ${y}px, 0)`; vfEl.style.width = w + 'px'; vfEl.style.height = h + 'px';
+	vfEl.style.setProperty('--p', p.toFixed(3));
+}
+function hideVf() { vfEl.hidden = true; }
+
+let backTimer = 0;
+function startDrag(i, el, id, x, y) {
+	closePopups();
+	// A new pickup during the previous piece's fly-back: finish that fly-back now
+	if (backTimer) { clearTimeout(backTimer); backTimer = 0; floatEl.classList.remove('back'); tray.querySelectorAll('.pc.lifted').forEach(p => p.classList.remove('lifted', 'home')); }
+	// gr = the whole board on screen (for square maths); br = the part of it you can see (the piece is pinned to this)
+	const { gr, br } = boardRects();
+	drag = { i, el, id, x, y, sx: x, sy: y, committed: false, zone: null, armed: false, target: undefined, br, gr, vr: viewEl.getBoundingClientRect(), zp: view.mode === 'zoom' ? 1 : 0, zpv: view.mode === 'zoom' ? 1 : 0, sp: 0, offT: 0, seenBoard: false, trayTop: $('trayZone').getBoundingClientRect().top, ghosts: [] };
+	if (drag.zp === 1) initZoom([(viewEl.clientWidth / 2 - view.tx) / view.s, (viewEl.clientHeight / 2 - view.ty) / view.s], true);
+	el.classList.add('lifted');
+	document.body.classList.add('dragging');
+	placePortals();
+	['pRot', 'pFlip', 'hRot', 'hFlip'].forEach(id => { const el = $(id); el.classList.remove('pulse'); void el.offsetWidth; el.classList.add('pulse'); });
+	const rule = SPECIAL[TRAY[i].kind], slot = $('dhText');
+	slot.classList.toggle('rule', !!rule); slot.innerHTML = rule || 'Hold the piece against an edge';
+	// Ghost squares are created once and reused
+	ghostLayer.innerHTML = shapes[i].map(() => `<span class="ghost" style="width:${CELL}px;height:${CELL}px"></span>`).join('');
+	drag.ghosts = [...ghostLayer.children];
+	ghostLayer.hidden = true;
+	drawFloat();
+	tick();
+}
+function drawFloat(anim) {
+	const [w, h] = dims(shapes[drag.i]);
+	// Always drawn exactly like the piece in the tray (same size, gap and styling); only its scale changes, so a
+	// zoomed-in and a zoomed-out piece look identical. Its square spacing matches the board on screen (lines up with the ghost).
+	const sq = STEP * view.s;
+	drag.w = w; drag.h = h; drag.pw = w * sq; drag.ph = h * sq;
+	floatEl.innerHTML = shapeHTML(shapes[drag.i], TRAY[drag.i].kind, T, 1, anim || '', true);
+	floatEl.hidden = false;
+}
+// Position the carried piece; while the board zooms it is scaled with it (about its centre) instead of jumping size
+function placeFloat() {
+	const [left, top] = piecePos(), { pw, ph } = drag;
+	const k = STEP * view.s / (T + 1);                       // tray-size piece -> board-square spacing on screen
+	floatEl.style.transform = `translate3d(${left}px, ${top}px, 0) scale(${k})`;
+	return [left, top];
+}
+// ---- Continuous zoom while carrying a piece ----
+// zp: 0 = overview, 1 = zoomed in. The view is always a smooth geometric blend of the two (about a focus point), so
+// the zoom is just the board gliding closer while the piece rests over your territory, and gliding back when it moves on.
+const SLOW = 150, FAST = 520, NEAR = 6; // piece speeds in px/s; NEAR in squares
+function nearMine(bx, by, n) {
+	const px = bx / STEP, py = by / STEP, mine = Object.keys(filled).filter(k => filled[k].color === 'purple').map(k => k.split(',').map(Number));
+	return (mine.length ? mine : [MY_START]).some(([x, y]) => Math.max(Math.abs(x + .5 - px), Math.abs(y + .5 - py)) <= n);
+}
+function initZoom(P, current) {
+	const vw = viewEl.clientWidth, vh = viewEl.clientHeight, s0 = Math.min(vw / BW, vh / BH);
+	drag.z = { s0, t0: [(vw - BW * s0) / 2, (vh - BH * s0) / 2], F: P, t1: current ? [view.tx, view.ty] : clampAt(ZOOM, vw / 2 - P[0] * ZOOM, vh / 2 - P[1] * ZOOM) };
+}
+function blendView(e) {
+	const z = drag.z, sc = z.s0 * Math.pow(ZOOM / z.s0, e);
+	const sx = (z.F[0] * z.s0 + z.t0[0]) * (1 - e) + (z.F[0] * ZOOM + z.t1[0]) * e, sy = (z.F[1] * z.s0 + z.t0[1]) * (1 - e) + (z.F[1] * ZOOM + z.t1[1]) * e;
+	view.s = sc; view.tx = sx - z.F[0] * sc; view.ty = sy - z.F[1] * sc;
+	boardEl.style.transform = `translate(${view.tx}px, ${view.ty}px) scale(${view.s})`;
+}
+// the piece and the part of the board you can see follow the current view
+function syncDrag() {
+	drag.pw = drag.w * STEP * view.s; drag.ph = drag.h * STEP * view.s;
+	const r = boardRects(), moved = Math.abs(r.br.bottom - drag.br.bottom) > .5;
+	drag.gr = r.gr; drag.br = r.br;
+	if (moved) placePortals();
+}
+function tick() {
+	frame = 0;
+	if (!drag) return;
+	schedule(); // runs every frame while a piece is carried (speed, zoom and camera all depend on time)
+	const now = performance.now(), dt = Math.min(.05, Math.max(.001, (now - (drag.tPrev || now - 16)) / 1000)); drag.tPrev = now;
+	const vw = viewEl.clientWidth, vh = viewEl.clientHeight, vr = drag.vr, kind = TRAY[drag.i].kind;
+	syncDrag();
+	let [left, top] = piecePos();
+	let pw = drag.pw, ph = drag.ph, cx0 = left + pw / 2, cy0 = top + ph / 2;
+	const ds = drag.lx === undefined ? 0 : Math.hypot(cx0 - drag.lx, cy0 - drag.ly) / dt;
+	drag.lx = cx0; drag.ly = cy0; drag.sp = drag.sp * .7 + ds * .3;
+	let br = drag.br, gr = drag.gr;
+	const over = drag.committed && cx0 > br.left && cx0 < br.right && cy0 > br.top && cy0 < br.bottom;
+	if (over) drag.seenBoard = true;
+
+	// -- zoom in: pause the piece anywhere over the board (about 0.25s of stillness) and the view zooms to the drop spot
+	// the hover is showing. Zoom out: pull the piece off the board (after it has been on it); bring it back and it zooms in
+	// again. Nothing else changes the zoom.
+	let dir = 0;
+	if (over) {
+		drag.offT = 0;
+		const holding = drag.holdOut && Math.hypot(cx0 - drag.holdOut[0], cy0 - drag.holdOut[1]) < 70; // just zoomed out: don't zoom straight back in
+		if (!holding) drag.holdOut = null;
+		drag.stillT = drag.sp < SLOW ? (drag.stillT || 0) + dt : 0;
+		if (drag.stillT > .25 && !holding) dir = 1;
+	} else if (drag.committed && drag.seenBoard && drag.zp > 0) { drag.stillT = 0; drag.offT += dt; if (drag.offT > .2) dir = -1; }
+	else { drag.offT = 0; drag.stillT = 0; }
+	// No new zoom starts while the piece is being flipped / rotated (pushing into a side portal, or within 0.6s of a turn)
+	if ((cy0 <= br.bottom && Math.abs(drag.push) >= PUSH * 0.5) || now - (drag.lastTurn || -1e9) < 600) { dir = 0; drag.stillT = 0; }
+	// A zoom, once started, can never be interrupted: whatever triggered it, it runs all the way to the end.
+	if (dir === 1 && drag.zp >= 1) dir = 0;
+	if (dir === -1 && drag.zp <= 0) dir = 0;
+	if (drag.zdir) dir = drag.zdir; else if (dir) drag.zdir = dir;
+	if (dir === -1 && !drag.holdOut) drag.holdOut = [cx0, cy0];
+	document.body.classList.toggle('pulling', dir === -1);
+	if (dir) {
+		const z0 = drag.zp;
+		drag.zp = Math.min(1, Math.max(0, z0 + dir * dt / (dir > 0 ? .9 : .6)));
+		if (z0 === 0 && drag.zp > 0) {
+			// zoom to the drop spot the hover is showing (the piece's own position if there is none)
+			const cs = drag.cells && drag.cells.cells;
+			const P = cs ? [cs.reduce((a, [gx]) => a + gx * STEP + CELL / 2, 0) / cs.length, cs.reduce((a, [, gy]) => a + gy * STEP + CELL / 2, 0) / cs.length] : [(cx0 - gr.left) / view.s, (cy0 - gr.top) / view.s];
+			initZoom(P, false);
+		}
+		if ((drag.zdir === 1 && drag.zp >= 1) || (drag.zdir === -1 && drag.zp <= 0)) drag.zdir = 0; // finished: free again
+	}
+	if (drag.zp !== drag.zpv) {
+		drag.zpv = drag.zp;
+		blendView(drag.zp * drag.zp * (3 - 2 * drag.zp));
+		setMode(drag.zp >= 1 ? 'zoom' : 'over');
+		if (drag.zp === 0) drag.z = null;
+		document.body.classList.toggle('zmid', drag.zp > 0 && drag.zp < 1);
+		drawMini(); // the minimap shows the view while the zoom is in between
+		syncDrag(); [left, top] = piecePos(); pw = drag.pw; ph = drag.ph; cx0 = left + pw / 2; cy0 = top + ph / 2; br = drag.br; gr = drag.gr;
+		drag.target = undefined; // the board moved under the piece: recompute the drop spot
+	}
+
+	// -- camera: zoomed in, a piece RESTING in an edge band slides the view that way (as long as there is more board there).
+	// It starts only after a short dwell, and never while the finger is pushing through the side edge (that turns the
+	// piece instead), so flipping / rotating at the sides never scrolls the board.
+	if (drag.zp === 1) {
+		const canL = view.tx < -.5, canR = view.tx > vw - BW * view.s + .5;
+		const canU = view.ty < -.5, canD = view.ty > vh - BH * view.s + .5;
+		const M = 64, VMAX = 420, ev = d => d >= M ? 0 : Math.pow(1 - Math.max(0, d) / M, 1.5) * VMAX;
+		const calm = Math.abs(drag.push) < 7; // not pushing through a side portal (about 4px of finger, so resting at the edge may jitter)
+		const E = drag.edge || (drag.edge = { l: 0, r: 0, u: 0, d: 0 });
+		const dwell = (k, active, need) => { E[k] = active ? E[k] + dt : 0; return E[k] > need ? Math.min(1, (E[k] - need) / .3) : 0; }; // 0 until `need` seconds, then eases to 1
+		let ax = 0, ay = 0;
+		const go = drag.committed;
+		const gl = dwell('l', go && canL && calm && ev(left - vr.left) > 0, .4), gr2 = dwell('r', go && canR && calm && ev(vr.right - (left + pw)) > 0, .4);
+		const gu = dwell('u', go && canU && ev(top - vr.top) > 0, .15), gd = dwell('d', go && canD && ev(vr.bottom - (top + ph)) > 0, .15);
+		ax += gl * ev(left - vr.left) - gr2 * ev(vr.right - (left + pw));
+		ay += gu * ev(top - vr.top) - gd * ev(vr.bottom - (top + ph));
+		if (ax || ay) {
+			view.tx += ax * dt; view.ty += ay * dt; clampView();
+			boardEl.style.transform = `translate(${view.tx}px, ${view.ty}px) scale(${view.s})`;
+			drawMini(); syncDrag(); gr = drag.gr; br = drag.br;
+			drag.target = undefined;
+		}
+		if (drag.z) { drag.z.t1 = [view.tx, view.ty]; drag.z.F = [(vw / 2 - view.tx) / view.s, (vh / 2 - view.ty) / view.s]; }
+	}
+
+	floatEl.style.transform = (() => { const k = STEP * view.s / (T + 1); return `translate3d(${left}px, ${top}px, 0) scale(${k})`; })();
+	// Portal glow tells the whole story: coming within 90px of an edge lights it to about 65%; pushing on through the last
+	// PUSH px takes it from 65% to 100%, and 100% is exactly the moment it turns the piece. The line also thickens with the push.
+	const besideBoard = top + ph / 2 <= br.bottom; // portals only run beside the board
+	const push = besideBoard ? drag.push : 0;
+	const amtL = push < 0 ? Math.min(1, -push / PUSH) : 0, amtR = push > 0 ? Math.min(1, push / PUSH) : 0;
+	const proxL = besideBoard ? .5 * Math.max(0, 1 - (left - br.left) / 60) + .5 * amtL : 0, proxR = besideBoard ? .5 * Math.max(0, 1 - (br.right - left - pw) / 60) + .5 * amtR : 0;
+	const glow = (k, ids, prox, amt) => {
+		const key = prox.toFixed(2) + '/' + amt.toFixed(2);
+		if (drag['g' + k] !== key) { drag['g' + k] = key; ids.forEach(id => { $(id).style.setProperty('--prox', prox.toFixed(2)); $(id).style.setProperty('--amt', amt.toFixed(2)); }); }
+	};
+	glow('L', ['pFlip', 'hFlip'], proxL, amtL); glow('R', ['pRot', 'hRot'], proxR, amtR);
+	// Portals: pushing the piece past the side edge by PUSH px turns it once; easing off re-arms
+	const side = push < 0 ? 'flip' : push > 0 ? 'rot' : null, amount = Math.min(1, Math.abs(push) / PUSH);
+	const lit = side && amount >= 1 ? side : null;
+	$('pRot').classList.toggle('near', lit === 'rot'); $('pFlip').classList.toggle('near', lit === 'flip');
+	$('hRot').classList.toggle('near', lit === 'rot'); $('hFlip').classList.toggle('near', lit === 'flip');
+	if (Math.abs(push) < PUSH * 0.5) drag.armed = true;
+	// Holding the piece against a portal keeps turning it, with a pause between turns
+	const full = side && amount >= 1 && drag.committed;
+	if (!full && drag.repeat) { clearInterval(drag.repeat); drag.repeat = null; }
+	if (full && drag.armed) {
+		drag.armed = false; turn(side);
+		// First turn is instant, then a 0.6s pause, then a turn every 0.4s while still held
+		const step = () => { if (drag && drag.repeat && Math.abs(drag.push) >= PUSH) turn(side, true); };
+		drag.repeat = setTimeout(() => { if (!drag || !drag.repeat) return; step(); drag.repeat = setInterval(step, 400); }, 600);
+		return;
+	}
+	// Drop spot: over the board it is always the valid spot nearest the piece that is fully on screen (searched outwards ring by
+	// ring); anywhere else (or if there is none) it is the piece's own slot in the tray.
+	const step = STEP * view.s;
+	let best = null;
+	if (over) {
+		const fx = (left - gr.left) / step, fy = (top - gr.top) / step, sh = shapes[drag.i];
+		const ox = Math.round(fx), oy = Math.round(fy), MAXR = Math.ceil(Math.max(BW, BH) / STEP) + 2;
+		const x0 = Math.ceil((vr.left - gr.left) / step - .25), x1 = Math.floor((vr.right - gr.left) / step + .25), y0 = Math.ceil((vr.top - gr.top) / step - .25), y1 = Math.floor((vr.bottom - gr.top) / step + .25);
+		const [sw, sht] = dims(sh);
+		let bestD = Infinity;
+		for (let r = 0; r <= MAXR; r++) {
+			if (best && r > Math.sqrt(bestD) + 1) break;
+			for (let gy = oy - r; gy <= oy + r; gy++) for (let gx = ox - r; gx <= ox + r; gx++) {
+				if (Math.max(Math.abs(gx - ox), Math.abs(gy - oy)) !== r) continue;
+				if (gx < x0 || gy < y0 || gx + sw > x1 || gy + sht > y1) continue; // not fully in view
+				const d = (gx - fx) ** 2 + (gy - fy) ** 2;
+				if (d >= bestD) continue;
+				if (legalAt(sh, gx, gy, kind)) { bestD = d; best = [gx, gy]; }
+			}
+		}
+	}
+	const key = best ? best.join(',') : null;
+	if (key === drag.target) return;
+	drag.target = key;
+	drag.el.classList.toggle('home', !best); // no board spot: the drop spot is the piece's own tray slot
+	if (!best) { ghostLayer.hidden = true; drag.cells = null; return; }
+	const cells = shapes[drag.i].map(([sx, sy]) => [sx + best[0], sy + best[1]]);
+	drag.cells = { cells, ok: true };
+	cells.forEach(([gx, gy], n) => { drag.ghosts[n].style.transform = `translate(${gx * STEP}px, ${gy * STEP}px)`; });
+	ghostLayer.hidden = false;
+}
+function turn(z, soft) {
+	drag.lastTurn = performance.now();
+	if (z === 'rot') rotate(drag.i); else flip(drag.i);
+	drawFloat(z === 'rot' ? 'anim-rot' : 'anim-flip'); // only the floating piece changes; the tray copy updates on drop
+	drag.target = null; // force the ghost to recompute with the new shape
+	drag.target = undefined; syncDrag(); placeFloat();
+	(z === 'rot' ? ['pRot', 'hRot'] : ['pFlip', 'hFlip']).forEach(id => { const el = $(id); el.classList.remove('fire', 'fireSoft'); void el.offsetWidth; el.classList.add(soft ? 'fireSoft' : 'fire'); }); // confirms the turn
+	navigator.vibrate && navigator.vibrate(12);
+}
+function endDrag() {
+	// A piece only lands if it was actually moved; touching and letting go puts it back
+	if (drag.committed && drag.cells && drag.cells.ok) {
+		drag.cells.cells.forEach(([cx, cy]) => filled[`${cx},${cy}`] = { color: 'purple', kind: TRAY[drag.i].kind });
+		placed.add(drag.i);
+		lastCell = drag.cells.cells[0];
+		me.s += drag.cells.cells.length; $('plScore').textContent = me.s; // mockup scoring: 1 point per square
+		finish(); renderBoard(); renderTray(); applyView();
+	} else cancelDrag();
+}
+function dropBack() { cancelDrag(); }
+function cancelDrag() {
+	// Fly back to the tray, then show the tray piece in its new orientation
+	const i = drag.i;
+	redrawPiece(i);
+	const el = tray.querySelector(`.pc[data-i="${i}"]`); el.classList.add('lifted');
+	const r = el.querySelector('.shape').getBoundingClientRect();
+	floatEl.classList.add('back');
+	floatEl.style.transform = `translate3d(${r.left}px, ${r.top}px, 0) scale(1)`;
+	backTimer = setTimeout(() => { floatEl.classList.remove('back'); floatEl.hidden = true; el.classList.remove('lifted', 'home'); }, 190);
+	finish(true);
+	showOverview(true); // the piece is back in the tray (dropped off the board, or where nothing valid fits): zoom out to the whole board
+}
+function finish(keepFloat) {
+	ghostLayer.hidden = true; hideVf();
+	['pFlip', 'hFlip', 'pRot', 'hRot'].forEach(p => $(p).classList.remove('dim'));
+	document.body.classList.remove('zmid', 'pulling');
+	if (drag && drag.z && drag.zp > 0 && drag.zp < 1) { // dropped in the middle of a zoom: finish it either way
+		const z = drag.z, vw = viewEl.clientWidth, vh = viewEl.clientHeight;
+		if (drag.zdir === 1) goView('zoom', ZOOM, z.t1[0], z.t1[1], z.F, true); else showOverview(true); // let go mid-zoom: it still finishes the way it was going
+	}
+	if (!keepFloat) floatEl.hidden = true;
+	document.body.classList.remove('dragging');
+	['pRot', 'pFlip', 'hRot', 'hFlip'].forEach(p => $(p).classList.remove('near'));
+	['pRot', 'pFlip', 'hRot', 'hFlip'].forEach(p => { $(p).style.setProperty('--prox', 0); $(p).style.setProperty('--amt', 0); $(p).classList.remove('fire', 'fireSoft'); });
+	cancelAnimationFrame(frame); frame = 0;
+	if (drag && drag.repeat) clearInterval(drag.repeat);
+	drag = null;
+}
+
+// ---------- Start ----------
+const drawTrayBar = scrollBar($('trayBar'), tray);
+ghostLayer.style.cssText = 'position:absolute;inset:0;pointer-events:none';
+fitTray(); renderBoard(); showOverview(false);
+renderTray(); drawTrayBar();
+addEventListener('resize', () => { fitTray(); renderBoard(); layoutView(true); renderTray(); });
+</script>
+</body>
+</html>

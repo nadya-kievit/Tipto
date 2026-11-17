@@ -27,11 +27,12 @@ function drawShape(element, piece, size, color) {
 
 // Pointer positions and animation state stay outside React. Rectangles are read
 // at pickup; the rAF loop only writes transforms and changed ghost targets.
-export default function usePhoneDrag(rootRef, config) {
+export default function usePhoneDrag(rootRef, config, enabled = true) {
  const latest = useRef(config)
  const cancel = useRef(() => {})
  useLayoutEffect(() => { latest.current = config })
  useEffect(() => {
+  if (!enabled) return
   const root = rootRef.current, tray = root.querySelector('.tray')
   const float = root.querySelector('.float'), ghost = root.querySelector('.ghostLayer')
   const portals = [...root.querySelectorAll('.portal, .dh')]
@@ -241,11 +242,12 @@ export default function usePhoneDrag(rootRef, config) {
    window.removeEventListener('blur', abort); document.removeEventListener('keydown', escape)
    document.removeEventListener('touchmove', touchMove)
   }
- }, [rootRef])
+ }, [rootRef, enabled])
  const { canMove, pendingPlacement, board, metrics: { cell, gap, pixelRatio }, game: { turnEndsAt, turnNumber, currentPlayerId } } = config
  useEffect(() => {
+  if (!enabled) return
   cancel.current()
   const timeout = turnEndsAt ? setTimeout(() => cancel.current(), Math.max(0, turnEndsAt - Date.now())) : null
   return () => clearTimeout(timeout)
- }, [canMove, pendingPlacement, board, turnEndsAt, turnNumber, currentPlayerId, cell, gap, pixelRatio])
+ }, [enabled, canMove, pendingPlacement, board, turnEndsAt, turnNumber, currentPlayerId, cell, gap, pixelRatio])
 }

@@ -4,6 +4,10 @@ import { displayCells, tileFinish } from '../../../game/piecePresentation'
 import { getPlayerColorHex } from '../../../game/playerColors'
 import { phoneFit, playableBounds } from '../../../game/phoneGeometry'
 import usePhoneDrag from './usePhoneDrag'
+import usePhoneZoomDrag from './usePhoneZoomDrag'
+import usePhoneView from './usePhoneView'
+import PhoneMinimap from '../board/PhoneMinimap'
+import { usesZoom, PHONE_ZOOM as Z, boardSize } from '../../../game/phoneZoom'
 import BoardTile from '../board/BoardTile'
 import { readBoardRatios, boardGeometryStyle, observeBoardPixelRatio } from '../../../game/boardGeometry'
 import useBoardPixelAlignment from '../../../hooks/useBoardPixelAlignment'
@@ -80,9 +84,26 @@ export default function PhoneGameLayout({ game, me, board, canMove, pieces, pend
  const [metrics, setMetrics] = useState({ cell: 1, gap: 1, pad: 0, frame: 0, tray: 11 })
  const bounds = playableBounds(board)
  const { row, col, rows, cols } = bounds
+ const zoom = usesZoom(game)
+ const cameraRef = usePhoneView(rootRef, bounds, zoom)
  useLayoutEffect(() => {
   const root = rootRef.current
   const fit = () => {
+   if (zoom) {
+    const zone = root.querySelector('.boardZone')
+    const currentTray = (parseFloat(getComputedStyle(root).getPropertyValue('--row')) - 12) / 5
+    // Match fitTray in the mockup: reserve its initial 66px rows first, then
+    // grow the tray only into height that the width-limited board cannot use.
+    const baseHeight = zone.clientHeight + 10 * (currentTray - 11) + 2
+    const cell = Math.floor((zone.clientWidth - 12 - (cols - 1) * Z.gap) / cols)
+    const boardHeight = rows * cell + (rows - 1) * Z.gap
+    const extra = baseHeight - 16 - boardHeight
+    let tray = Math.max(11, Math.min(16, Math.floor((Math.max(0, extra - 10) / 2 + 54) / 5)))
+    while (tray > 11 && baseHeight - 2 - 10 * (tray - 11) - 16 < boardHeight) tray--
+    const next = { cell: Z.cell, gap: Z.gap, pad: 0, frame: 0, tray }
+    setMetrics(old => JSON.stringify(old) === JSON.stringify(next) ? old : next)
+    return
+   }
    const bottom = parseFloat(getComputedStyle(root.querySelector('.trayZone')).paddingBottom)
    const next = phoneFit(root.clientWidth, root.clientHeight, { rows, cols }, bottom, readBoardRatios(root), window.devicePixelRatio || 1)
    if (next) setMetrics(old => JSON.stringify(old) === JSON.stringify(next) ? old : next)
@@ -91,7 +112,7 @@ export default function PhoneGameLayout({ game, me, board, canMove, pieces, pend
   const observer = new ResizeObserver(fit)
   observer.observe(root)
   return () => { observer.disconnect(); stopPixelRatio() }
- }, [rows, cols])
+ }, [rows, cols, zoom])
  useEffect(() => {
   const close = e => {
    if (e.type === 'keydown' && e.key !== 'Escape') return
@@ -102,8 +123,10 @@ export default function PhoneGameLayout({ game, me, board, canMove, pieces, pend
   return () => { document.removeEventListener('pointerdown', close); document.removeEventListener('keydown', close) }
  }, [])
  const color = getPlayerColorHex(me.color)
- usePhoneDrag(rootRef, { game, me, board, canMove, pieces, pendingPlacement, bounds, metrics, color,
-  onStage, onRotate, onFlip, onPlace, closeOverlays: () => { setOverlay(null); setExpanded(null) } })
+ const dragConfig = { game, me, board, canMove, pieces, pendingPlacement, bounds, metrics, color,
+  onStage, onRotate, onFlip, onPlace, closeOverlays: () => { setOverlay(null); setExpanded(null) } }
+ usePhoneDrag(rootRef, dragConfig, !zoom)
+ usePhoneZoomDrag(rootRef, cameraRef, dragConfig, zoom)
  const current = game.players.find(p => p.id === game.currentPlayerId)
  const players = [...game.players].sort((a, b) => score(b) - score(a))
  const remaining = pieces.filter(p => !p.placed)
@@ -114,8 +137,23 @@ export default function PhoneGameLayout({ game, me, board, canMove, pieces, pend
  const copyRoom = async () => {
   try { await copyText(roomCode); setCopied(true) } catch { setCopied(false); onCopyError?.('Could not copy the room code.') }
  }
- return <div ref={rootRef} className="gamePage phoneGame" style={{ '--me': color, '--player-color': color,
-  ...boardGeometryStyle(metrics), '--board-columns': cols, '--board-rows': rows,
+ const boardSurface = <section ref={zoom ? undefined : surfaceRef} className={`gameBoardSurface${zoom ? ' phoneZoomBoard' : ''}`}>
+  <div className="phoneBoard board gameBoardGrid" data-game-board>
+   {board.slice(row, row + rows).flatMap((line, dr) => line.slice(col, col + cols).map((value, dc) => {
+    const key = `${row + dr},${col + dc}`, pending = pendingCells.has(key), start = starts.get(key)
+    const occupied = value.occupied || pending
+    const tileColor = getPlayerColorHex(pending ? pendingPlacement.color : value.color)
+    const ability = pending ? pendingPlacement.ability : abilities.get(value.pieceId)
+    return <BoardTile key={key} color={tileColor} ability={ability} occupied={occupied}
+     playable={value.playable !== false} startColor={start ? getPlayerColorHex(start.color) : undefined}
+     data-row={row + dr} data-col={col + dc} aria-label={start ? `${start.name}'s starting square` : undefined} />
+   }))}
+   <div className="ghostLayer" hidden />
+  </div>
+ </section>
+ return <div ref={rootRef} className={`gamePage phoneGame${zoom ? ' phoneZoomGame' : ''}`} style={{ '--me': color, '--player-color': color,
+  ...boardGeometryStyle(zoom ? { cell: Z.cell, gap: Z.gap, pad: 0, frame: 0 } : metrics), '--board-columns': cols, '--board-rows': rows,
+  '--phone-board-width': `${boardSize(bounds).width}px`, '--phone-board-height': `${boardSize(bounds).height}px`,
   '--row': `${5 * metrics.tray + 12}px`, '--col': `${5 * metrics.tray + 24}px` }}>
   <header className="top">
    <div className="topRow">
@@ -146,22 +184,12 @@ export default function PhoneGameLayout({ game, me, board, canMove, pieces, pend
    </Fragment>)}</section>}
   </header>
   <main className="boardZone" aria-label="Game board">
-   <section ref={surfaceRef} className="gameBoardSurface">
-   <div className="phoneBoard board gameBoardGrid" data-game-board>
-    {board.slice(row, row + rows).flatMap((line, dr) => line.slice(col, col + cols).map((value, dc) => {
-     const key = `${row + dr},${col + dc}`, pending = pendingCells.has(key), start = starts.get(key)
-     const occupied = value.occupied || pending
-     const tileColor = getPlayerColorHex(pending ? pendingPlacement.color : value.color)
-     const ability = pending ? pendingPlacement.ability : abilities.get(value.pieceId)
-     return <BoardTile key={key} color={tileColor} ability={ability} occupied={occupied}
-      playable={value.playable !== false} startColor={start ? getPlayerColorHex(start.color) : undefined}
-      data-row={row + dr} data-col={col + dc} aria-label={start ? `${start.name}'s starting square` : undefined} />
-    }))}
-    <div className="ghostLayer" hidden />
-   </div>
-   </section>
+   {zoom ? <>
+    <div className="phoneView">{boardSurface}</div>
+    <PhoneMinimap cameraRef={cameraRef} board={board} players={game.players} bounds={bounds} pendingPlacement={pendingPlacement} />
+   </> : boardSurface}
   </main>
-  <div className="portal" data-side="flip" /><div className="portal" data-side="rot" />
+  {!zoom && <><div className="portal" data-side="flip" /><div className="portal" data-side="rot" /></>}
   <section className="trayZone" aria-label="Your pieces" aria-disabled={!canMove || !!pendingPlacement}>
    <div className="tray" ref={trayRef}>{remaining.map(piece => <button key={piece.name} className="pc" data-piece={piece.name} aria-label={`${piece.name}${piece.ability ? ` - ${piece.ability}` : ''}`} disabled={!canMove || !!pendingPlacement} onContextMenu={e => e.preventDefault()}><PhonePieceShape piece={piece} cellSize={metrics.tray} color={color} /></button>)}</div>
    <ScrollBar targetRef={trayRef} label="Scroll your pieces" count={remaining.length} />

@@ -132,3 +132,68 @@ html:has(.phoneGame), body:has(.phoneGame), body:has(.phoneGame) #root {
 @media (prefers-reduced-motion: reduce) {
  .phoneGame .shape, .phoneGame .gameBoardPiece, .phoneGame .portal, .phoneGame .dh::before { animation: none !important; transition: none !important; }
 }
+
+/* Four to six players: a fixed reference grid inside a one-finger camera. */
+.gamePage.phoneGame.phoneZoomGame { touch-action: pan-x pan-y; }
+.phoneZoomGame .boardZone { padding: 0; }
+.phoneZoomGame .phoneView { position: absolute; inset: 8px 6px; overflow: hidden; touch-action: none; }
+.phoneGame.phoneZoomGame .phoneZoomBoard {
+ position: absolute; left: 0; top: 0; margin: 0; max-width: none;
+ width: var(--phone-board-width); height: var(--phone-board-height);
+ transform-origin: 0 0; will-change: transform;
+ --board-radius: 2px; --board-bevel: 2px; --board-outline: 2px; --board-edge: 2px;
+ --board-stripe: 1px; --board-repeat: 5px;
+}
+.phoneZoomGame .ghostLayer { inset: 0; }
+.phoneZoomGame .ghost { border-radius: 2px; opacity: 1; }
+.phoneZoomGame .phoneMini {
+ position: absolute; right: 10px; bottom: 12px; z-index: 5; display: none;
+ padding: 3px; border: 1px solid var(--border-strong); border-radius: 6px;
+ background: color-mix(in srgb, var(--page) 86%, transparent); touch-action: none;
+}
+.phoneZoomGame.zoomed .phoneMini { display: block; }
+.phoneZoomGame.dragging .phoneMini { opacity: 0; pointer-events: none; }
+.phoneZoomGame .phoneMini canvas { display: block; }
+.phoneZoomGame .phoneMiniExpand {
+ position: absolute; top: 3px; right: 3px; width: 20px; height: 20px;
+ display: grid; place-items: center; border-radius: 4px; pointer-events: none;
+ background: color-mix(in srgb, var(--surface-raised) 92%, transparent); color: var(--text);
+}
+.phoneZoomGame .phoneMiniExpand svg { width: 13px; height: 13px; stroke-width: 2.4; }
+.phoneZoomGame .phoneMini:focus-visible { outline: 2px solid var(--me); outline-offset: 2px; }
+
+/* Each tab and its line share one background, filter and animation. */
+.phoneGame.phoneZoomGame .dragHint { z-index: 60; }
+.phoneGame.phoneZoomGame .dh {
+ background: var(--pcol); box-shadow: none;
+ filter: drop-shadow(0 0 calc(3px * var(--prox, 0)) color-mix(in srgb, var(--me) 22%, transparent)) brightness(calc(1 + .12 * var(--prox, 0)));
+ transition: background 120ms, filter 120ms;
+}
+.phoneGame.phoneZoomGame .dh::before { content: none; }
+.phoneGame.phoneZoomGame .dh::after {
+ content: ''; position: absolute; top: 100%; width: 3px; height: var(--lh, 0px);
+ background: inherit; pointer-events: none; transform: scaleX(calc(1 + .7 * var(--amt, 0)));
+}
+.phoneZoomGame .dh[data-side="flip"]::after { left: 0; transform-origin: left center; }
+.phoneZoomGame .dh[data-side="rot"]::after { right: 0; transform-origin: right center; }
+.phoneGame.phoneZoomGame .dh.near {
+ --pcol: var(--me);
+ filter: drop-shadow(0 0 4px color-mix(in srgb, var(--me) 40%, transparent)) brightness(1.12);
+}
+.phoneGame.phoneZoomGame .dh.pulse { animation: phoneZoomPulse 520ms ease-out; }
+.phoneGame.phoneZoomGame .dh.fire { animation: phoneZoomFire 200ms ease-out; }
+.phoneGame.phoneZoomGame .dh.fireSoft { animation: phoneZoomFireSoft 200ms ease-out; }
+@keyframes phoneZoomPulse {
+ 40% { filter: drop-shadow(0 0 3px color-mix(in srgb, var(--me) 35%, transparent)) brightness(1.08); }
+}
+@keyframes phoneZoomFire {
+ from { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--me) 60%, transparent)) brightness(1.4); }
+ to { filter: drop-shadow(0 0 4px color-mix(in srgb, var(--me) 40%, transparent)) brightness(1.12); }
+}
+@keyframes phoneZoomFireSoft {
+ from { filter: drop-shadow(0 0 4px color-mix(in srgb, var(--me) 45%, transparent)) brightness(1.25); }
+ to { filter: drop-shadow(0 0 4px color-mix(in srgb, var(--me) 40%, transparent)) brightness(1.12); }
+}
+@media (prefers-reduced-motion: reduce) {
+ .phoneGame.phoneZoomGame .dh { animation: none !important; transition: none !important; }
+}
