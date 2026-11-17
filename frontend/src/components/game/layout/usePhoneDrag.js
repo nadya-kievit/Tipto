@@ -1,22 +1,24 @@
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import { flushSync } from 'react-dom'
-import { displayCells, horizontalFlip, tileFinish } from '../../../game/piecePresentation'
+import { displayCells, horizontalFlip } from '../../../game/piecePresentation'
 import { phonePose, phoneTarget } from '../../../game/phoneGeometry'
+import { pixelOffset } from '../../../game/boardGeometry'
 
 function drawShape(element, piece, size, color) {
  const cells = displayCells(piece.cells, piece.rotation, piece.flipped)
  const shape = document.createElement('span')
- shape.className = 'shape'
- shape.style.width = `${(Math.max(...cells.map(([, c]) => c)) + 1) * size}px`
- shape.style.height = `${(Math.max(...cells.map(([r]) => r)) + 1) * size}px`
+ shape.className = 'gameBoardPiece'
+ shape.style.setProperty('--board-cell-size', `${size}px`)
+ shape.style.setProperty('--board-columns', Math.max(...cells.map(([, c]) => c)) + 1)
+ shape.style.setProperty('--board-rows', Math.max(...cells.map(([r]) => r)) + 1)
  for (const [r, c] of cells) {
   const tile = document.createElement('i')
-  tile.className = piece.ability || ''
-  Object.assign(tile.style, tileFinish(color, piece.ability, 'tray'), {
-   width: `${size}px`, height: `${size}px`, left: `${c * size}px`, top: `${r * size}px`,
-  })
-  // Float-only seams; special pieces retain their tray finish.
-  if (piece.ability !== 'scout') tile.style.boxShadow = `inset 0 0 0 1px color-mix(in srgb, ${color} 45%, #000)${piece.ability === 'connector' ? '' : ', inset 0 3px 0 -1px rgba(255,255,255,.22), inset 0 -3px 0 -1px rgba(0,0,0,.2)'}`
+  tile.className = 'gameBoardTile'
+  tile.dataset.occupied = 'true'
+  tile.dataset.ability = piece.ability || 'normal'
+  tile.style.setProperty('--tile-color', color)
+  tile.style.gridRow = r + 1
+  tile.style.gridColumn = c + 1
   shape.append(tile)
  }
  element.replaceChildren(shape)
@@ -85,7 +87,7 @@ export default function usePhoneDrag(rootRef, config) {
    drag.piece = side === 'rot' ? { ...drag.piece, rotation: ((drag.piece.rotation || 0) + 270) % 360 }
     : { ...drag.piece, ...horizontalFlip(drag.piece.rotation || 0, drag.piece.flipped) }
    drag.turns.push(side)
-   const shape = drawShape(float, drag.piece, drag.stride, latest.current.color)
+   const shape = drawShape(float, drag.piece, drag.cell, latest.current.color)
    shape.classList.add(side === 'rot' ? 'anim-rot' : 'anim-flip')
    drag.target = null
    drag.targetKey = undefined
@@ -102,7 +104,10 @@ export default function usePhoneDrag(rootRef, config) {
    if (!drag) return
    if (!allowed()) { finish(false, false, false); return }
    const d = drag, cfg = latest.current
-   const pose = phonePose(d, d.stride)
+   const pose = phonePose(d, d.stride, d.gap)
+   const pixelRatio = window.devicePixelRatio || 1
+   pose.left += pixelOffset(pose.left, pixelRatio)
+   pose.top += pixelOffset(pose.top, pixelRatio)
    float.style.transform = `translate3d(${pose.left}px, ${pose.top}px, 0)`
    const beside = pose.cy <= d.rect.bottom
    const push = beside ? pose.push : 0
@@ -141,8 +146,14 @@ export default function usePhoneDrag(rootRef, config) {
    const p = pending, cfg = latest.current
    stopPending(); clearBack()
    cfg.closeOverlays()
-   drag = { ...p, piece: { ...p.piece }, turns: [], rect: root.querySelector('.phoneBoard').getBoundingClientRect(),
-    home: p.el.querySelector('.shape').getBoundingClientRect(), stride: cfg.metrics.cell + 2,
+   const grid = root.querySelector('.phoneBoard')
+   const gridRect = grid.getBoundingClientRect()
+   const inset = parseFloat(getComputedStyle(grid).paddingLeft)
+   const rect = { left: gridRect.left + inset, top: gridRect.top + inset,
+    right: gridRect.right - inset, bottom: gridRect.bottom - inset }
+   drag = { ...p, piece: { ...p.piece }, turns: [], rect,
+    home: p.el.querySelector('.shape').getBoundingClientRect(), stride: cfg.metrics.cell + cfg.metrics.gap,
+    cell: cfg.metrics.cell, gap: cfg.metrics.gap,
     traySize: cfg.metrics.tray, moved: p.x !== p.sx || p.y !== p.sy, armed: true, targetKey: undefined }
    p.el.setPointerCapture(p.id)
    p.el.classList.add('lifted')
@@ -151,18 +162,24 @@ export default function usePhoneDrag(rootRef, config) {
    hint.textContent = p.piece.ability === 'scout' ? 'Scout: no corner needed; no own edges.'
     : p.piece.ability === 'connector' ? 'Connector: touch your edge or corner.' : 'Hold the piece against an edge'
    hint.classList.toggle('rule', !!p.piece.ability)
-   const top = root.querySelector('.dh').getBoundingClientRect().bottom
    portals.forEach(el => {
-    if (el.classList.contains('portal')) { el.style.top = `${top}px`; el.style.height = `${Math.max(0, drag.rect.bottom - top)}px` }
+    if (el.classList.contains('portal')) {
+     const label = root.querySelector(`.dh[data-side="${el.dataset.side}"]`).getBoundingClientRect()
+     const top = label.top + label.height / 2
+     el.style.top = `${top}px`
+     el.style.height = `${Math.max(0, drag.rect.bottom - top)}px`
+    }
     el.classList.add('pulse')
    })
    ghost.replaceChildren(...p.piece.cells.map(() => {
-    const el = document.createElement('span'); el.className = 'ghost'
-    el.style.width = el.style.height = `${cfg.metrics.cell}px`
+    const el = document.createElement('span'); el.className = 'ghost gameBoardTile'
+    el.dataset.occupied = 'true'
+    el.dataset.ability = p.piece.ability || 'normal'
+    el.style.setProperty('--tile-color', cfg.color)
     return el
    }))
    ghost.hidden = true
-   drawShape(float, drag.piece, drag.stride, cfg.color)
+   drawShape(float, drag.piece, drag.cell, cfg.color)
    float.hidden = false
    vibrate(); schedule()
   }
@@ -225,10 +242,10 @@ export default function usePhoneDrag(rootRef, config) {
    document.removeEventListener('touchmove', touchMove)
   }
  }, [rootRef])
- const { canMove, pendingPlacement, board, game: { turnEndsAt, turnNumber, currentPlayerId } } = config
+ const { canMove, pendingPlacement, board, metrics: { cell, gap, pixelRatio }, game: { turnEndsAt, turnNumber, currentPlayerId } } = config
  useEffect(() => {
   cancel.current()
   const timeout = turnEndsAt ? setTimeout(() => cancel.current(), Math.max(0, turnEndsAt - Date.now())) : null
   return () => clearTimeout(timeout)
- }, [canMove, pendingPlacement, board, turnEndsAt, turnNumber, currentPlayerId])
+ }, [canMove, pendingPlacement, board, turnEndsAt, turnNumber, currentPlayerId, cell, gap, pixelRatio])
 }

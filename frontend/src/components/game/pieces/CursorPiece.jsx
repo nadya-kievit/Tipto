@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef } from 'react'
 import { getPlayerColorHex } from '../../../game/playerColors'
 import BoardPiece from '../board/BoardPiece'
+import { pixelOffset } from '../../../game/boardGeometry'
 
 function CursorPiece({ piece, rotation, flipped, color, positionRef, cellSize = 28 }) {
 	const elementRef = useRef(null)
@@ -11,7 +12,11 @@ function CursorPiece({ piece, rotation, flipped, color, positionRef, cellSize = 
 		const paint = () => {
 			frame = null
 			const { x, y } = positionRef.current
-			element.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%)`
+			const rect = element.getBoundingClientRect()
+			const ratio = window.devicePixelRatio || 1
+			const left = x - rect.width / 2
+			const top = y - rect.height / 2
+			element.style.transform = `translate3d(${left + pixelOffset(left, ratio)}px, ${top + pixelOffset(top, ratio)}px, 0)`
 		}
 		const move = event => {
 			positionRef.current = { x: event.clientX, y: event.clientY }
@@ -23,7 +28,7 @@ function CursorPiece({ piece, rotation, flipped, color, positionRef, cellSize = 
 			window.removeEventListener('pointermove', move)
 			cancelAnimationFrame(frame)
 		}
-	}, [positionRef])
+	}, [positionRef, cellSize, piece, rotation, flipped])
 
 	return (
 		<div ref={elementRef} className="gameHeldPiece" data-held-piece aria-hidden="true" style={{

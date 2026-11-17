@@ -1,5 +1,6 @@
 import { displayCells } from './piecePresentation.js'
 import { isValidPlacement } from './placementRules.js'
+import { fitBoardGeometry } from './boardGeometry.js'
 
 export function playableBounds(board) {
  const cells = board.flatMap((row, r) => row.flatMap((cell, c) => cell.playable === false ? [] : [[r, c]]))
@@ -9,20 +10,20 @@ export function playableBounds(board) {
 }
 
 // Reserve the smallest tray first. Extra tray height never costs a board pixel.
-export function phoneFit(width, height, bounds, bottomPadding = 6) {
+export function phoneFit(width, height, bounds, bottomPadding, ratios, pixelRatio = 1) {
  const trayHeight = size => 2 * (5 * size + 12) + 2 + 4 + bottomPadding + 8
- const cell = Math.max(1, Math.floor(Math.min((width - 12 - 2 * (bounds.cols - 1)) / bounds.cols,
-  (height - 50 - 16 - trayHeight(11) - 2 * (bounds.rows - 1)) / bounds.rows)))
- const boardHeight = bounds.rows * cell + 2 * (bounds.rows - 1)
+ const geometry = fitBoardGeometry(width - 12, height - 50 - 16 - trayHeight(11), bounds.rows, bounds.cols, ratios, pixelRatio)
+ if (!geometry) return null
+ const boardHeight = geometry.height
  let tray = 11
  while (tray < 16 && height - 50 - 16 - trayHeight(tray + 1) >= boardHeight) tray++
- return { cell, tray }
+ return { ...geometry, tray }
 }
 
-export function phonePose(drag, stride) {
+export function phonePose(drag, stride, gap = 0) {
  const oriented = displayCells(drag.piece.cells, drag.piece.rotation, drag.piece.flipped)
- const width = (Math.max(...oriented.map(([, c]) => c)) + 1) * stride
- const height = (Math.max(...oriented.map(([r]) => r)) + 1) * stride
+ const width = (Math.max(...oriented.map(([, c]) => c)) + 1) * stride - gap
+ const height = (Math.max(...oriented.map(([r]) => r)) + 1) * stride - gap
  const rawX = drag.sx + (drag.x - drag.sx) * 1.7
  const cx = Math.min(drag.rect.right - width / 2, Math.max(drag.rect.left + width / 2, rawX))
  const cy = Math.max(drag.rect.top + height / 2, drag.sy - 56 + (drag.y - drag.sy) * 1.7)

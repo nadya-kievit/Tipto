@@ -4,6 +4,10 @@ import { displayCells, tileFinish } from '../../../game/piecePresentation'
 import { getPlayerColorHex } from '../../../game/playerColors'
 import { phoneFit, playableBounds } from '../../../game/phoneGeometry'
 import usePhoneDrag from './usePhoneDrag'
+import BoardTile from '../board/BoardTile'
+import { readBoardRatios, boardGeometryStyle, observeBoardPixelRatio } from '../../../game/boardGeometry'
+import useBoardPixelAlignment from '../../../hooks/useBoardPixelAlignment'
+import '../../../styles/game/board.css'
 
 const score = player => player.pieces.reduce((sum, piece) => sum + (piece.placed ? piece.cells.length : 0), 0)
 
@@ -69,22 +73,24 @@ function Logo() {
 export default function PhoneGameLayout({ game, me, board, canMove, pieces, pendingPlacement,
  onStage, onRotate, onFlip, onPlace, onQuit, isQuitting, onCopyError, notice }) {
  const rootRef = useRef(null), trayRef = useRef(null)
+ const surfaceRef = useRef(null)
+ useBoardPixelAlignment(surfaceRef)
  const [overlay, setOverlay] = useState(null), [expanded, setExpanded] = useState(null)
  const [copied, setCopied] = useState(false)
- const [metrics, setMetrics] = useState({ cell: 1, tray: 11 })
+ const [metrics, setMetrics] = useState({ cell: 1, gap: 1, pad: 0, frame: 0, tray: 11 })
  const bounds = playableBounds(board)
  const { row, col, rows, cols } = bounds
  useLayoutEffect(() => {
   const root = rootRef.current
   const fit = () => {
    const bottom = parseFloat(getComputedStyle(root.querySelector('.trayZone')).paddingBottom)
-   const next = phoneFit(root.clientWidth, root.clientHeight, { rows, cols }, bottom)
-   setMetrics(old => old.cell === next.cell && old.tray === next.tray ? old : next)
+   const next = phoneFit(root.clientWidth, root.clientHeight, { rows, cols }, bottom, readBoardRatios(root), window.devicePixelRatio || 1)
+   if (next) setMetrics(old => JSON.stringify(old) === JSON.stringify(next) ? old : next)
   }
-  fit()
+  const stopPixelRatio = observeBoardPixelRatio(fit)
   const observer = new ResizeObserver(fit)
   observer.observe(root)
-  return () => observer.disconnect()
+  return () => { observer.disconnect(); stopPixelRatio() }
  }, [rows, cols])
  useEffect(() => {
   const close = e => {
@@ -109,7 +115,8 @@ export default function PhoneGameLayout({ game, me, board, canMove, pieces, pend
   try { await copyText(roomCode); setCopied(true) } catch { setCopied(false); onCopyError?.('Could not copy the room code.') }
  }
  return <div ref={rootRef} className="gamePage phoneGame" style={{ '--me': color, '--player-color': color,
-  '--cs': `${metrics.cell}px`, '--row': `${5 * metrics.tray + 12}px`, '--col': `${5 * metrics.tray + 24}px` }}>
+  ...boardGeometryStyle(metrics), '--board-columns': cols, '--board-rows': rows,
+  '--row': `${5 * metrics.tray + 12}px`, '--col': `${5 * metrics.tray + 24}px` }}>
   <header className="top">
    <div className="topRow">
     <button className="more" aria-label="Tipto menu" aria-expanded={overlay === 'menu'} onClick={() => setOverlay(overlay === 'menu' ? null : 'menu')}><Logo /><Icon /></button>
@@ -139,17 +146,20 @@ export default function PhoneGameLayout({ game, me, board, canMove, pieces, pend
    </Fragment>)}</section>}
   </header>
   <main className="boardZone" aria-label="Game board">
-   <div className="phoneBoard" data-game-board style={{ gridTemplateColumns: `repeat(${cols}, var(--cs))`, gridTemplateRows: `repeat(${rows}, var(--cs))` }}>
+   <section ref={surfaceRef} className="gameBoardSurface">
+   <div className="phoneBoard board gameBoardGrid" data-game-board>
     {board.slice(row, row + rows).flatMap((line, dr) => line.slice(col, col + cols).map((value, dc) => {
      const key = `${row + dr},${col + dc}`, pending = pendingCells.has(key), start = starts.get(key)
      const occupied = value.occupied || pending
      const tileColor = getPlayerColorHex(pending ? pendingPlacement.color : value.color)
      const ability = pending ? pendingPlacement.ability : abilities.get(value.pieceId)
-     const style = occupied ? tileFinish(tileColor, ability, 'tray') : start ? { '--pc': getPlayerColorHex(start.color) } : undefined
-     return <div key={key} className={`c${value.playable !== false ? ' on' : ''}${occupied ? ' filled' : start ? ' start' : ''}`} style={style} data-row={row + dr} data-col={col + dc} data-ability={ability || 'normal'} aria-label={start ? `${start.name}'s starting square` : undefined} />
+     return <BoardTile key={key} color={tileColor} ability={ability} occupied={occupied}
+      playable={value.playable !== false} startColor={start ? getPlayerColorHex(start.color) : undefined}
+      data-row={row + dr} data-col={col + dc} aria-label={start ? `${start.name}'s starting square` : undefined} />
     }))}
     <div className="ghostLayer" hidden />
    </div>
+   </section>
   </main>
   <div className="portal" data-side="flip" /><div className="portal" data-side="rot" />
   <section className="trayZone" aria-label="Your pieces" aria-disabled={!canMove || !!pendingPlacement}>

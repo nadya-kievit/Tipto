@@ -2,6 +2,12 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { phoneFit, phonePose, phoneTarget, playableBounds } from '../src/game/phoneGeometry.js'
 import { isValidPlacement } from '../src/game/placementRules.js'
+import { readFileSync } from 'node:fs'
+import { boardSpacing } from '../src/game/boardGeometry.js'
+
+const css = readFileSync(new URL('../src/styles/game/board.css', import.meta.url), 'utf8')
+const ratios = Object.fromEntries(['gap', 'pad', 'frame'].map(name =>
+ [name, Number(css.match(new RegExp(`--board-${name}-ratio:\\s*([\\d.]+)`))[1])]))
 
 const makeBoard = () => Array.from({ length: 16 }, (_, row) => Array.from({ length: 14 }, (_, col) => ({ playable: row >= 2 && row < 14 && col >= 1 && col < 13, occupied: false })))
 const piece = { name: 'L', cells: [[0, 0], [1, 0], [1, 1]], rotation: 0, flipped: false }
@@ -17,19 +23,37 @@ test('phone crops unused borders without losing original board coordinates', () 
  assert.equal(isValidPlacement(board, target.cells, me, true, [me]), true)
 })
 
-test('tray grows only into spare height; board uses largest integer cell', () => {
+test('phone boards fit using shared proportional spacing; tray grows into spare height', () => {
+ for (const spacing of [ratios, { gap: .15, pad: .75, frame: .05 }]) {
+ for (const pixelRatio of [1, 1.25, 1.5, 2, 3]) {
  for (const [width, height] of [[375, 700], [390, 844], [320, 568]]) {
   for (const bounds of [{ rows: 14, cols: 14 }, { rows: 28, cols: 30 }, { rows: 30, cols: 8 }]) {
-   const fit = phoneFit(width, height, bounds)
-   const boardH = bounds.rows * fit.cell + (bounds.rows - 1) * 2
+   const fit = phoneFit(width, height, bounds, 6, spacing, pixelRatio)
+   const boardH = fit.height
    const trayH = 2 * (5 * fit.tray + 12) + 20
    assert.ok(boardH + trayH + 66 <= height)
-   assert.ok(bounds.cols * fit.cell + (bounds.cols - 1) * 2 <= width - 12)
+   assert.ok(fit.width <= width - 12 + 1e-9)
+   assert.ok(Math.abs(fit.gap * pixelRatio - Math.round(fit.gap * pixelRatio)) < 1e-9)
    assert.ok(fit.tray >= 11 && fit.tray <= 16)
-   assert.equal(fit.cell, Math.floor(Math.min((width - 12 - (bounds.cols - 1) * 2) / bounds.cols,
-    (height - 66 - 154 - (bounds.rows - 1) * 2) / bounds.rows)))
+   const nextCell = fit.cell + 1 / pixelRatio
+   const next = boardSpacing(nextCell, spacing, pixelRatio)
+   const extent = count => count * nextCell + (count - 1) * next.gap + 2 * (next.pad + next.frame)
+   assert.ok(extent(bounds.cols) > width - 12 || extent(bounds.rows) > height - 66 - 154)
   }
  }
+ }
+ }
+})
+
+test('drag previews match device-pixel board spacing and align at the right edge', () => {
+ const fit = phoneFit(375, 700, { rows: 28, cols: 30 }, 6, ratios, 3)
+ const stride = fit.cell + fit.gap
+ const drag = { sx: 100, sy: 600, x: 1000, y: 450, piece,
+  rect: { left: 6, right: 360, top: 60, bottom: 450 } }
+ const pose = phonePose(drag, stride, fit.gap)
+ assert.ok(Math.abs(pose.width - (2 * fit.cell + fit.gap)) < 1e-9)
+ assert.ok(Math.abs(pose.height - (2 * fit.cell + fit.gap)) < 1e-9)
+ assert.ok(Math.abs(pose.left + pose.width - drag.rect.right) < 1e-9)
 })
 
 test('amplified motion clamps sides/top and preserves centre through a turn', () => {

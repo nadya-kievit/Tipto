@@ -17,9 +17,9 @@
 }
 
 .gameBoardSurface, .gameBoardPiece {
-	--board-gap: calc(var(--board-cell-size) * var(--board-gap-ratio));
-	--board-pad: calc(var(--board-cell-size) * var(--board-pad-ratio));
-	--board-frame: calc(var(--board-cell-size) * var(--board-frame-ratio));
+	--board-gap: var(--board-gap-size, calc(var(--board-cell-size) * var(--board-gap-ratio)));
+	--board-pad: var(--board-pad-size, calc(var(--board-cell-size) * var(--board-pad-ratio)));
+	--board-frame: var(--board-frame-size, calc(var(--board-cell-size) * var(--board-frame-ratio)));
 	--board-radius: calc(var(--board-cell-size) * var(--board-radius-ratio));
 	--board-bevel: calc(var(--board-cell-size) * var(--board-bevel-ratio));
 	--board-outline: calc(var(--board-cell-size) * var(--board-outline-ratio));
@@ -98,6 +98,16 @@
 
 .gameBoardTile[data-occupied="false"][data-playable="false"] {
 	background: color-mix(in srgb, var(--cell) 10%, var(--surface));
+}
+
+/* Let irregular phone boards blend into the surrounding game background. */
+.phoneGame .gameBoardSurface {
+	background: var(--page);
+	box-shadow: none;
+}
+
+.phoneGame .gameBoardTile[data-playable="false"] {
+	visibility: hidden;
 }
 
 .gameBoardTile[data-start="true"] {

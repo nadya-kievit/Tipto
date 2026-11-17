@@ -1,4 +1,4 @@
-/* Phone portrait only. Shared/desktop board presentation is intentionally untouched. */
+/* Phone portrait layout. Board surfaces, tiles and floating pieces use board.css. */
 html:has(.phoneGame), body:has(.phoneGame), body:has(.phoneGame) #root {
  height: 100%; overflow: hidden; overscroll-behavior: none; touch-action: manipulation;
 }
@@ -72,11 +72,7 @@ html:has(.phoneGame), body:has(.phoneGame), body:has(.phoneGame) #root {
 .phoneGame .code svg { width: 15px; height: 15px; stroke: var(--text-soft); }
 .phoneGame .leaveBtn { width: 100%; height: 38px; margin-top: 14px; border-color: var(--leave-border); background: transparent; color: var(--leave-text); font-size: 14px; font-weight: 600; }
 .phoneGame .boardZone { position: relative; flex: 1; min-height: 0; display: grid; place-items: center; padding: 8px 6px; }
-.phoneGame .phoneBoard { position: relative; display: grid; gap: 2px; }
-.phoneGame .c { width: var(--cs); height: var(--cs); border-radius: 2px; }
-.phoneGame .c.on { background: var(--cell); }
-.phoneGame .c.start { background: color-mix(in srgb, var(--pc) 28%, var(--cell)); box-shadow: inset 0 0 0 2px var(--pc); }
-.phoneGame .ghost { position: absolute; left: 0; top: 0; border-radius: 2px; pointer-events: none; background: color-mix(in srgb, var(--me) 55%, var(--cell)); }
+.phoneGame .ghost { position: absolute; left: 0; top: 0; pointer-events: none; opacity: .55; }
 .phoneGame .trayZone { position: relative; flex: none; padding: 4px 0 max(6px, calc(env(safe-area-inset-bottom) - 18px)); }
 .phoneGame .tray { display: grid; grid-auto-flow: column; grid-template-rows: repeat(2, var(--row, 66px)); grid-auto-columns: var(--col, 80px); gap: 2px 6px; padding: 0 10px; overflow-x: auto; overscroll-behavior-x: none; scrollbar-width: none; touch-action: pan-x; }
 .phoneGame .tray::-webkit-scrollbar { display: none; }
@@ -88,8 +84,8 @@ html:has(.phoneGame), body:has(.phoneGame), body:has(.phoneGame) #root {
 .phoneGame .pc.lifted.home { opacity: .5; }
 .phoneGame .shape { position: relative; display: block; }
 .phoneGame .shape i { position: absolute; border-radius: 1px; }
-.phoneGame .shape.anim-rot { animation: phoneSpin 220ms cubic-bezier(.2,.8,.3,1); }
-.phoneGame .shape.anim-flip { animation: phoneMirror 260ms cubic-bezier(.2,.8,.3,1); }
+.phoneGame .shape.anim-rot, .phoneGame .gameBoardPiece.anim-rot { animation: phoneSpin 220ms cubic-bezier(.2,.8,.3,1); }
+.phoneGame .shape.anim-flip, .phoneGame .gameBoardPiece.anim-flip { animation: phoneMirror 260ms cubic-bezier(.2,.8,.3,1); }
 @keyframes phoneSpin { from { transform: rotate(-90deg); } to { transform: none; } }
 @keyframes phoneMirror { from { transform: scaleX(-1); } to { transform: none; } }
 .phoneGame .portal { --prox: 0; --pcol: color-mix(in srgb, var(--me) calc(42% + 45% * var(--prox, 0)), var(--page)); position: fixed; z-index: 60; width: 3px; pointer-events: none; opacity: 0;
@@ -108,14 +104,13 @@ html:has(.phoneGame), body:has(.phoneGame), body:has(.phoneGame) #root {
 .phoneGame .plBtn { padding: 0 9px; }
 .phoneGame .prow { padding: 0 10px 0 14px; }
 .phoneGame .pc { border: 0; border-radius: 0; background: transparent; touch-action: pan-x; }
-.phoneGame .phoneBoard { flex: none; margin: 0; padding: 0; border: 0; gap: 2px; }
 .phoneGame .boardZone { width: 100%; }
 .phoneGame .shape > i { display: block; }
-.phoneGame .ghostLayer { position: absolute; inset: 0; pointer-events: none; }
+.phoneGame .ghostLayer { position: absolute; inset: calc(var(--board-pad) + var(--board-frame)); pointer-events: none; }
 .phoneGame .float[hidden], .phoneGame .ghostLayer[hidden] { display: none; }
 .phoneGame .portal[data-side="flip"] { left: 0; }
 .phoneGame .portal[data-side="rot"] { right: 0; }
-.phoneGame .dragHint { z-index: 61; }
+.phoneGame .dragHint { z-index: 61; background: transparent; }
 .phoneGame.dragging .topRow { visibility: hidden; }
 .phoneGame .dh { position: relative; isolation: isolate; background: none; box-shadow: none; filter: none; }
 .phoneGame .dh::before { content: ''; position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: var(--pcol); filter: brightness(calc(1 + .2 * var(--prox, 0))); box-shadow: 0 0 calc(4px * var(--prox, 0)) color-mix(in srgb, var(--me) 30%, transparent); }
@@ -135,5 +130,5 @@ html:has(.phoneGame), body:has(.phoneGame), body:has(.phoneGame) #root {
 .phoneGame .plist { max-height: calc(100dvh - 62px); overflow-y: auto; overscroll-behavior: contain; }
 .phoneGame .sbar[hidden] { display: block; visibility: hidden; }
 @media (prefers-reduced-motion: reduce) {
- .phoneGame .shape, .phoneGame .portal, .phoneGame .dh::before { animation: none !important; transition: none !important; }
+ .phoneGame .shape, .phoneGame .gameBoardPiece, .phoneGame .portal, .phoneGame .dh::before { animation: none !important; transition: none !important; }
 }

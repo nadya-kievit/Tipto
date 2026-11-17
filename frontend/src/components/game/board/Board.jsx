@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useState } from 'react'
-import { fitBoardCell } from '../../../game/boardGeometry'
+import { fitBoardGeometry, readBoardRatios, boardGeometryStyle, observeBoardPixelRatio } from '../../../game/boardGeometry'
+import useBoardPixelAlignment from '../../../hooks/useBoardPixelAlignment'
 import '../../../styles/game/board.css'
 import Tile from './Tile'
 
@@ -8,7 +9,9 @@ function Board({
 	hoverCells, pendingPlacement, players, currentPlayerId, preview, lastMove,
 }) {
 	const stageRef = useRef(null)
-	const [cellSize, setCellSize] = useState(20)
+	const surfaceRef = useRef(null)
+	const [geometry, setGeometry] = useState({ cell: 20, gap: 2, pad: 10, frame: 0 })
+	useBoardPixelAlignment(surfaceRef)
 	const height = board.length
 	const width = board[0]?.length || 0
 	const viewHeight = boardRotation % 180 === 0 ? height : width
@@ -27,15 +30,14 @@ function Board({
 			const style = getComputedStyle(stage)
 			const width = stage.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight)
 			const height = stage.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom)
-			const ratios = Object.fromEntries(['gap', 'pad', 'frame'].map(name =>
-				[name, Number.parseFloat(style.getPropertyValue(`--board-${name}-ratio`))]))
-			const next = fitBoardCell(width, height, viewHeight, viewWidth, ratios)
-			if (next) setCellSize(next)
+			const ratios = readBoardRatios(stage)
+			const next = fitBoardGeometry(width, height, viewHeight, viewWidth, ratios, window.devicePixelRatio || 1)
+			if (next) setGeometry(old => JSON.stringify(old) === JSON.stringify(next) ? old : next)
 		}
-		update()
+		const stopPixelRatio = observeBoardPixelRatio(update)
 		const observer = new ResizeObserver(update)
 		observer.observe(stage)
-		return () => observer.disconnect()
+		return () => { observer.disconnect(); stopPixelRatio() }
 	}, [viewHeight, viewWidth])
 	function viewToBoard(row, col) {
 		switch (boardRotation) {
@@ -88,9 +90,9 @@ function Board({
 	}))
 	return (
 		<div className="boardStage" ref={stageRef}>
-			<section className="gameBoardSurface" aria-label="Game board" style={{
+			<section ref={surfaceRef} className="gameBoardSurface" aria-label="Game board" style={{
 				'--board-columns': viewWidth, '--board-rows': viewHeight,
-				'--board-cell-size': `${cellSize}px`,
+				...boardGeometryStyle(geometry),
 			}}>
 				<div className="board gameBoardGrid" data-game-board onClick={onTileClick} onPointerMove={handlePointerMove} onPointerLeave={onBoardLeave}>{tiles}</div>
 			</section>
