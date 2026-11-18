@@ -9,7 +9,7 @@
 	position: fixed;
 }
 
-.pregameShell > .createGamePage.homeScreen,
+.pregameShell > .homeScreen,
 .pregameShell > .lobbyScreen {
 	background: transparent;
 }

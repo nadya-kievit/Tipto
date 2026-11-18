@@ -217,20 +217,6 @@ button:disabled {
 	line-height: 1;
 }
 
-.startPage {
-	min-height: 100vh;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-	gap: 24px;
-}
-
-.startPanel.createGamePanel {
-	width: 500px;
-	max-width: calc(100vw - 24px);
-}
-
 .startPanel {
 	width: 750px;
 	padding: 28px;
@@ -323,34 +309,6 @@ button:disabled {
 	justify-content: center;
 	gap: 22px;
 	margin-top: auto;
-}
-
-.startDivider {
-	display: flex;
-	align-items: center;
-	gap: 12px;
-	margin: 20px 0;
-	color: #958ba9;
-}
-
-.startDivider::before,
-.startDivider::after {
-	content: "";
-	flex: 1;
-	height: 1px;
-	background: rgba(155, 113, 211, 0.24);
-}
-
-.joinForm {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	gap: 11px;
-}
-
-.joinForm button {
-	align-self: stretch;
-	min-width: 104px;
 }
 
 .codeInputGroup {
@@ -1389,37 +1347,6 @@ button:disabled {
 	.piecesRight {
 		justify-self: center;
 		width: min(100%, 680px);
-	}
-
-	.createGamePage {
-		position: fixed;
-		top: 0;
-		left: 0;
-		height: 100dvh;
-		width: 100%;
-		min-height: 0;
-		box-sizing: border-box;
-		justify-content: safe center;
-		padding: 24px 12px;
-		overflow: hidden;
-	}
-
-	.createGamePanel {
-		padding: clamp(16px, 5vw, 22px);
-	}
-
-	.joinForm {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) auto;
-		gap: 8px;
-		width: 100%;
-	}
-
-	.joinForm button {
-		min-width: 0;
-		padding: 8px 10px;
-		font-size: 13px;
-		white-space: nowrap;
 	}
 
 	.codeInputGroup {

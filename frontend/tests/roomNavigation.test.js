@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { setImmediate } from 'node:timers'
 import { createRoomNavigation } from '../src/app/roomNavigation.js'
 
-function browserAt(path = '/') {
-	const entries = [{ path, state: null }]
-	let index = 0
+function browserAt(path = '/', previousPath) {
+	const entries = previousPath ? [{ path: previousPath, state: null }, { path, state: null }] : [{ path, state: null }]
+	let index = entries.length - 1
 	let pushes = 0
 	const pendingMoves = []
 	const listeners = new Set()
@@ -22,6 +23,9 @@ function browserAt(path = '/') {
 			if (!entries[index + delta]) return
 			index += delta
 			await Promise.all([...listeners].map(fn => fn()))
+			await browser.flush()
+		},
+		async flush() {
 			while (pendingMoves.length) await browser.move(pendingMoves.shift())
 		},
 		get paths() { return entries.map(entry => entry.path) },
@@ -96,13 +100,51 @@ test('repeated Back while Leave is pending submits only once', async () => {
 	assert.equal(browser.location.pathname, '/')
 })
 
-test('Leave button replaces the room entry and later history traversal stays home', async () => {
-	const browser = browserAt('/game/123456')
+test('Leave button returns to the existing Home entry and Forward cannot reopen the room', async () => {
+	const browser = browserAt('/game/123456', '/previous-page')
 	const nav = createRoomNavigation(browser, () => {}, () => null)
 	nav.navigateTo('/')
+	await browser.flush()
+	assert.equal(browser.location.pathname, '/')
 	await browser.move(-1)
+	assert.equal(browser.location.pathname, '/previous-page')
 	await browser.move(1)
-	assert.deepEqual(browser.paths, ['/', '/'])
+	await browser.move(1)
+	assert.equal(browser.location.pathname, '/')
+	assert.deepEqual(browser.paths, ['/previous-page', '/', '/'])
+})
+
+for (const room of ['lobby', 'game']) {
+	test(`Back from ${room} leaves once, then one more Back exits Tipto`, async () => {
+		const browser = browserAt('/', '/previous-page')
+		let leaves = 0
+		const nav = createRoomNavigation(browser, () => {}, () => () => {
+			leaves++
+			nav.navigateTo('/')
+		})
+		nav.navigateTo('/lobby/123456')
+		if (room === 'game') nav.navigateTo('/game/123456')
+
+		await browser.move(-1)
+		assert.equal(browser.location.pathname, '/')
+		assert.equal(leaves, 1)
+		await browser.move(-1)
+		assert.equal(browser.location.pathname, '/previous-page')
+		assert.equal(leaves, 1)
+	})
+}
+
+test('repeated room visits do not accumulate Home entries behind the current page', async () => {
+	const browser = browserAt('/', '/previous-page')
+	const nav = createRoomNavigation(browser, () => {}, () => () => nav.navigateTo('/'))
+	for (let i = 0; i < 3; i++) {
+		nav.navigateTo(`/game/room${i}`)
+		await browser.move(-1)
+		assert.equal(browser.location.pathname, '/')
+		assert.deepEqual(browser.paths, ['/previous-page', '/', '/'])
+	}
+	await browser.move(-1)
+	assert.equal(browser.location.pathname, '/previous-page')
 })
 
 test('stale Forward entry cannot rejoin a room from Home', async () => {
