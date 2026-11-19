@@ -24,6 +24,7 @@ function installFixture() {
   }
   const fixture = window.lobbyFixture = {
     game, requests: [], sockets: [], pending: [], holdProfiles: false, failName: false,
+    holdEntry: false, releaseEntry: null, resumed: false,
     emit() {
       game.revision++
       for (const socket of this.sockets) socket.onmessage?.({ data: JSON.stringify({ type: 'game_state', game }) })
@@ -45,6 +46,20 @@ function installFixture() {
     const body = options.body ? JSON.parse(options.body) : null
     fixture.requests.push({ path, method, body })
     if (path === '/health') return reply({ status: 'ok' })
+    if (method === 'GET' && path.startsWith('/games/')) {
+      if (fixture.holdEntry) await new Promise(resolve => { fixture.releaseEntry = resolve })
+      if (path === '/games/999999') return reply({ detail: 'Not found' }, 404)
+      if (path === '/games/888888') return reply({ ...game, players: Array.from({ length: 6 }, (_, id) => ({ id })) })
+      if (path === '/games/777777') return reply({ ...game, status: 'playing' })
+      const token = options.headers?.['X-Player-Token']
+      if (token === 'expired') return reply({ detail: 'Invalid session' }, 403)
+      if (token === 'removed') return reply({ detail: 'You were removed from the room' }, 403)
+      if (token === 'playing') {
+        if (fixture.resumed) return new Promise(() => {})
+        fixture.resumed = true
+        return reply({ ...game, status: 'playing' })
+      }
+    }
     if (path.endsWith('/join')) return reply({ playerId: 'p1', playerToken: 'token' })
     if (path.endsWith('/profile')) {
       if (fixture.failName && body.name) return reply({ detail: 'Name save failed' }, 503)
@@ -127,11 +142,16 @@ try {
   const nameValue = () => evaluate(`document.querySelector('.lobbyOwnProfile input').value`)
 
   await open('/')
+  await evaluate(`lobbyFixture.holdEntry = true`)
   await evaluate(`document.querySelector('.homeCreateButton').click()`)
+  await until(`location.pathname === '/lobby/123456' && !!lobbyFixture.releaseEntry`)
+  assert.equal(await evaluate(`!!document.querySelector('.lobbyLoading')`), true, 'Lobby owns entry loading')
+  await evaluate(`lobbyFixture.holdEntry = false;lobbyFixture.releaseEntry()`)
   // This fixture treats room creation like any other game response.
   await until(`!!document.querySelector('.lobbyStart:not(:disabled)')`)
   assert.equal(await evaluate(`lobbyFixture.requests.filter(r => r.method === 'GET' && r.path === '/games/123456').length`), 2,
-    'Home entry should not be repeated by LobbyScreen')
+    'Lobby entry should run once despite StrictMode effect replays')
+  assert.equal(await evaluate(`lobbyFixture.requests.filter(r => r.path.endsWith('/join')).length`), 1)
 
   await editName('My draft')
   await wait(350)
@@ -159,7 +179,7 @@ try {
   await evaluate(`lobbyFixture.requests=[];lobbyFixture.failName=false;lobbyFixture.holdProfiles=true;document.querySelector('.lobbyStart').click()`)
   await until(`lobbyFixture.pending.length === 1`)
   assert.equal(await evaluate(`lobbyFixture.requests.some(r=>r.path.endsWith('/start'))`), false)
-  assert.equal(await evaluate(`document.querySelector('.lobbyOwnProfile input').disabled`), true)
+  assert.equal(await evaluate(`document.querySelector('.lobbyStart').disabled`), true)
   await evaluate(`lobbyFixture.pending.shift()()`)
   await until(`lobbyFixture.requests.some(r=>r.path.endsWith('/start'))`)
   assert.equal(await evaluate(`lobbyFixture.game.players[0].name`), 'Newer draft')
@@ -179,9 +199,43 @@ try {
   assert.equal(await evaluate(`lobbyFixture.requests.filter(r=>r.path.endsWith('/profile')).length`), 2, 'Colour changes are sent without a queue')
   await evaluate(`lobbyFixture.pending.pop()();lobbyFixture.pending.pop()()`)
   await wait(100)
-  assert.equal(await evaluate(`document.querySelector('.lobbySwatch[aria-pressed="true"]').title`), 'Orange')
+  assert.equal(await evaluate(`document.querySelector('.lobbySwatch[data-selected="true"]').title`), 'Orange')
+
+  await evaluate(`localStorage.setItem('tipto-player-123456', JSON.stringify({playerId:'p1',playerToken:'expired'}))`)
+  await open('/lobby/123456')
+  assert.equal(await evaluate(`lobbyFixture.requests.filter(r=>r.path.endsWith('/join')).length`), 1, 'Expired credentials allow a fresh join')
+
+  await evaluate(`localStorage.clear()`)
+  for (const [roomId, message] of [['999999', 'We couldn’t find a game with that code.'], ['888888', 'Room is full'], ['777777', 'This room is no longer accepting players.']]) {
+    await command('Page.navigate', { url: base + '/lobby/' + roomId })
+    await until(`!!document.querySelector('.lobbyError')`)
+    assert.equal(await evaluate(`document.querySelector('.lobbyError').textContent.trim()`), message)
+    assert.equal(await evaluate(`lobbyFixture.requests.some(r=>r.path.endsWith('/join'))`), false)
+    await evaluate(`document.querySelector('.headerLeave').click()`)
+    await until(`!!document.querySelector('.homeCreateButton')`)
+  }
+
+  // A Home join navigates before the lobby reports an invalid code.
+  await evaluate(`{
+    const input = document.querySelector('.homeJoinForm input');
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, '999999');
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  }`)
+  await until(`!document.querySelector('.homeJoinButton').disabled`)
+  await evaluate(`document.querySelector('.homeJoinButton').click()`)
+  await until(`location.pathname === '/lobby/999999' && !!document.querySelector('.lobbyError')`)
+
+  await evaluate(`localStorage.setItem('tipto-player-123456', JSON.stringify({playerId:'p1',playerToken:'removed'}))`)
+  await command('Page.navigate', { url: base + '/lobby/123456' })
+  await until(`!!document.querySelector('.homeError')`)
+  assert.equal(await evaluate(`document.querySelector('.homeError').textContent.trim()`), 'You were removed from the room')
+  assert.equal(await evaluate(`localStorage.getItem('tipto-player-123456')`), null)
+
+  await evaluate(`localStorage.setItem('tipto-player-123456', JSON.stringify({playerId:'p1',playerToken:'playing'}))`)
+  await command('Page.navigate', { url: base + '/lobby/123456' })
+  await until(`location.pathname === '/game/123456'`)
   assert.deepEqual(errors, [], 'No browser runtime errors')
-  console.log('Lobby browser checks passed: reused entry, direct links, reload, local name draft, blur saves, delayed replies, Start ordering/failure, blank names, and concurrent colour saves.')
+  console.log('Lobby browser checks passed: lobby-owned entry/loading, single joins, direct links, reload, expired/removed sessions, entry errors and leaving, active-game redirect, name editing, Start ordering/failure, and concurrent colour saves.')
 } finally {
   if (send && ws?.readyState === WebSocket.OPEN) await send('Browser.close').catch(() => {})
   ws?.close()

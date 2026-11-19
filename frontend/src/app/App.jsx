@@ -4,7 +4,6 @@ import LobbyScreen from '../screens/LobbyScreen'
 import GameScreen from '../screens/GameScreen'
 import BackgroundPieces from '../components/background/BackgroundPieces'
 import { createGame, wakeGameServer } from '../services/api'
-import { enterLobby } from '../services/roomSession'
 import { createRoomNavigation } from './roomNavigation'
 import usePhoneLayout from '../hooks/usePhoneLayout'
 import '../styles/phone-layout.css'
@@ -16,20 +15,14 @@ function getRouteFromPath(pathname) {
 		: { screen: 'home', gameId: null }
 }
 
-function getEntryErrorMessage(error, action) {
+function getCreateErrorMessage(error) {
 	if (!navigator.onLine) return 'You’re offline. Reconnect to the internet and try again.'
 
 	const isNetworkError = error instanceof TypeError
 		|| /failed to fetch|load failed|network request failed|networkerror/i.test(error?.message || '')
 
 	if (isNetworkError) {
-		return action === 'create'
-			? 'Couldn’t start the game. Check your connection and try again.'
-			: 'Couldn’t join the game. Check your connection and try again.'
-	}
-
-	if (action === 'join' && error?.status === 404) {
-		return 'We couldn’t find a game with that code.'
+		return 'Couldn’t start the game. Check your connection and try again.'
 	}
 
 	return error?.message || 'Something went wrong. Please try again.'
@@ -50,7 +43,6 @@ function App() {
 	const [path, setPath] = useState(window.location.pathname)
 	const [entryError, setEntryError] = useState('')
 	const [enteringAction, setEnteringAction] = useState(null)
-	const [lobbyEntry, setLobbyEntry] = useState(null)
 	const enteringRef = useRef(false)
 	const navigationRef = useRef(null)
 	const leaveHandlerRef = useRef(null)
@@ -82,7 +74,6 @@ function App() {
 
 
 	const navigateTo = useCallback(nextPath => {
-		if (!nextPath.startsWith('/lobby/')) setLobbyEntry(null)
 		navigationRef.current?.navigateTo(nextPath)
 	}, [])
 
@@ -102,28 +93,25 @@ function App() {
 
 	const handleEnterRoom = async gameId => {
 		if (enteringRef.current) return
-		const action = gameId ? 'join' : 'create'
+		if (gameId) {
+			setEntryError('')
+			navigateTo(`/lobby/${gameId}`)
+			return
+		}
 		enteringRef.current = true
-		setEnteringAction(action)
+		setEnteringAction('create')
 		setEntryError('')
 		try {
-			let roomId = gameId
-			if (!roomId) {
-				const room = await createGame({
-					lobbyMode: true,
-					boardLayout: 'irregular',
-					playerCount: 4,
-					moveTimeLimitSeconds: 60,
-				})
-				roomId = room.gameId
-				localStorage.setItem(`tipto-admin-${roomId}`, room.adminToken)
-			}
-			const entry = await enterLobby(roomId)
-			const { game } = entry
-			setLobbyEntry(entry)
-			navigateTo(`/${game.status === 'waiting' ? 'lobby' : 'game'}/${roomId}`)
+			const room = await createGame({
+				lobbyMode: true,
+				boardLayout: 'irregular',
+				playerCount: 4,
+				moveTimeLimitSeconds: 60,
+			})
+			localStorage.setItem(`tipto-admin-${room.gameId}`, room.adminToken)
+			navigateTo(`/lobby/${room.gameId}`)
 		} catch (error) {
-			setEntryError(getEntryErrorMessage(error, action))
+			setEntryError(getCreateErrorMessage(error))
 		} finally {
 			enteringRef.current = false
 			setEnteringAction(null)
@@ -147,7 +135,6 @@ function App() {
 				<LobbyScreen
 					key={route.gameId}
 					gameId={route.gameId}
-					initialEntry={lobbyEntry?.game.gameId === route.gameId ? lobbyEntry : null}
 					onLeave={handleLeaveRoom}
 					onStarted={handleStartPlaying}
 					onRemoved={handleRemoved}

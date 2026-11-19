@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { addLobbyBot, gameSocketUrl, getGame, leaveLobby, removeLobbyPlayer, 
+import { addLobbyBot, gameSocketUrl, getGame, joinGame, leaveLobby, removeLobbyPlayer, 
 	startLobbyGame, updateLobbyProfile, updateLobbySettings } from '../services/api'
-import { enterLobby } from '../services/roomSession'
 import { PLAYER_COLORS } from '../game/playerColors'
 import Header from '../components/Header'
 import BoardPreview from '../components/lobby/BoardPreview'
@@ -11,14 +10,63 @@ import '../styles/lobby.css'
 
 const MAX_PLAYERS = 6
 
+// Share in-flight entries across effect replays and temporary screen remounts.
+const pendingEntries = new Map()
+
+function enterLobby(gameId) {
+	if (pendingEntries.has(gameId)) return pendingEntries.get(gameId)
+
+	const entry = (async () => {
+		const storageKey = `tipto-player-${gameId}`
+		const saved = localStorage.getItem(storageKey)
+		if (saved) {
+			const credentials = JSON.parse(saved)
+			try {
+				return { game: await getGame(gameId, credentials), credentials }
+			} catch (error) {
+				if (error.status !== 403) throw error
+				localStorage.removeItem(storageKey)
+				if (error.message === 'You were removed from the room') throw error
+			}
+		}
+
+		const room = await getGame(gameId)
+		if (room.players.length >= MAX_PLAYERS) throw new Error('Room is full')
+		if (!room.lobbyMode || room.status !== 'waiting') {
+			throw new Error('This room is no longer accepting players.')
+		}
+		const adminToken = localStorage.getItem(`tipto-admin-${gameId}`) || undefined
+		const credentials = await joinGame(gameId, undefined, undefined, adminToken)
+		localStorage.setItem(storageKey, JSON.stringify(credentials))
+		return { game: await getGame(gameId, credentials), credentials }
+	})()
+
+	pendingEntries.set(gameId, entry)
+	entry.then(
+		() => pendingEntries.delete(gameId),
+		() => pendingEntries.delete(gameId),
+	)
+	return entry
+}
+
+function getEntryErrorMessage(error) {
+	if (!navigator.onLine) return 'You’re offline. Reconnect to the internet and try again.'
+	if (error instanceof TypeError
+		|| /failed to fetch|load failed|network request failed|networkerror/i.test(error?.message || '')) {
+		return 'Couldn’t join the game. Check your connection and try again.'
+	}
+	if (error?.status === 404) return 'We couldn’t find a game with that code.'
+	return error?.message || 'Something went wrong. Please try again.'
+}
+
 function clearRoomCredentials(gameId) {
 	localStorage.removeItem(`tipto-player-${gameId}`)
 	localStorage.removeItem(`tipto-admin-${gameId}`)
 }
 
-function LobbyScreen({ gameId, initialEntry, onLeave, onStarted, onRemoved, onRegisterLeave }) {
-	const [game, setGame] = useState(initialEntry?.game ?? null)
-	const [session, setSession] = useState(initialEntry?.credentials ?? null)
+function LobbyScreen({ gameId, onLeave, onStarted, onRemoved, onRegisterLeave }) {
+	const [game, setGame] = useState(null)
+	const [session, setSession] = useState(null)
 	const [playerName, setPlayerName] = useState(null)
 	const [error, setError] = useState('')
 	const [connected, setConnected] = useState(false)
@@ -67,7 +115,7 @@ function LobbyScreen({ gameId, initialEntry, onLeave, onStarted, onRemoved, onRe
 	useEffect(() => {
 		let active = true
 		if (!entryRef.current) {
-			entryRef.current = initialEntry ? Promise.resolve(initialEntry) : enterLobby(gameId)
+			entryRef.current = enterLobby(gameId)
 		}
 		entryRef.current.then(({
 			game: snapshot,
@@ -81,13 +129,13 @@ function LobbyScreen({ gameId, initialEntry, onLeave, onStarted, onRemoved, onRe
 			if (nextError.message === 'You were removed from the room') {
 				removedFromRoom()
 			} else {
-				setError(nextError.message)
+				setError(getEntryErrorMessage(nextError))
 			}
 		})
 		return () => {
 			active = false
 		}
-	}, [gameId, initialEntry, receiveGame, removedFromRoom])
+	}, [gameId, receiveGame, removedFromRoom])
 
 	useEffect(() => {
 		if (!session) return
@@ -213,7 +261,7 @@ function LobbyScreen({ gameId, initialEntry, onLeave, onStarted, onRemoved, onRe
 	const leaveRoom = useCallback(async () => {
 		setLeaving(true)
 		try {
-			const credentials = session || (await entryRef.current)?.credentials
+			const credentials = session || (await entryRef.current?.catch(() => null))?.credentials
 			if (credentials) {
 				await leaveLobby(gameId, credentials)
 			}
