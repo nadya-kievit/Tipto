@@ -50,6 +50,7 @@ function App() {
 	const [path, setPath] = useState(window.location.pathname)
 	const [entryError, setEntryError] = useState('')
 	const [enteringAction, setEnteringAction] = useState(null)
+	const [lobbyEntry, setLobbyEntry] = useState(null)
 	const enteringRef = useRef(false)
 	const navigationRef = useRef(null)
 	const leaveHandlerRef = useRef(null)
@@ -80,7 +81,10 @@ function App() {
 	}, [phoneMode])
 
 
-	const navigateTo = useCallback(nextPath => { navigationRef.current?.navigateTo(nextPath) }, [])
+	const navigateTo = useCallback(nextPath => {
+		if (!nextPath.startsWith('/lobby/')) setLobbyEntry(null)
+		navigationRef.current?.navigateTo(nextPath)
+	}, [])
 
 	const registerLeave = useCallback(handler => {
 		leaveHandlerRef.current = handler
@@ -114,7 +118,9 @@ function App() {
 				roomId = room.gameId
 				localStorage.setItem(`tipto-admin-${roomId}`, room.adminToken)
 			}
-			const { game } = await enterLobby(roomId)
+			const entry = await enterLobby(roomId)
+			const { game } = entry
+			setLobbyEntry(entry)
 			navigateTo(`/${game.status === 'waiting' ? 'lobby' : 'game'}/${roomId}`)
 		} catch (error) {
 			setEntryError(getEntryErrorMessage(error, action))
@@ -141,6 +147,7 @@ function App() {
 				<LobbyScreen
 					key={route.gameId}
 					gameId={route.gameId}
+					initialEntry={lobbyEntry?.game.gameId === route.gameId ? lobbyEntry : null}
 					onLeave={handleLeaveRoom}
 					onStarted={handleStartPlaying}
 					onRemoved={handleRemoved}

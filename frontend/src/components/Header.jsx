@@ -22,7 +22,7 @@ export default function Header({ screen, gameId, onLeave, leaveDisabled = false,
 	}
 
 	return <header className={`appHeader${children ? ' appHeaderWithCenter' : ''}`}>
-		<h1 className="headerLogo"><span className="headerLogoMark" aria-hidden="true"><i /><i /><i /></span>Tipto</h1>
+		<h1 className="headerLogo"><span className="headerLogoMark" aria-hidden={screen === 'lobby' ? undefined : true}><i /><i /><i /></span>Tipto</h1>
 		{children && <div className="headerCenter">{children}</div>}
 		<div className="headerActions">
 			{screen == 'lobby' && (
@@ -31,12 +31,12 @@ export default function Header({ screen, gameId, onLeave, leaveDisabled = false,
 					<span>Room code</span>
 					<strong>{`${gameId.slice(0, 3)} ${gameId.slice(3)}`.trim()}</strong>
 				</div>
-				<button type="button" className={`headerCopy${copied ? ' copied' : ''}`} onClick={copyInvite} aria-label={copied ? 'Link copied' : 'Copy invite link'}>
-					<span className="headerCopyIcons" aria-hidden="true">
+				<button type="button" className={`headerCopy${copied ? ' copied' : ''}`} onClick={copyInvite}>
+					<span className="headerCopyIcons">
 						<svg className={copied ? 'hidden' : ''} viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="1" /><path d="M16 8V4H4v12h4" /></svg>
 						<svg className={copied ? '' : 'hidden'} viewBox="0 0 24 24"><path d="m5 12 4 4 10-10" /></svg>
 					</span>
-					<span aria-live="polite">{copied ? 'Link copied' : 'Copy invite link'}</span>
+					<span>{copied ? 'Link copied' : 'Copy invite link'}</span>
 				</button>
 			</div>
 			)}

@@ -1,8 +1,8 @@
-import { getPlayerColorHex, PLAYER_COLORS } from '../../game/playerColors'
+import { getPlayerColorHex } from '../../game/playerColors'
 
 function RobotIcon() {
 	return (
-		<svg viewBox="0 0 24 24" aria-hidden="true">
+		<svg viewBox="0 0 24 24">
 			<path d="M12 7V4M10 2h4" />
 			<rect x="4" y="7" width="16" height="13" rx="3" />
 			<path d="M4 11H2v5h2M20 11h2v5h-2M9 17h6" />
@@ -16,43 +16,37 @@ function PlayerRow({
 	player,
 	isYou,
 	isHost,
-	players,
+	colorOptions,
 	name,
-	busy,
-	managingPlayers,
-	savingProfile,
 	onNameChange,
 	onNameBlur,
 	onColour,
 	onRemove
 }) {
+	const handleRemove = () => {
+		onRemove(player.id)
+	}
+
 	return (
 		<div className={`lobbyPlayerRow${isYou ? ' own' : ''}`} style={{
 			'--player-colour': getPlayerColorHex(player.color)
 		}}>
-			<span className={`lobbyPlayerTile${player.isBot ? ' bot' : ''}`} aria-hidden="true">
+			<span className={`lobbyPlayerTile${player.isBot ? ' bot' : ''}`}>
 				{player.isBot && <RobotIcon />}
 			</span>
 			{isYou ? <div className="lobbyOwnProfile">
 				<input
-					aria-label="Name"
 					value={name}
 					maxLength={24}
 					onChange={onNameChange}
 					onBlur={onNameBlur}
-					disabled={busy}
-					data-managing-players={managingPlayers || undefined}
 					autoComplete="nickname"
 				/>
 				<div
 					className="lobbySwatches"
 					role="group"
-					aria-label="Colour"
 				>
-					{PLAYER_COLORS.map(option => {
-						const takenBy = players.find(other => other.id !== player.id && !other.isBot && other.color === option.name)
-						const selected = player.color === option.name
-						return (
+					{colorOptions.map(option => (
 							<button
 								key={option.name}
 								type="button"
@@ -60,18 +54,14 @@ function PlayerRow({
 								style={{
 									'--swatch': option.hex
 								}}
-								disabled={Boolean(takenBy) || busy || savingProfile}
-								data-saving-profile={savingProfile && !busy || undefined}
-								data-managing-players={managingPlayers || undefined}
-								data-taken={takenBy ? '' : undefined}
-								aria-pressed={selected}
-								aria-label={`${option.name}${takenBy ? ` \u2014 taken by ${takenBy.name}` : ''}`}
-								title={takenBy ? `Taken by ${takenBy.name}` : option.name}
+								disabled={option.takenBy !== null}
+								data-taken={option.takenBy !== null ? '' : undefined}
+								data-selected={player.color === option.name}
+								title={option.takenBy !== null ? `Taken by ${option.takenBy}` : option.name}
 								onClick={() => onColour(option.name)}
 							>
 							</button>
-						)
-					})}
+					))}
 				</div>
 			</div> : <span className="lobbyPlayerName" title={player.name}>
 				{player.name}
@@ -79,10 +69,7 @@ function PlayerRow({
 			{player.isBot && isHost && <button
 				type="button"
 				className="lobbyRemoveBot"
-				aria-label={`Remove ${player.name}`}
-				disabled={busy}
-				data-managing-players={managingPlayers || undefined}
-				onClick={onRemove}
+				onClick={handleRemove}
 			>{'\u00d7'}</button>}
 		</div>
 	)

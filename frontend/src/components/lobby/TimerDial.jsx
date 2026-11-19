@@ -56,7 +56,7 @@ function timerFromPointer(event, element, requireRing = true) {
 	return Math.round((TIMER_MIN + progress * (TIMER_MAX - TIMER_MIN)) / 5) * 5
 }
 
-function TimerDial({ value, readOnly, disabled, saving, onChange }) {
+function TimerDial({ value, readOnly, disabled, onChange }) {
 	const [draft, setDraft] = useState(null)
 	const [optimisticValue, setOptimisticValue] = useState(undefined)
 	const [ghostValue, setGhostValue] = useState(null)
@@ -127,12 +127,6 @@ function TimerDial({ value, readOnly, disabled, saving, onChange }) {
 					className="lobbyDialFace"
 					role="slider"
 					tabIndex={inactive ? -1 : 0}
-					aria-label="Turn timer"
-					aria-valuemin="30"
-					aria-valuemax="90"
-					aria-valuenow={noLimit ? undefined : shown}
-					aria-valuetext={noLimit ? '' : `${shown} seconds`}
-					aria-disabled={inactive}
 					onKeyDown={keyDown}
 					onPointerDown={beginDrag}
 					onPointerMove={event => {
@@ -149,7 +143,7 @@ function TimerDial({ value, readOnly, disabled, saving, onChange }) {
 					}}
 					onPointerLeave={() => !dragging && setGhostValue(null)}
 				>
-					<svg viewBox="0 0 220 205" aria-hidden="true">
+					<svg viewBox="0 0 220 205">
 						<path className="dialTrack" d={arcPath(405)} />
 						<path className="dialFill" d={arcPath(timerAngle(shown))} />
 						{Array.from({
@@ -198,7 +192,6 @@ function TimerDial({ value, readOnly, disabled, saving, onChange }) {
 					type="checkbox"
 					checked={noLimit}
 					disabled={readOnly || disabled}
-					data-saving-settings={saving || undefined}
 					onChange={event => {
 						if (event.target.checked && effectiveValue !== null) {
 							setLastValue(effectiveValue)
@@ -206,7 +199,7 @@ function TimerDial({ value, readOnly, disabled, saving, onChange }) {
 						save(event.target.checked ? null : lastValue)
 					}}
 				/>
-				<i aria-hidden="true">
+				<i>
 					<b />
 				</i>
 			</label>

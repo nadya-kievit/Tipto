@@ -1,15 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import {
-	addLobbyBot,
-	gameSocketUrl,
-	getGame,
-	leaveLobby,
-	removeLobbyPlayer,
-	startLobbyGame,
-	updateLobbyProfile,
-	updateLobbySettings,
-} from '../services/api'
+import { addLobbyBot, gameSocketUrl, getGame, leaveLobby, removeLobbyPlayer, 
+	startLobbyGame, updateLobbyProfile, updateLobbySettings } from '../services/api'
 import { enterLobby } from '../services/roomSession'
+import { PLAYER_COLORS } from '../game/playerColors'
 import Header from '../components/Header'
 import BoardPreview from '../components/lobby/BoardPreview'
 import PlayerRow from '../components/lobby/PlayerRow'
@@ -41,50 +34,39 @@ function clearRoomCredentials(gameId) {
 	localStorage.removeItem(`tipto-admin-${gameId}`)
 }
 
-function LobbyScreen({ gameId, onLeave, onStarted, onRemoved, onRegisterLeave }) {
-	const [game, setGame] = useState(null)
-	const [session, setSession] = useState(null)
-	const [name, setName] = useState('')
+function LobbyScreen({ gameId, initialEntry, onLeave, onStarted, onRemoved, onRegisterLeave }) {
+	const [game, setGame] = useState(initialEntry?.game ?? null)
+	const [session, setSession] = useState(initialEntry?.credentials ?? null)
+	const [playerName, setPlayerName] = useState(null)
 	const [error, setError] = useState('')
 	const [connected, setConnected] = useState(false)
-	const [pendingProfileCount, setPendingProfileCount] = useState(0)
-	const [savingSettings, setSavingSettings] = useState(false)
-	const [managingPlayers, setManagingPlayers] = useState(false)
 	const [starting, setStarting] = useState(false)
 	const [leaving, setLeaving] = useState(false)
 
 	const entryRef = useRef(null)
-	const nameTimerRef = useRef(null)
-	const nameDirtyRef = useRef(false)
-	const latestNameRef = useRef('')
-	const profileQueueRef = useRef(Promise.resolve())
 	const revisionRef = useRef(-1)
-	const leavingRef = useRef(false)
 	const removedRef = useRef(false)
 
 	const me = game?.players.find(player => player.id === session?.playerId)
 	const isHost = Boolean(me && me.id === game.adminPlayerId)
-	const savingProfile = pendingProfileCount > 0
-	const busy = !connected || leaving || starting || managingPlayers
+	const colorOptions = PLAYER_COLORS.map(option => ({
+		...option,
+		takenBy: game?.players.find(player =>
+			player.id !== me?.id && !player.isBot && player.color === option.name
+		)?.name ?? null,
+	}))
 
-	const getStartDisabledReason = () => {
+	const startDisabledReason = (() => {
 		if (!game) return ''
 		if (game.players.length < 2) return 'At least 2 players are needed to start.'
 		if (!connected) return 'Waiting for the room connection.'
-		if (leaving) return 'Leaving the room.'
-		if (starting) return 'The game is starting.'
-		if (managingPlayers) return 'Updating the player list.'
-		if (savingSettings) return 'Saving game settings.'
 		return ''
-	}
-
-	const startDisabledReason = getStartDisabledReason()
-	const startDisabled = Boolean(startDisabledReason)
+	})()
+	const startDisabled = starting || Boolean(startDisabledReason)
 
 	const removedFromRoom = useCallback(() => {
-		if (removedRef.current || leavingRef.current) return
+		if (removedRef.current) return
 		removedRef.current = true
-		clearTimeout(nameTimerRef.current)
 		clearRoomCredentials(gameId)
 		onRemoved()
 	}, [gameId, onRemoved])
@@ -95,10 +77,6 @@ function LobbyScreen({ gameId, onLeave, onStarted, onRemoved, onRegisterLeave })
 		const own = snapshot.players.find(player => player.id === credentials.playerId)
 		if (!own) return removedFromRoom()
 		setGame(snapshot)
-		if (!nameDirtyRef.current) {
-			setName(own.name)
-			latestNameRef.current = own.name
-		}
 		if (snapshot.status === 'playing' || snapshot.status === 'finished') {
 			onStarted(gameId)
 		}
@@ -107,7 +85,7 @@ function LobbyScreen({ gameId, onLeave, onStarted, onRemoved, onRegisterLeave })
 	useEffect(() => {
 		let active = true
 		if (!entryRef.current) {
-			entryRef.current = enterLobby(gameId)
+			entryRef.current = initialEntry ? Promise.resolve(initialEntry) : enterLobby(gameId)
 		}
 		entryRef.current.then(({
 			game: snapshot,
@@ -127,7 +105,7 @@ function LobbyScreen({ gameId, onLeave, onStarted, onRemoved, onRegisterLeave })
 		return () => {
 			active = false
 		}
-	}, [gameId, receiveGame, removedFromRoom])
+	}, [gameId, initialEntry, receiveGame, removedFromRoom])
 
 	useEffect(() => {
 		if (!session) return
@@ -178,60 +156,37 @@ function LobbyScreen({ gameId, onLeave, onStarted, onRemoved, onRegisterLeave })
 		}
 	}, [gameId, session, receiveGame, removedFromRoom])
 
-	useEffect(() => () => {
-		clearTimeout(nameTimerRef.current)
-	}, [])
-
-	const saveProfile = changes => {
-		setPendingProfileCount(count => count + 1)
+	const saveProfile = async changes => {
 		setError('')
-		const update = profileQueueRef.current.then(async () => {
-			try {
-				const snapshot = await updateLobbyProfile(gameId, session, changes)
-				if (changes.name === latestNameRef.current.trim()) {
-					nameDirtyRef.current = false
-				}
-				receiveGame(snapshot, session)
-			} catch (nextError) {
-				setError(nextError.message)
-				const snapshot = await getGame(gameId, session).catch(() => null)
-				if (snapshot) {
-					receiveGame(snapshot, session)
-				}
-			} finally {
-				setPendingProfileCount(count => count - 1)
-			}
-		})
-		profileQueueRef.current = update.catch(() => {})
-		return update
+		const snapshot = await updateLobbyProfile(gameId, session, changes)
+		receiveGame(snapshot, session)
 	}
 
-	const changeName = event => {
-		const next = event.target.value
-		setName(next)
-		latestNameRef.current = next
-		nameDirtyRef.current = true
-		clearTimeout(nameTimerRef.current)
-		if (next.trim()) {
-			nameTimerRef.current = setTimeout(() => saveProfile({
-				name: next.trim()
-			}), 250)
+	const saveName = async () => {
+		if (playerName === null) return
+		const name = playerName.trim()
+		if (!name) {
+			setPlayerName(null)
+			return
 		}
+		if (name !== me.name) await saveProfile({ name })
+		// A response must not overwrite edits made while the save was pending.
+		setPlayerName(current => current === playerName ? name : current)
 	}
 
-	const flushName = async () => {
-		clearTimeout(nameTimerRef.current)
-		if (nameDirtyRef.current && latestNameRef.current.trim()) {
-			await saveProfile({
-				name: latestNameRef.current.trim()
-			})
-		} else {
-			await profileQueueRef.current
-		}
+	const handleNameChange = event => {
+		setPlayerName(event.target.value)
+	}
+
+	const handleNameBlur = () => {
+		saveName().catch(nextError => setError(nextError.message))
+	}
+
+	const handleColourChange = color => {
+		saveProfile({ color }).catch(nextError => setError(nextError.message))
 	}
 
 	const changeSettings = async changes => {
-		setSavingSettings(true)
 		setError('')
 		try {
 			receiveGame(await updateLobbySettings(gameId, session, {
@@ -240,29 +195,28 @@ function LobbyScreen({ gameId, onLeave, onStarted, onRemoved, onRegisterLeave })
 			}), session)
 		} catch (nextError) {
 			setError(nextError.message)
-		} finally {
-			setSavingSettings(false)
 		}
 	}
 
 	const managePlayers = async action => {
-		setManagingPlayers(true)
 		setError('')
 		try {
 			receiveGame(await action(), session)
 		} catch (nextError) {
 			setError(nextError.message)
-		} finally {
-			setManagingPlayers(false)
 		}
 	}
 
+	const handleRemovePlayer = playerId => {
+		return managePlayers(() => removeLobbyPlayer(gameId, session, playerId))
+	}
+
 	const startGame = async () => {
-		if (starting || !game || game.players.length < 2) return
+		if (!connected || starting || !game || game.players.length < 2) return
 		setStarting(true)
 		setError('')
 		try {
-			await flushName()
+			await saveName()
 			receiveGame(await startLobbyGame(gameId, session), session)
 		} catch (nextError) {
 			setError(nextError.message)
@@ -271,10 +225,7 @@ function LobbyScreen({ gameId, onLeave, onStarted, onRemoved, onRegisterLeave })
 	}
 
 	const leaveRoom = useCallback(async () => {
-		if (leavingRef.current) return
-		leavingRef.current = true
 		setLeaving(true)
-		clearTimeout(nameTimerRef.current)
 		try {
 			const credentials = session || (await entryRef.current)?.credentials
 			if (credentials) {
@@ -284,7 +235,6 @@ function LobbyScreen({ gameId, onLeave, onStarted, onRemoved, onRegisterLeave })
 			if (nextError.status !== 403 && nextError.status !== 404) {
 				setError(nextError.message)
 				setLeaving(false)
-				leavingRef.current = false
 				return
 			}
 		}
@@ -294,15 +244,6 @@ function LobbyScreen({ gameId, onLeave, onStarted, onRemoved, onRegisterLeave })
 
 	useEffect(() => onRegisterLeave?.(leaveRoom), [leaveRoom, onRegisterLeave])
 
-	const handleNameBlur = () => {
-		if (!latestNameRef.current.trim()) {
-			nameDirtyRef.current = false
-			setName(me.name)
-			latestNameRef.current = me.name
-		} else {
-			flushName()
-		}
-	}
 	return (
 		<div className="lobbyScreen">
 			<Header 
@@ -315,45 +256,40 @@ function LobbyScreen({ gameId, onLeave, onStarted, onRemoved, onRegisterLeave })
 
 			<main className="lobbyPage">
 				{game && me ? <>
-					<section className="lobbyPanel lobbyPlayersPanel">
+					<section className="lobbyPanel">
 						<h2>Players</h2>
 						<div className="lobbyPlayerList">
-							{game.players.map(player => <PlayerRow
-								key={player.id}
-								player={player}
-								isYou={player.id === me.id}
-								isHost={isHost}
-								players={game.players}
-								name={name}
-								busy={busy}
-								managingPlayers={managingPlayers}
-								savingProfile={savingProfile}
-								onNameChange={changeName}
-								onNameBlur={handleNameBlur}
-								onColour={color => saveProfile({
-									color
-								})}
-								onRemove={() => managePlayers(() => removeLobbyPlayer(gameId, session, player.id))}
-							/>)}
+							{game.players.map(player => 
+								<PlayerRow
+									key={player.id}
+									player={player}
+									isYou={player.id === me.id}
+									isHost={isHost}
+									colorOptions={colorOptions}
+									name={playerName ?? me.name}
+									onNameChange={handleNameChange}
+									onNameBlur={handleNameBlur}
+									onColour={handleColourChange}
+									onRemove={handleRemovePlayer}
+								/>
+							)}
 						</div>
-						{isHost && <button
-							type="button"
-							className="lobbyAddBot"
-							disabled={busy || game.players.length >= MAX_PLAYERS}
-							onClick={() => managePlayers(() => addLobbyBot(gameId, session))}
-						>+ Add bot</button>}
+						{isHost && 
+							<button 
+								type="button" 
+								className="lobbyAddBot" 
+								disabled={!connected || starting || game.players.length >= MAX_PLAYERS} 
+								onClick={() => managePlayers(() => addLobbyBot(gameId, session))}
+							>
+								+ Add bot
+							</button>
+						}
 					</section>
 					<div className="lobbyRightColumn">
-						<section className="lobbyPanel lobbySettingsPanel">
+						<section className="lobbyPanel">
 							<h2>Game settings</h2>
-							<div className="lobbySettingHeading">
-								<span>Board</span>
-							</div>
-							<div
-								className="lobbyBoardCards"
-								role="group"
-								aria-label="Board layout"
-							>
+							<h3>Board</h3>
+							<div className="lobbyBoardCards" role="group">
 								{BOARDS.map(board => {
 									const selected = game.settings.boardLayout === board.id
 									return (
@@ -361,9 +297,7 @@ function LobbyScreen({ gameId, onLeave, onStarted, onRemoved, onRegisterLeave })
 											type="button"
 											key={board.id}
 											className={selected ? 'selected' : ''}
-											aria-pressed={selected}
-											disabled={!isHost || busy || savingSettings}
-											data-saving-settings={isHost && !busy && savingSettings || undefined}
+											disabled={!isHost || !connected || starting}
 											onClick={() => changeSettings({
 												boardLayout: board.id
 											})}
@@ -381,55 +315,49 @@ function LobbyScreen({ gameId, onLeave, onStarted, onRemoved, onRegisterLeave })
 								})}
 							</div>
 							<div className="lobbyTimerSection">
-								<div className="lobbySettingHeading">
-									<div>
-										<span>Turn timer</span>
-										<p>How long each player has to make a move. If time runs out, a piece is placed for them automatically.</p>
-									</div>
-								</div>
+								<h3>Turn timer</h3>
+								<p>How long each player has to make a move. If time runs out, a piece is placed for them automatically.</p>
 								<TimerDial
 									value={game.settings.moveTimeLimitSeconds}
 									readOnly={!isHost}
-									disabled={busy || savingSettings}
-									saving={savingSettings}
-									onChange={moveTimeLimitSeconds => changeSettings({
-										moveTimeLimitSeconds
-									})}
+									disabled={!connected || starting}
+									onChange={moveTimeLimitSeconds => changeSettings({moveTimeLimitSeconds})}
 								/>
 							</div>
 						</section>
-						<footer className="lobbyFooter">
-							{isHost && <span
-								className="lobbyStartControl"
-								tabIndex={startDisabled ? 0 : undefined}
-								aria-describedby={startDisabled ? 'lobby-start-tooltip' : undefined}
-							>
+						{isHost && 
+							<footer className="lobbyFooter" tabIndex={startDisabledReason ? 0 : undefined}>
 								<button
 									type="button"
 									className="lobbyStart"
 									onClick={startGame}
 									disabled={startDisabled}
-									data-saving-settings={savingSettings || undefined}
-									data-updating-players={managingPlayers && game.players.length >= 2 && connected && !leaving && !starting || undefined}
-									aria-busy={starting}
-									aria-describedby={startDisabled ? 'lobby-start-tooltip' : undefined}
 								>
-									{starting ? 'Starting\u2026' : 'Start game'}
+									{starting ? 'Starting...' : 'Start game'}
+									{starting && <span className="lobbyStartLoadingBar" />}
 								</button>
-								{startDisabled && <span
-									id="lobby-start-tooltip"
-									className="lobbyStartTooltip"
-									role="tooltip"
-								>
-									{startDisabledReason}
-								</span>}
-							</span>}
-						</footer>
+								{startDisabledReason && 
+									<span
+										id="lobby-start-tooltip"
+										className="lobbyStartTooltip"
+										role="tooltip"
+									>
+										{startDisabledReason}
+									</span>
+								}
+							</footer>
+						}
 					</div>
-				</> : !error && <div className="lobbyLoading" role="status">Joining room{'\u2026'}</div>}
-				{error && <div className="lobbyError" role="alert">
-					{error}
-				</div>}
+				</> : !error && 
+					<div className="lobbyLoading" role="status">
+						Joining room{'\u2026'}
+					</div>
+				}
+				{error && 
+					<div className="lobbyError" role="alert">
+						{error}
+					</div>
+				}
 			</main>
 		</div>
 	)

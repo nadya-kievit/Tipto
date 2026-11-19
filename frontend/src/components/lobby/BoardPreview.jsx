@@ -10,7 +10,7 @@ function BoardPreview({ board, players, selected }) {
 		})
 	}
 	return (
-		<span className="lobbyBoardPreview" aria-hidden="true">
+		<span className="lobbyBoardPreview">
 			{board.shape.flatMap((row, r) => [...row].map((cell, c) => {
 				const color = pieces.get(`${r}-${c}`)
 				return (
