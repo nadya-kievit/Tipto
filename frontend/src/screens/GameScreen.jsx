@@ -43,7 +43,6 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 	const [selectedPieceName, setSelectedPieceName] = useState(null)
 	const [cursorCellSize, setCursorCellSize] = useState(28)
 	const [hoverCells, setHoverCells] = useState([])
-	const [pendingPlacement, setPendingPlacement] = useState(null)
 	const [lastMessage, setLastMessage] = useState('')
 	const [dismissedMessages, setDismissedMessages] = useState(() => readDismissedGameNotices(gameId, credentials?.playerId))
 	const [isQuitting, setIsQuitting] = useState(false)
@@ -59,7 +58,6 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 	const boardWidth = board[0]?.length || 0
 	const isFinished = game?.status === 'finished'
 	const isWinnerModalClosed = isFinished && closedWinnerTurnNumber === game?.turnNumber
-	const boardRotation = 0
 	const pieces = useMemo(() => (me?.pieces || []).map(piece => ({
 		...piece,
 		rotation: pieceRotations[piece.name] || 0,
@@ -88,7 +86,6 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 				board,
 				piece,
 				me,
-				boardRotation,
 				isFirstMove,
 				game?.players || [],
 			)
@@ -97,7 +94,7 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 		}
 
 		return playableNames
-	}, [board, boardRotation, game?.players, game?.status, isPhoneGame, me])
+	}, [board, game?.players, game?.status, isPhoneGame, me])
 
 	const selectedPiece = useMemo(() => 
 		pieces.find(piece =>
@@ -107,12 +104,7 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 		) || null,
 		[isPhoneGame, pieces, playablePieceNames, selectedPieceName]
 	)
-	const availablePieces = useMemo(() => pieces.map(piece =>
-		piece.name === pendingPlacement?.pieceName ? { ...piece, placed: true } : piece
-	),
-		[pendingPlacement?.pieceName, pieces]
-	)
-	const phoneSelectedPiece = isPhoneGame ? (pendingPlacement ? null : selectedPiece) : null
+	const phoneSelectedPiece = isPhoneGame ? selectedPiece : null
 
 	const winners = useMemo(() => {
 		const winnerIds = game?.winnerIds?.length
@@ -143,13 +135,6 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 		if (revision < revisionRef.current) return
 		revisionRef.current = revision
 		setGame(snapshot)
-		setPendingPlacement(pending => {
-			if (!pending) return null
-			const confirmed = pending.cells.every(cell =>
-				snapshot.board[cell.row]?.[cell.col]?.pieceId === pending.pieceId
-			)
-			return confirmed ? null : pending
-		})
 		const notice = getNewGameNotice(lastServerNoticeRef.current, snapshot.notice)
 		lastServerNoticeRef.current = snapshot.notice || ''
 		if (notice) setLastMessage(notice)
@@ -210,13 +195,8 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 			}
 
 			if (message.type === 'error') {
-				setPendingPlacement(null)
 				setLastMessage(message.reason)
 			}
-		}
-
-		socket.onclose = () => {
-			if (active) setPendingPlacement(null)
 		}
 
 		return () => {
@@ -365,7 +345,6 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 		try {
 			const restartedGame = await restartGame(gameId, credentials)
 			receiveGame(restartedGame)
-			setPendingPlacement(null)
 			clearSelection()
 		} catch (err) {
 			setLastMessage(err.message)
@@ -400,20 +379,10 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 
 
 	const submitPlacement = (cells, piece) => {
-		if (!canMove || !piece || cells.length === 0 || pendingPlacement) {
-			return
-		}
+		const socket = socketRef.current
+		if (!canMove || !piece || cells.length === 0 || socket?.readyState !== WebSocket.OPEN) return
 
-		setPendingPlacement({
-			cells,
-			color: me.color,
-			pieceId: `${me.id}-${piece.name}`,
-			pieceName: piece.name,
-			playerId: me.id,
-			ability: piece.ability,
-		})
-
-		socketRef.current?.send(JSON.stringify({
+		socket.send(JSON.stringify({
 			type: 'place_piece',
 			pieceName: piece.name,
 			cells,
@@ -452,14 +421,14 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 
 		const isFirstMove = !me.pieces.some(piece => piece.placed)
 		const nearestCells = closestLegalPlacement(
-			board, selectedPiece, me, boardRotation, isFirstMove,
+			board, selectedPiece, me, isFirstMove,
 			game?.players || [], pointerRow, pointerCol,
 		)
 		setHoverCells(current => current.length === nearestCells.length &&
 			current.every((cell, index) => cell.row === nearestCells[index].row && cell.col === nearestCells[index].col)
 			? current
 			: nearestCells)
-	}, [board, boardRotation, canMove, game?.players, me, selectedPiece])
+	}, [board, canMove, game?.players, me, selectedPiece])
 
 
 	useEffect(() => {
@@ -517,10 +486,9 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 				me={me}
 				board={board}
 				canMove={canMove}
-				pieces={availablePieces}
+				pieces={pieces}
 				selectedPiece={phoneSelectedPiece}
 				selectedPieceName={phoneSelectedPiece?.name || null}
-				pendingPlacement={pendingPlacement}
 				onStage={setSelectedPieceName}
 				onRotate={handlePhoneRotate}
 				onFlip={handlePhoneFlip}
@@ -585,14 +553,11 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 
 				<Board
 					board={board}
-					boardRotation={boardRotation}
 					onTileClick={handleTileClick}
 					onBoardPointerMove={handleBoardPointerMove}
 					onBoardLeave={clearHover}
 					hoverCells={hoverCells}
-					pendingPlacement={pendingPlacement}
 					players={game.players}
-					currentPlayerId={me?.id}
 					preview={{ color: me?.color, ability: selectedPiece?.ability }}
 					lastMove={game.moveHistory.at(-1)}
 				/>
@@ -600,7 +565,7 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 				<PiecePanel
 					canMove={canMove}
 					onPieceClick={handlePieceClick}
-					pieces={availablePieces}
+					pieces={pieces}
 					playablePieceNames={playablePieceNames}
 					player={me}
 					selectedPieceName={selectedPieceName}

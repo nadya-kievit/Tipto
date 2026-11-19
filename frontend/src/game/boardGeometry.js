@@ -46,6 +46,27 @@ export function pixelOffset(position, pixelRatio) {
 	return Math.round(position * pixelRatio) / pixelRatio - position
 }
 
+export function boardPointerCoordinate(position, count, cellSize, gap) {
+	const stride = cellSize + gap
+	const index = Math.max(0, Math.min(count - 1, Math.floor(position / stride)))
+	const withinCell = Math.max(0, Math.min(1, (position - index * stride) / cellSize))
+	return index + withinCell
+}
+
+export function readBoardPointer(element, clientX, clientY, rows, columns) {
+	const rect = element.getBoundingClientRect()
+	const tile = element.querySelector('.tile')
+	const cellSize = tile?.getBoundingClientRect().width || rect.width / columns
+	const style = getComputedStyle(element)
+	const gap = Number.parseFloat(style.columnGap) || 0
+	const paddingLeft = Number.parseFloat(style.paddingLeft) || 0
+	const paddingTop = Number.parseFloat(style.paddingTop) || 0
+	return {
+		row: boardPointerCoordinate(clientY - rect.top - paddingTop, rows, cellSize, gap),
+		col: boardPointerCoordinate(clientX - rect.left - paddingLeft, columns, cellSize, gap),
+	}
+}
+
 // Browser zoom and moving between monitors can change DPR without a slot resize.
 export function observeBoardPixelRatio(update) {
 	let query

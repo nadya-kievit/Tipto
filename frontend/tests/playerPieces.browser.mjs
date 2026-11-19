@@ -66,7 +66,7 @@ try {
   const game = { gameId: 'popover-test', status: 'playing', currentPlayerId: 'p0', revision: 1,
     turnNumber: 1, moveHistory: [], players,
     settings: { players: Object.fromEntries(players.map(p => [p.settingsPlayerKey, {}])) },
-    board: Array.from({ length: 16 }, () => Array.from({ length: 16 }, () => ({ playable: true, occupied: false }))),
+    board: Array.from({ length: 16 }, () => Array.from({ length: 19 }, () => ({ playable: true, occupied: false }))),
   }
   await page('Page.addScriptToEvaluateOnNewDocument', { source: `
     localStorage.setItem('tipto-player-popover-test',JSON.stringify({playerId:'p0',playerToken:'test'}));
@@ -86,9 +86,27 @@ try {
     return {cards:[...document.querySelectorAll('.playerStatusCard')].map(rect),card:card&&rect(card),pop:pop&&rect(pop),count:pop?.querySelectorAll('.pieceCard').length,
       hit:pop&&pop.contains(document.elementFromPoint(r.left+r.width/2,r.top+r.height/2)),shape:pop&&rect(pop.querySelector('.pieceShape'))};
   })()`)
-  for (const [width, height, portrait] of [[1920, 1080, false], [900, 1200, true]]) {
-    await page('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false })
+  for (const [width, height, portrait, deviceScaleFactor] of [[1920, 1080, false, 1], [900, 1200, true, 1.25]]) {
+    await page('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor, mobile: false })
     await wait(300)
+    const boardLayout = await evaluate(`(() => {
+      const stage = document.querySelector('.boardStage');
+      const surface = stage.querySelector('.gameBoardSurface');
+      const stageRect = stage.getBoundingClientRect();
+      const board = surface.getBoundingClientRect();
+      const {paddingTop, paddingBottom} = getComputedStyle(stage);
+      const tile = (row, col) => surface.querySelector('.tile[data-row="'+row+'"][data-col="'+col+'"]').getBoundingClientRect();
+      const first = tile(0, 0), nextCol = tile(0, 1), nextRow = tile(1, 0);
+      const availableHeight = stageRect.height - parseFloat(paddingTop) - parseFloat(paddingBottom);
+      return {
+        square: Math.abs(first.width-first.height) < .05 && first.width > 0,
+        gaps: [nextCol.left-first.right, nextRow.top-first.bottom],
+        fits: board.width <= stageRect.width + 1 && board.height <= availableHeight + 1,
+        fillsOneAxis: Math.min(Math.abs(board.width-stageRect.width), Math.abs(board.height-availableHeight)) < 1,
+      };
+    })()`)
+    assert.ok(boardLayout.square && boardLayout.fits && boardLayout.fillsOneAxis, 'Square tiles fill the rectangular board slot without overflowing')
+    assert.ok(boardLayout.gaps.every(gap => Math.abs(gap - 2) < .05), 'CSS keeps both tile gaps at 2px')
     const before = await geometry()
     await evaluate(`document.querySelector('.viewPiecesButton').click()`)
     await wait(100)
@@ -117,6 +135,18 @@ try {
     assert.ok(Math.abs(portrait ? other.pop.left - other.card.left : other.pop.top - other.card.top) < 1, 'Each popover anchors to its own card')
     await evaluate(`document.querySelectorAll('.viewPiecesButton')[1].click()`)
     assert.equal((await geometry()).pop, null, 'The Pieces button also toggles the popover closed')
+
+    await evaluate(`document.querySelector('.pieceCardGrid button').click()`)
+    const startCell = await evaluate(`(() => {
+      const r=document.querySelector('.gameBoardGrid .tile[data-row="0"][data-col="0"]').getBoundingClientRect();
+      return {x:r.left+r.width/2,y:r.top+r.height/2};
+    })()`)
+    await page('Input.dispatchMouseEvent', { type: 'mouseMoved', ...startCell })
+    await wait(100)
+    assert.deepEqual(await evaluate(`[...document.querySelectorAll('.gameBoardGrid .tile[data-occupied="true"]')].map(el=>[Number(el.dataset.row),Number(el.dataset.col)])`),
+      [[0, 0], [0, 1], [1, 0]], 'Pointer preview uses board row/column coordinates in both layouts')
+    await page('Input.dispatchKeyEvent', { type: 'rawKeyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27, nativeVirtualKeyCode: 27 })
+    await page('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27, nativeVirtualKeyCode: 27 })
   }
   assert.deepEqual(errors, [], 'Browser runtime errors')
   console.log('Player pieces browser checks passed: placement, overlay, stable layout, filtering, sizing and dismissal')

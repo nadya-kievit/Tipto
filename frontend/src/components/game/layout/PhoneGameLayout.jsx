@@ -71,7 +71,7 @@ function Logo() {
  return <i className="logo"><b /><b /><b /><b /></i>
 }
 
-export default function PhoneGameLayout({ game, me, board, canMove, pieces, pendingPlacement,
+export default function PhoneGameLayout({ game, me, board, canMove, pieces,
  onStage, onRotate, onFlip, onPlace, onQuit, isQuitting, onCopyError, notice }) {
  const rootRef = useRef(null), trayRef = useRef(null)
  const surfaceRef = useRef(null)
@@ -120,7 +120,7 @@ export default function PhoneGameLayout({ game, me, board, canMove, pieces, pend
   return () => { document.removeEventListener('pointerdown', close); document.removeEventListener('keydown', close) }
  }, [])
  const color = getPlayerColorHex(me.color)
- const dragConfig = { game, me, board, canMove, pieces, pendingPlacement, bounds, metrics, color,
+ const dragConfig = { game, me, board, canMove, pieces, bounds, metrics, color,
   onStage, onRotate, onFlip, onPlace, closeOverlays: () => { setOverlay(null); setExpanded(null) } }
  usePhoneDrag(rootRef, dragConfig, !zoom)
  usePhoneZoomDrag(rootRef, cameraRef, dragConfig, zoom)
@@ -129,7 +129,6 @@ export default function PhoneGameLayout({ game, me, board, canMove, pieces, pend
  const remaining = pieces.filter(p => !p.placed)
  const abilities = new Map(game.players.flatMap(player => player.pieces.filter(p => p.placed && p.ability).map(p => [`${player.id}-${p.name}`, p.ability])))
  const starts = new Map(game.players.filter(p => p.startPosition).map(p => [`${p.startPosition.row},${p.startPosition.col}`, p]))
- const pendingCells = new Set(pendingPlacement?.cells.map(c => `${c.row},${c.col}`) || [])
  const roomCode = game.inviteCode || game.gameId
  const copyRoom = async () => {
   try { await copyText(roomCode); setCopied(true) } catch { setCopied(false); onCopyError?.('Could not copy the room code.') }
@@ -137,11 +136,8 @@ export default function PhoneGameLayout({ game, me, board, canMove, pieces, pend
  const boardSurface = <section ref={zoom ? undefined : surfaceRef} className={`gameBoardSurface${zoom ? ' phoneZoomBoard' : ''}`}>
   <div className="phoneBoard board gameBoardGrid" data-game-board>
    {board.slice(row, row + rows).flatMap((line, dr) => line.slice(col, col + cols).map((value, dc) => {
-    const key = `${row + dr},${col + dc}`, pending = pendingCells.has(key), start = starts.get(key)
-    const occupied = value.occupied || pending
-    const tileColor = getPlayerColorHex(pending ? pendingPlacement.color : value.color)
-    const ability = pending ? pendingPlacement.ability : abilities.get(value.pieceId)
-    return <BoardTile key={key} color={tileColor} ability={ability} occupied={occupied}
+    const key = `${row + dr},${col + dc}`, start = starts.get(key)
+    return <BoardTile key={key} color={getPlayerColorHex(value.color)} ability={abilities.get(value.pieceId)} occupied={value.occupied}
      playable={value.playable !== false} startColor={start ? getPlayerColorHex(start.color) : undefined}
      data-row={row + dr} data-col={col + dc} />
    }))}
@@ -183,12 +179,12 @@ export default function PhoneGameLayout({ game, me, board, canMove, pieces, pend
   <main className="boardZone">
    {zoom ? <>
     <div className="phoneView">{boardSurface}</div>
-    <PhoneMinimap cameraRef={cameraRef} board={board} players={game.players} bounds={bounds} pendingPlacement={pendingPlacement} />
+    <PhoneMinimap cameraRef={cameraRef} board={board} players={game.players} bounds={bounds} />
    </> : boardSurface}
   </main>
   {!zoom && <><div className="portal" data-side="flip" /><div className="portal" data-side="rot" /></>}
-  <section className="trayZone" aria-disabled={!canMove || !!pendingPlacement}>
-   <div className="tray" ref={trayRef}>{remaining.map(piece => <button key={piece.name} className="pc" data-piece={piece.name} disabled={!canMove || !!pendingPlacement} onContextMenu={e => e.preventDefault()}><PhonePieceShape piece={piece} cellSize={metrics.tray} color={color} /></button>)}</div>
+  <section className="trayZone" aria-disabled={!canMove}>
+   <div className="tray" ref={trayRef}>{remaining.map(piece => <button key={piece.name} className="pc" data-piece={piece.name} disabled={!canMove} onContextMenu={e => e.preventDefault()}><PhonePieceShape piece={piece} cellSize={metrics.tray} color={color} /></button>)}</div>
    <ScrollBar targetRef={trayRef} count={remaining.length} />
   </section>
   <div className="float" hidden />

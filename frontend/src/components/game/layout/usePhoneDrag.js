@@ -52,7 +52,7 @@ export default function usePhoneDrag(rootRef, config, enabled = true) {
    float.classList.remove('back')
    float.hidden = true
   }
-  const allowed = () => latest.current.canMove && !latest.current.pendingPlacement
+  const allowed = () => latest.current.canMove
    && (!latest.current.game.turnEndsAt || Date.now() < latest.current.game.turnEndsAt)
   const finish = (place = false, animate = true, commit = true) => {
    stopPending()
@@ -243,11 +243,11 @@ export default function usePhoneDrag(rootRef, config, enabled = true) {
    document.removeEventListener('touchmove', touchMove)
   }
  }, [rootRef, enabled])
- const { canMove, pendingPlacement, board, metrics: { cell, gap, pixelRatio }, game: { turnEndsAt, turnNumber, currentPlayerId } } = config
+ const { canMove, board, metrics: { cell, gap, pixelRatio }, game: { turnEndsAt, turnNumber, currentPlayerId } } = config
  useEffect(() => {
   if (!enabled) return
   cancel.current()
   const timeout = turnEndsAt ? setTimeout(() => cancel.current(), Math.max(0, turnEndsAt - Date.now())) : null
   return () => clearTimeout(timeout)
- }, [enabled, canMove, pendingPlacement, board, turnEndsAt, turnNumber, currentPlayerId, cell, gap, pixelRatio])
+ }, [enabled, canMove, board, turnEndsAt, turnNumber, currentPlayerId, cell, gap, pixelRatio])
 }

@@ -32,7 +32,17 @@
 	--stripe: var(--board-stripe-color);
 }
 
-/* All board appearance lives here. Page layouts only size the boardStage slot. */
+/* Desktop uses the stage's content box. Reserve the gaps and frame first,
+   then fit square cells and the padding proportional to them. */
+.boardStage > .gameBoardSurface {
+	--board-gap-size: 2px;
+	--board-frame-size: 1px;
+	--board-cell-size: max(0px, min(
+		(100cqw - (var(--board-columns) - 1) * var(--board-gap-size) - 2 * var(--board-frame-size)) / (var(--board-columns) + 2 * var(--board-pad-ratio)),
+		(100cqh - (var(--board-rows) - 1) * var(--board-gap-size) - 2 * var(--board-frame-size)) / (var(--board-rows) + 2 * var(--board-pad-ratio))
+	));
+}
+
 .gameBoardSurface {
 	position: relative;
 	flex: none;
@@ -57,10 +67,13 @@
 	width: max-content;
 	padding: calc(var(--board-pad) + var(--board-frame));
 	border: 0;
+	touch-action: none;
+}
+
+.gameBoardGrid.board:not(.gameBoardSurface) {
 	border-radius: 0;
 	background: transparent;
 	box-shadow: none;
-	touch-action: none;
 }
 
 .gameBoardTile {

@@ -72,7 +72,7 @@ export default function usePhoneZoomDrag(rootRef, cameraRef, config, enabled) {
    backTimer = 0,
    returning = null
   const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  const allowed = () => latest.current.canMove && !latest.current.pendingPlacement && (!latest.current.game.turnEndsAt || Date.now() < latest.current.game.turnEndsAt)
+  const allowed = () => latest.current.canMove && (!latest.current.game.turnEndsAt || Date.now() < latest.current.game.turnEndsAt)
   const stopPending = () => {
    if (!pending) return
    clearTimeout(pending.timer)
@@ -467,7 +467,6 @@ export default function usePhoneZoomDrag(rootRef, cameraRef, config, enabled) {
  }, [rootRef, cameraRef, enabled])
  const {
   canMove,
-  pendingPlacement,
   board,
   metrics: {
    tray
@@ -483,5 +482,5 @@ export default function usePhoneZoomDrag(rootRef, cameraRef, config, enabled) {
   cancel.current()
   const timeout = turnEndsAt ? setTimeout(() => cancel.current(), Math.max(0, turnEndsAt - Date.now())) : null
   return () => clearTimeout(timeout)
- }, [enabled, canMove, pendingPlacement, board, tray, turnEndsAt, turnNumber, currentPlayerId])
+ }, [enabled, canMove, board, tray, turnEndsAt, turnNumber, currentPlayerId])
 }

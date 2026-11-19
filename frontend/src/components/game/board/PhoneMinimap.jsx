@@ -6,7 +6,6 @@ export default function PhoneMinimap({
  board,
  players,
  bounds,
- pendingPlacement
 }) {
  const canvasRef = useRef(null)
  useLayoutEffect(() => {
@@ -27,13 +26,12 @@ export default function PhoneMinimap({
    ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
    ctx.clearRect(0, 0, w, h)
    const starts = new Map(players.filter(p => p.startPosition).map(p => [`${p.startPosition.row},${p.startPosition.col}`, getPlayerColorHex(p.color)]))
-   const pending = new Set((pendingPlacement?.cells || []).map(c => `${c.row},${c.col}`))
    const owners = new Map(players.map(p => [p.id, getPlayerColorHex(p.color)]))
    for (let r = 0; r < bounds.rows; r++) for (let c = 0; c < bounds.cols; c++) {
     const value = board[r + bounds.row][c + bounds.col],
      key = `${r + bounds.row},${c + bounds.col}`
     if (value.playable === false) continue
-    ctx.fillStyle = pending.has(key) ? getPlayerColorHex(pendingPlacement.color) : value.occupied ? (value.color ? getPlayerColorHex(value.color) : owners.get(value.player)) || '#4a5060' : starts.get(key) || '#4a5060'
+    ctx.fillStyle = value.occupied ? (value.color ? getPlayerColorHex(value.color) : owners.get(value.player)) || '#4a5060' : starts.get(key) || '#4a5060'
     ctx.fillRect(c * Z.miniCell, r * Z.miniCell, Z.miniCell - 0.4, Z.miniCell - 0.4)
    }
    const frame = minimapFrame(camera.size, camera.board, camera.view, bounds)
@@ -47,7 +45,7 @@ export default function PhoneMinimap({
   camera.listeners.add(draw)
   draw()
   return () => camera.listeners.delete(draw)
- }, [cameraRef, board, players, bounds, pendingPlacement])
+ }, [cameraRef, board, players, bounds])
  return <div className="phoneMini" role="button" tabIndex={0}>
  <canvas ref={canvasRef} />
  <span className="phoneMiniExpand"><svg viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-7 7M10 20H4v-6M4 20l7-7" /></svg></span>

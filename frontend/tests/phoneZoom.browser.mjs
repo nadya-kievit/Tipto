@@ -246,6 +246,31 @@ try {
   assert.ok(maximum >= 0.799, 'Started zoom-in was interrupted')
   assert.equal(final.mode, valid ? 'zoom' : 'over')
   assert.equal(final.sent, valid ? 1 : 0)
+  if (valid) {
+   const renderedPlacement = () => evaluate(`(() => {
+    const move = window.__sent[0];
+    return {
+     occupied: !!document.querySelector('.phoneBoard [data-occupied="true"]'),
+     inTray: [...document.querySelectorAll('.tray [data-piece]')].some(el => el.dataset.piece === move.pieceName),
+    };
+   })()`)
+   assert.deepEqual(await renderedPlacement(), { occupied: false, inTray: true })
+   await evaluate(`(() => {
+    const game = window.__game, move = window.__sent[0], player = game.players[0];
+    player.pieces.find(piece => piece.name === move.pieceName).placed = true;
+    for (const { row, col } of move.cells) Object.assign(game.board[row][col], {
+     occupied: true, player: player.id, color: player.color, pieceId: player.id + '-' + move.pieceName,
+    });
+    game.revision++;
+    game.turnNumber++;
+    game.currentPlayerId = game.players[1].id;
+    for (const socket of window.__sockets) if (socket.readyState === 1) {
+     socket.onmessage?.({ data: JSON.stringify({ type: 'game_state', game }) });
+    }
+   })()`)
+   for (let i = 0; i < 20 && !(await renderedPlacement()).occupied; i++) await wait(50)
+   assert.deepEqual(await renderedPlacement(), { occupied: true, inTray: false })
+  }
  }
  console.log('Release mid-zoom, valid placement retention and cancelled return passed')
  await load(4, 'square')
