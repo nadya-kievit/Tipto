@@ -17,7 +17,7 @@
 	font: 16px/1.4 'DM Sans', sans-serif;
 }
 
-.appHeaderWithCenter {
+.gamePage .appHeader {
 	grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
 }
 
@@ -151,12 +151,6 @@
 	fill: none;
 	stroke: currentColor;
 	stroke-width: 1.5;
-	opacity: 1;
-	transition: opacity 140ms;
-}
-
-.appHeader .headerCopyIcons svg.hidden {
-	opacity: 0;
 }
 
 .appHeader.appHeader .headerLeave {
@@ -174,11 +168,11 @@
 }
 
 @media (max-width: 1400px) {
-	.appHeaderWithCenter {
+	.gamePage .appHeader {
 		grid-template-columns: auto minmax(0, 1fr);
 	}
 
-	.appHeaderWithCenter .headerCenter {
+	.gamePage .appHeader .headerCenter {
 		grid-column: 1 / -1;
 		grid-row: 2;
 		justify-self: center;
@@ -237,7 +231,8 @@
 }
 
 @media (max-width: 380px) {
-	.appHeader {
+	.appHeader,
+	.gamePage .appHeader {
 		grid-template-columns: minmax(0, 1fr);
 	}
 
@@ -248,39 +243,39 @@
 		justify-content: space-between;
 	}
 
-	.appHeaderWithCenter .headerCenter {
+	.gamePage .appHeader .headerCenter {
 		grid-row: 3;
 	}
 }
 
 @media (orientation: portrait) and (min-width: 700px) {
-	.appHeaderWithCenter {
+	.gamePage .appHeader {
 		grid-template-columns: auto minmax(0, 1fr) auto;
 	}
 
-	.appHeaderWithCenter .headerLogo {
+	.gamePage .appHeader .headerLogo {
 		grid-column: 1;
 		grid-row: 1;
 	}
 
-	.appHeaderWithCenter .headerCenter {
+	.gamePage .appHeader .headerCenter {
 		grid-column: 2;
 		grid-row: 1;
 		max-width: 100%;
 	}
 
-	.appHeaderWithCenter .headerActions {
+	.gamePage .appHeader .headerActions {
 		grid-column: 3;
 		grid-row: 1;
 	}
 
-	.appHeaderWithCenter .turnTitle {
+	.gamePage .appHeader .turnTitle {
 		min-width: 0;
 		overflow: hidden;
 		text-overflow: ellipsis;
 	}
 
-	.gamePage .appHeaderWithCenter .turnTimerTrack {
+	.gamePage .appHeader .turnTimerTrack {
 		min-width: 24px;
 		flex-shrink: 1;
 	}

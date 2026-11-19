@@ -1,7 +1,25 @@
 import { getPlayerColorHex } from '../../game/playerColors'
 import { previewPlacements } from '../../game/previewPlacements'
 
-function BoardPreview({ board, players, selected }) {
+const BOARDS = [
+	{
+		id: 'square',
+		label: 'Classic',
+		shape: ['#######', '#######', '#######', '#######', '#######', '#######', '#######'],
+	},
+	{
+		id: 'irregular',
+		label: 'Irregular',
+		shape: ['..###..', '.#####.', '#######', '#######', '.#####.', '..####.', '...##..'],
+	},
+	{
+		id: 'rooms',
+		label: 'Rooms',
+		shape: ['###.###', '###.###', '.#...#.', '.#####.', '...#...', '..###..', '..###..'],
+	},
+]
+
+function BoardShape({ board, players, selected }) {
 	const pieces = new Map()
 	if (selected) {
 		previewPlacements(board, players.length).forEach((cells, index) => {
@@ -25,6 +43,28 @@ function BoardPreview({ board, players, selected }) {
 				)
 			}))}
 		</span>
+	)
+}
+
+function BoardPreview({ boardLayout, players, disabled, onChange }) {
+	return (
+		<div className="lobbyBoardCards" role="group">
+			{BOARDS.map(board => {
+				const selected = boardLayout === board.id
+				return (
+					<button
+						type="button"
+						key={board.id}
+						className={selected ? 'selected' : ''}
+						disabled={disabled}
+						onClick={() => onChange(board.id)}
+					>
+						<BoardShape board={board} players={players} selected={selected} />
+						<span>{board.label}</span>
+					</button>
+				)
+			})}
+		</div>
 	)
 }
 

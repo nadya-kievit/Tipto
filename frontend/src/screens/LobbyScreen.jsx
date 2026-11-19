@@ -9,24 +9,6 @@ import PlayerRow from '../components/lobby/PlayerRow'
 import TimerDial from '../components/lobby/TimerDial'
 import '../styles/lobby.css'
 
-const BOARDS = [
-	{
-		id: 'square',
-		label: 'Classic',
-		shape: ['#######', '#######', '#######', '#######', '#######', '#######', '#######'],
-	},
-	{
-		id: 'irregular',
-		label: 'Irregular',
-		shape: ['..###..', '.#####.', '#######', '#######', '.#####.', '..####.', '...##..'],
-	},
-	{
-		id: 'rooms',
-		label: 'Rooms',
-		shape: ['###.###', '###.###', '.#...#.', '.#####.', '...#...', '..###..', '..###..'],
-	},
-]
-
 const MAX_PLAYERS = 6
 
 function clearRoomCredentials(gameId) {
@@ -198,6 +180,10 @@ function LobbyScreen({ gameId, initialEntry, onLeave, onStarted, onRemoved, onRe
 		}
 	}
 
+	const handleBoardChange = boardLayout => {
+		return changeSettings({ boardLayout })
+	}
+
 	const managePlayers = async action => {
 		setError('')
 		try {
@@ -289,31 +275,12 @@ function LobbyScreen({ gameId, initialEntry, onLeave, onStarted, onRemoved, onRe
 						<section className="lobbyPanel">
 							<h2>Game settings</h2>
 							<h3>Board</h3>
-							<div className="lobbyBoardCards" role="group">
-								{BOARDS.map(board => {
-									const selected = game.settings.boardLayout === board.id
-									return (
-										<button
-											type="button"
-											key={board.id}
-											className={selected ? 'selected' : ''}
-											disabled={!isHost || !connected || starting}
-											onClick={() => changeSettings({
-												boardLayout: board.id
-											})}
-										>
-											<BoardPreview
-												board={board}
-												players={game.players}
-												selected={selected}
-											/>
-											<span>
-												{board.label}
-											</span>
-										</button>
-									)
-								})}
-							</div>
+							<BoardPreview
+								boardLayout={game.settings.boardLayout}
+								players={game.players}
+								disabled={!isHost || !connected || starting}
+								onChange={handleBoardChange}
+							/>
 							<div className="lobbyTimerSection">
 								<h3>Turn timer</h3>
 								<p>How long each player has to make a move. If time runs out, a piece is placed for them automatically.</p>

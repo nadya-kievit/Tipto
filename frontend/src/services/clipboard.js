@@ -1,7 +1,4 @@
-export async function copyText(text, {
-	clipboard = globalThis.navigator?.clipboard,
-	document: doc = globalThis.document,
-} = {}) {
+export async function copyText(text, { clipboard = globalThis.navigator?.clipboard, document: doc = globalThis.document} = {}) {
 	if (clipboard?.writeText) {
 		try {
 			await clipboard.writeText(text)
@@ -19,6 +16,7 @@ export async function copyText(text, {
 	field.readOnly = true
 	field.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;font-size:16px;'
 	doc.body.appendChild(field)
+	
 	try {
 		field.focus({ preventScroll: true })
 		field.select()
