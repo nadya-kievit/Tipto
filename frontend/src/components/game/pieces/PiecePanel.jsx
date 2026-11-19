@@ -5,7 +5,7 @@ import Piece from './Piece'
 
 function MouseIcon({ action }) {
 	return (
-		<svg viewBox="0 0 24 24" aria-hidden="true">
+		<svg viewBox="0 0 24 24">
 			{action === 'flip' && <path className="controlHighlight" d="M12 3h1a6 6 0 0 1 6 6v3h-7Z" />}
 			<rect x="5" y="3" width="14" height="18" rx="5" />
 			<path d="M5 12h14M12 3v9" />
@@ -46,7 +46,7 @@ function PiecePanel({
 	const ability = selectedPiece?.ability
 	const firstMove = !player?.pieces.some(piece => piece.placed)
 	return (
-		<aside className="piecesRight" aria-label="Your pieces">
+		<aside className="piecesRight" style={{ '--player-color': getPlayerColorHex(player?.color) }}>
 			<div className="piecePanelHeader">
 				<h2 className="gamePanelTitle">Your pieces</h2>
 				<span className="pieceCount">{left}/{totalPieceCount}</span>
@@ -60,16 +60,16 @@ function PiecePanel({
 				</div>
 				<div className="piecePanelAside">
 			{fitPiecePreviews && !firstMove && !ability && <div className="pieceAbilityCard portraitPieceHint" data-game-piece>
-				<div className="instructionSwatch" style={tileFinish(getPlayerColorHex(player?.color), null, 'tray')} aria-hidden="true" />
+				<div className="instructionSwatch" style={tileFinish(getPlayerColorHex(player?.color), null, 'tray')} />
 				<div><div className="abilityTitle">{selectedPiece ? 'Place your piece' : 'Your turn'}</div>
 					<p>{selectedPiece ? 'It must touch one of your pieces at a corner, but never along an edge.' : 'Pick a piece and place it so it touches one of your pieces at a corner.'}</p>
 				</div>
 			</div>}
 			{firstMove ? <div className="pieceAbilityCard firstMoveCard" data-game-piece>
-				<div className="firstMoveSwatch" style={{ '--start-color': getPlayerColorHex(player?.color) }} aria-hidden="true"><i /></div>
+				<div className="firstMoveSwatch" style={{ '--start-color': getPlayerColorHex(player?.color) }}><i /></div>
 				<div><div className="abilityTitle">First move</div><p>Pick any piece and place it so it covers your starting square, outlined in your color on the board.</p></div>
 			</div> : ability && <div className="pieceAbilityCard" data-game-piece>
-				<div className="abilitySwatch" aria-hidden="true">
+				<div className="abilitySwatch">
 					{Array.from({ length: 4 }, (_, index) => <i key={index} style={tileFinish(getPlayerColorHex(player?.color), ability, 'tray')} />)}
 				</div>
 				<div>
@@ -87,7 +87,7 @@ function PiecePanel({
 				<h3>Controls</h3>
 				<div className="pieceControlRow"><span><MouseIcon action="rotate" />Rotate</span><span className="controlKeys"><kbd>Scroll</kbd><span>or</span><kbd>← →</kbd></span></div>
 				<div className="pieceControlRow"><span><MouseIcon action="flip" />Flip</span><span className="controlKeys"><kbd>Right-click</kbd><span>or</span><kbd>↑ ↓</kbd></span></div>
-				<div className="pieceControlRow"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>Put back</span><kbd>Esc</kbd></div>
+				<div className="pieceControlRow"><span><svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18" /></svg>Put back</span><kbd>Esc</kbd></div>
 			</div>
 				</div>
 			</div>

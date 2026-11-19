@@ -11,21 +11,18 @@ import { usesZoom, PHONE_ZOOM as Z, boardSize } from '../../../game/phoneZoom'
 import BoardTile from '../board/BoardTile'
 import { readBoardRatios, boardGeometryStyle, observeBoardPixelRatio } from '../../../game/boardGeometry'
 import useBoardPixelAlignment from '../../../hooks/useBoardPixelAlignment'
+import useTurnTimer from '../../../hooks/useTurnTimer'
 import '../../../styles/game/board.css'
 
 const score = player => player.pieces.reduce((sum, piece) => sum + (piece.placed ? piece.cells.length : 0), 0)
 
 function PhoneTimer({ endsAt, limit }) {
- const [remaining, setRemaining] = useState(() => Math.max(0, Math.ceil((endsAt - Date.now()) / 1000)))
- useEffect(() => {
-  const interval = setInterval(() => setRemaining(Math.max(0, Math.ceil((endsAt - Date.now()) / 1000))), 250)
-  return () => clearInterval(interval)
- }, [endsAt])
- return <><span className="phoneTimerTrack"><i style={{ width: `${limit ? Math.min(100, remaining / limit * 100) : 100}%` }} /></span><span className="phoneTime">{String(Math.floor(remaining / 60)).padStart(2, '0')}:{String(remaining % 60).padStart(2, '0')}</span></>
+ const { fraction, text } = useTurnTimer(endsAt, limit)
+ return <><span className="phoneTimerTrack"><i style={{ width: `${fraction * 100}%` }} /></span><span className="phoneTime">{text}</span></>
 }
 
 function Icon({ kind }) {
- return <svg viewBox="0 0 24 24" aria-hidden="true">{kind === 'people' ? <><circle cx="9" cy="8" r="3.2" /><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6" /><circle cx="17" cy="9" r="2.6" /><path d="M15.5 14.2c3 .2 5.5 2.6 5.5 5.8" /></> : kind === 'menu' ? <><circle cx="5" cy="12" r="1.2" /><circle cx="12" cy="12" r="1.2" /><circle cx="19" cy="12" r="1.2" /></> : kind === 'left' ? <path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5" /> : kind === 'right' ? <path d="M21 12a9 9 0 1 1-3-6.7M21 4v5h-5" /> : kind === 'flip' ? <path d="M12 3v18M8 7 3 12l5 5V7zM16 7l5 5-5 5V7z" /> : kind === 'copy' ? <><rect x="8" y="8" width="12" height="12" rx="1" /><path d="M16 8V4H4v12h4" /></> : <path d="m6 9 6 6 6-6" />}</svg>
+ return <svg viewBox="0 0 24 24">{kind === 'people' ? <><circle cx="9" cy="8" r="3.2" /><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6" /><circle cx="17" cy="9" r="2.6" /><path d="M15.5 14.2c3 .2 5.5 2.6 5.5 5.8" /></> : kind === 'menu' ? <><circle cx="5" cy="12" r="1.2" /><circle cx="12" cy="12" r="1.2" /><circle cx="19" cy="12" r="1.2" /></> : kind === 'left' ? <path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5" /> : kind === 'right' ? <path d="M21 12a9 9 0 1 1-3-6.7M21 4v5h-5" /> : kind === 'flip' ? <path d="M12 3v18M8 7 3 12l5 5V7zM16 7l5 5-5 5V7z" /> : kind === 'copy' ? <><rect x="8" y="8" width="12" height="12" rx="1" /><path d="M16 8V4H4v12h4" /></> : <path d="m6 9 6 6 6-6" />}</svg>
 }
 
 // Tray and opponent previews share the existing compact tile finishes.
@@ -36,13 +33,13 @@ function PhonePieceShape({ piece, cellSize, color, gap = 1 }) {
  const rows = Math.max(...cells.map(([row]) => row)) + 1
  const size = cellSize
  const spacing = Math.round(gap)
- return <span className="shape" aria-hidden="true" style={{ width: columns * size + (columns - 1) * spacing, height: rows * size + (rows - 1) * spacing }}>
+ return <span className="shape" style={{ width: columns * size + (columns - 1) * spacing, height: rows * size + (rows - 1) * spacing }}>
   {cells.map(([row, col], index) => <i key={index} style={{ width: size, height: size, top: row * (size + spacing), left: col * (size + spacing), borderRadius: 1, ...tileFinish(color, piece.ability, 'tray') }} />)}
  </span>
 }
 
 // Native tray scrolling, with a larger hit area for the custom scrollbar.
-function ScrollBar({ targetRef, label, count }) {
+function ScrollBar({ targetRef, count }) {
  const [scroll, setScroll] = useState({ fraction: 1, position: 0 })
  const grab = useRef(null)
  useLayoutEffect(() => {
@@ -61,7 +58,7 @@ function ScrollBar({ targetRef, label, count }) {
   const rect = event.currentTarget.getBoundingClientRect()
   target.scrollLeft = (event.clientX - rect.left - grab.current.offset) / rect.width * target.scrollWidth
  }
- return <div className="sbar trayBar" role="slider" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(scroll.position / (1 - scroll.fraction || 1) * 100)} tabIndex={0} hidden={scroll.fraction >= .999}
+ return <div className="sbar trayBar" role="slider" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(scroll.position / (1 - scroll.fraction || 1) * 100)} tabIndex={0} hidden={scroll.fraction >= .999}
   onKeyDown={event => { if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) { event.preventDefault(); const el = targetRef.current; el.scrollLeft = event.key === 'Home' ? 0 : event.key === 'End' ? el.scrollWidth : el.scrollLeft + (event.key === 'ArrowRight' ? 1 : -1) * el.clientWidth / 2 } }}
   onPointerDown={event => { event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect(); const thumb = event.currentTarget.firstElementChild.getBoundingClientRect(); grab.current = { offset: event.clientX >= thumb.left && event.clientX <= thumb.right ? event.clientX - thumb.left : rect.width * scroll.fraction / 2 }; event.currentTarget.setPointerCapture(event.pointerId); move(event) }}
   onPointerMove={move} onPointerUp={() => { grab.current = null }} onPointerCancel={() => { grab.current = null }} onLostPointerCapture={() => { grab.current = null }}>
@@ -71,7 +68,7 @@ function ScrollBar({ targetRef, label, count }) {
 
 
 function Logo() {
- return <i className="logo" aria-hidden="true"><b /><b /><b /><b /></i>
+ return <i className="logo"><b /><b /><b /><b /></i>
 }
 
 export default function PhoneGameLayout({ game, me, board, canMove, pieces, pendingPlacement,
@@ -146,7 +143,7 @@ export default function PhoneGameLayout({ game, me, board, canMove, pieces, pend
     const ability = pending ? pendingPlacement.ability : abilities.get(value.pieceId)
     return <BoardTile key={key} color={tileColor} ability={ability} occupied={occupied}
      playable={value.playable !== false} startColor={start ? getPlayerColorHex(start.color) : undefined}
-     data-row={row + dr} data-col={col + dc} aria-label={start ? `${start.name}'s starting square` : undefined} />
+     data-row={row + dr} data-col={col + dc} />
    }))}
    <div className="ghostLayer" hidden />
   </div>
@@ -157,24 +154,24 @@ export default function PhoneGameLayout({ game, me, board, canMove, pieces, pend
   '--row': `${5 * metrics.tray + 12}px`, '--col': `${5 * metrics.tray + 24}px` }}>
   <header className="top">
    <div className="topRow">
-    <button className="more" aria-label="Tipto menu" aria-expanded={overlay === 'menu'} onClick={() => setOverlay(overlay === 'menu' ? null : 'menu')}><Logo /><Icon /></button>
+    <button className="more" aria-expanded={overlay === 'menu'} onClick={() => setOverlay(overlay === 'menu' ? null : 'menu')}><Logo /><Icon /></button>
     <div className="turn" style={{ '--pc': getPlayerColorHex(current?.color) }}>
      <span className="lbl">{game.currentPlayerId === me.id ? 'Your turn' : `${current?.name || 'Player'}'s turn`}</span>
      {game.turnEndsAt && <PhoneTimer key={game.turnEndsAt} endsAt={game.turnEndsAt} limit={game.settings.moveTimeLimitSeconds} />}
     </div>
-    <button className="plBtn" aria-label="Players" aria-expanded={overlay === 'players'} onClick={() => setOverlay(overlay === 'players' ? null : 'players')}><Icon kind="people" /><small>#{players.findIndex(p => p.id === me.id) + 1}</small><b>{score(me)}</b><Icon /></button>
+    <button className="plBtn" aria-expanded={overlay === 'players'} onClick={() => setOverlay(overlay === 'players' ? null : 'players')}><Icon kind="people" /><small>#{players.findIndex(p => p.id === me.id) + 1}</small><b>{score(me)}</b><Icon /></button>
    </div>
-   <div className="dragHint" aria-hidden="true">
+   <div className="dragHint">
     <span className="dh" data-side="flip"><Icon kind="flip" />Flip</span>
     <span className="dhText">Hold the piece against an edge</span>
     <span className="dh" data-side="rot">Rotate<Icon kind="right" /></span>
    </div>
-   {overlay === 'menu' && <section className="menu" aria-label="Game menu">
+   {overlay === 'menu' && <section className="menu">
     <div className="brand"><Logo />Tipto</div><h5>Room</h5>
-    <div className="code"><span>Code</span><b>{roomCode}</b><button aria-label={copied ? 'Room code copied' : 'Copy room code'} onClick={copyRoom}>{copied ? '\u2713' : <Icon kind="copy" />}</button></div>
+    <div className="code"><span>Code</span><b>{roomCode}</b><button onClick={copyRoom}>{copied ? '\u2713' : <Icon kind="copy" />}</button></div>
     <button className="leaveBtn" onClick={onQuit} disabled={isQuitting}>Leave room</button>
    </section>}
-   {overlay === 'players' && <section className="plist" aria-label="Players list">{players.map((player, rank) => <Fragment key={player.id}>
+   {overlay === 'players' && <section className="plist">{players.map((player, rank) => <Fragment key={player.id}>
     <button className={`prow${player.id === game.currentPlayerId ? ' active' : ''}${expanded === player.id ? ' open' : ''}`} style={{ '--pc': getPlayerColorHex(player.color) }} aria-expanded={player.id !== me.id ? expanded === player.id : undefined} onClick={() => { if (player.id !== me.id) setExpanded(expanded === player.id ? null : player.id) }}>
      <span className="rk">{rank + 1}</span><span className="nm">{player.id === me.id ? 'You' : player.name}</span>
      {player.id === game.currentPlayerId && <span className="tag">Turn</span>}
@@ -183,18 +180,18 @@ export default function PhoneGameLayout({ game, me, board, canMove, pieces, pend
     {expanded === player.id && <div className="pieces">{player.pieces.filter(p => !p.placed).map(piece => <div key={piece.name} title={piece.name}><PhonePieceShape piece={piece} cellSize={6} color={getPlayerColorHex(player.color)} /></div>)}</div>}
    </Fragment>)}</section>}
   </header>
-  <main className="boardZone" aria-label="Game board">
+  <main className="boardZone">
    {zoom ? <>
     <div className="phoneView">{boardSurface}</div>
     <PhoneMinimap cameraRef={cameraRef} board={board} players={game.players} bounds={bounds} pendingPlacement={pendingPlacement} />
    </> : boardSurface}
   </main>
   {!zoom && <><div className="portal" data-side="flip" /><div className="portal" data-side="rot" /></>}
-  <section className="trayZone" aria-label="Your pieces" aria-disabled={!canMove || !!pendingPlacement}>
-   <div className="tray" ref={trayRef}>{remaining.map(piece => <button key={piece.name} className="pc" data-piece={piece.name} aria-label={`${piece.name}${piece.ability ? ` - ${piece.ability}` : ''}`} disabled={!canMove || !!pendingPlacement} onContextMenu={e => e.preventDefault()}><PhonePieceShape piece={piece} cellSize={metrics.tray} color={color} /></button>)}</div>
-   <ScrollBar targetRef={trayRef} label="Scroll your pieces" count={remaining.length} />
+  <section className="trayZone" aria-disabled={!canMove || !!pendingPlacement}>
+   <div className="tray" ref={trayRef}>{remaining.map(piece => <button key={piece.name} className="pc" data-piece={piece.name} disabled={!canMove || !!pendingPlacement} onContextMenu={e => e.preventDefault()}><PhonePieceShape piece={piece} cellSize={metrics.tray} color={color} /></button>)}</div>
+   <ScrollBar targetRef={trayRef} count={remaining.length} />
   </section>
-  <div className="float" hidden aria-hidden="true" />
+  <div className="float" hidden />
   {notice}
  </div>
 }

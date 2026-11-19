@@ -25,7 +25,7 @@ export default function Header({ screen, gameId, onLeave, leaveDisabled = false,
 	return (
 		<header className="appHeader">
 			<h1 className="headerLogo">
-				<span className="headerLogoMark" aria-hidden={screen === 'lobby' ? undefined : true}>
+				<span className="headerLogoMark">
 					<i /><i /><i />
 				</span>
 				Tipto

@@ -31,7 +31,7 @@ function CursorPiece({ piece, rotation, flipped, color, positionRef, cellSize = 
 	}, [positionRef, cellSize, piece, rotation, flipped])
 
 	return (
-		<div ref={elementRef} className="gameHeldPiece" data-held-piece aria-hidden="true" style={{
+		<div ref={elementRef} className="gameHeldPiece" data-held-piece style={{
 			position: 'fixed', top: 0, left: 0, width: 'max-content', zIndex: 1000,
 			pointerEvents: 'none', willChange: 'transform', opacity: 0.6,
 		}}>

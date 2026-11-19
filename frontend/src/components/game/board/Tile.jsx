@@ -10,6 +10,5 @@ export default function Tile({ value, row, col, isHovered, startPlayer, isOwnSta
 		lastMoveEdges={isLastMove && !isHovered ? lastMoveEdges : null}
 		data-row={row} data-col={col} data-piece-id={value.pieceId || undefined}
 		data-ability={(isHovered ? preview?.ability : ability) || 'normal'} data-last-move={isLastMove || undefined}
-		aria-label={startPlayer ? `${startPlayer.name}'s starting square` : undefined}
 		style={{ opacity: isHovered || isPending ? 0.6 : 1 }} />
 }

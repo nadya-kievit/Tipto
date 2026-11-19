@@ -48,7 +48,7 @@ function BoardShape({ board, players, selected }) {
 
 function BoardPreview({ boardLayout, players, disabled, onChange }) {
 	return (
-		<div className="lobbyBoardCards" role="group">
+		<div className="lobbyBoardCards">
 			{BOARDS.map(board => {
 				const selected = boardLayout === board.id
 				return (

@@ -355,7 +355,6 @@ function LobbyScreen({ gameId, onLeave, onStarted, onRemoved, onRegisterLeave })
 									<span
 										id="lobby-start-tooltip"
 										className="lobbyStartTooltip"
-										role="tooltip"
 									>
 										{startDisabledReason}
 									</span>

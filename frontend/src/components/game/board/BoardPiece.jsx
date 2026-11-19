@@ -15,7 +15,7 @@ export default function BoardPiece({ piece, cellSize, color }) {
 	const cells = displayCells(piece.cells, piece.rotation, piece.flipped)
 	const rows = Math.max(...cells.map(([row]) => row)) + 1
 	const cols = Math.max(...cells.map(([, col]) => col)) + 1
-	return <span ref={ref} className="gameBoardPiece" aria-hidden="true" style={{
+	return <span ref={ref} className="gameBoardPiece" style={{
 		'--board-cell-size': `${cellSize}px`, '--board-columns': cols, '--board-rows': rows,
 	}}>
 		{cells.map(([row, col], index) => <BoardTile key={index} as="i" color={color} ability={piece.ability}

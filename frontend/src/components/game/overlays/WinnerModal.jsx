@@ -1,4 +1,5 @@
 import clsx from 'clsx'
+import { Crown, X } from 'lucide-react'
 import { getPlayerColorHex } from '../../../game/playerColors'
 
 function WinnerModal({ isOpen, isTie, leaderboard, onClose, resultColor, winner }) {
@@ -10,31 +11,17 @@ function WinnerModal({ isOpen, isTie, leaderboard, onClose, resultColor, winner 
 				className="winnerModal"
 				role="dialog"
 				aria-modal="true"
-				aria-labelledby="winner-title"
 			>
-				<button
-					className="modalCloseButton"
-					onClick={onClose}
-					aria-label="Close winner summary"
-				>
-					<svg aria-hidden="true" viewBox="0 0 24 24">
-						<path d="M18 6 6 18" />
-						<path d="m6 6 12 12" />
-					</svg>
+				<button className="modalCloseButton" onClick={onClose}>
+					<X />
 				</button>
 
-				<div
-					className="winnerBadge"
-					style={{ '--winner-color': resultColor }}
-				>
-					<svg aria-hidden="true" viewBox="0 0 24 24">
-						<path d="M6 9 8 20h8l2-11-4 3-2-6-2 6-4-3Z" />
-						<path d="M8 20h8" />
-					</svg>
+				<div className="winnerBadge" style={{ '--winner-color': resultColor }}>
+					<Crown/>
 				</div>
 
-				<div id="winner-title" className="winnerTitle">
-					{isTie ? 'It\'s a tie!' : `${winner?.name || 'A player'} won!`}
+				<div className="winnerTitle">
+					{isTie ? 'It\'s a tie!' : `${winner?.name} won!`}
 				</div>
 
 				<div className="leaderboardList">

@@ -112,9 +112,8 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 	),
 		[pendingPlacement?.pieceName, pieces]
 	)
-	const phoneSelectedPiece = isPhoneGame
-		? (pendingPlacement ? null : selectedPiece)
-		: null
+	const phoneSelectedPiece = isPhoneGame ? (pendingPlacement ? null : selectedPiece) : null
+
 	const winners = useMemo(() => {
 		const winnerIds = game?.winnerIds?.length
 			? game.winnerIds
@@ -481,7 +480,7 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 					<h2>Loading game...</h2>
 
 					{lastMessage && (
-						<div className="statusMessage statusMessageError">
+						<div className="statusMessageError">
 							{lastMessage}
 						</div>
 					)}
@@ -505,19 +504,9 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 	const notice = noticeMessage ? (
 		<div className="gameNotice" role="status">
 			<span>{noticeMessage}</span>
-			<button type="button" onClick={dismissMessage} aria-label="Dismiss message">Dismiss</button>
+			<button type="button" onClick={dismissMessage}>Dismiss</button>
 		</div>
 	) : null
-	const winnerModal = (
-		<WinnerModal
-			isOpen={isFinished && !isWinnerModalClosed}
-			isTie={isTie}
-			leaderboard={leaderboard}
-			onClose={handleCloseWinnerModal}
-			resultColor={resultColor}
-			winner={winner}
-		/>
-	)
 
 
 	if (isPhoneGame) {
@@ -541,12 +530,20 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 				onCopyError={setLastMessage}
 				lastMove={game.moveHistory.at(-1)}
 			/>
-			{winnerModal}
+
+			<WinnerModal
+				isOpen={isFinished && !isWinnerModalClosed}
+				isTie={isTie}
+				leaderboard={leaderboard}
+				onClose={handleCloseWinnerModal}
+				resultColor={resultColor}
+				winner={winner}
+			/>
 		</>
 	}
 
 	return (
-		<div className="gamePage" style={{ ...(isPortraitComputer ? { '--ui-scale': 1, '--text-scale': 1 } : uiScaleStyle), '--me': getPlayerColorHex(me?.color) }}>
+		<div className="gamePage">
 
 			{selectedPiece && createPortal(
 				<CursorPiece
@@ -583,7 +580,7 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 				<PlayerRank
 					currentUserId={me?.id}
 					game={game}
-					pieceCellSize={8 * uiScale}
+					portraitComputer={isPortraitComputer}
 				/>
 
 				<Board
@@ -615,7 +612,14 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 			</div>
 
 			{notice}
-			{winnerModal}
+			<WinnerModal
+				isOpen={isFinished && !isWinnerModalClosed}
+				isTie={isTie}
+				leaderboard={leaderboard}
+				onClose={handleCloseWinnerModal}
+				resultColor={resultColor}
+				winner={winner}
+			/>
 		</div>
 	)
 }

@@ -16,7 +16,7 @@ function Piece({
 			? 'Connector — connect along edges or corners. First move must cover your starting square.'
 			: piece.name
 	const content = (
-		<span className="pieceShape" aria-hidden="true" style={{
+		<span className="pieceShape" style={{
 			width: columns * cellSize + columns - 1,
 			height: rows * cellSize + rows - 1,
 		}}>
@@ -29,12 +29,12 @@ function Piece({
 	)
 	const className = `pieceCard${isSelected ? ' selected' : ''}${placed ? ' placed' : ''}`
 	if (staticPreview) {
-		return <div className={className} title={tooltip} aria-label={`${piece.name}${placed ? ' — used' : ''}`}
+		return <div className={className} title={tooltip}
 			data-piece-name={piece.name} data-ability={piece.ability || 'normal'}>{content}</div>
 	}
 	return (
 		<button type="button" className={className} disabled={disabled || isWaitingForPlayers || placed || !isPlayable}
-			onClick={onClick} title={tooltip} aria-label={`${piece.name}${piece.ability ? ` — ${piece.ability}` : ''}${placed ? ' — used' : ''}`}
+			onClick={onClick} title={tooltip}
 			aria-pressed={Boolean(isSelected)} data-piece-name={piece.name} data-ability={piece.ability || 'normal'}
 			data-rotation={rotation} data-flipped={flipped}>
 			{content}

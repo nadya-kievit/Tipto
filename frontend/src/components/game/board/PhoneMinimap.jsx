@@ -48,8 +48,8 @@ export default function PhoneMinimap({
   draw()
   return () => camera.listeners.delete(draw)
  }, [cameraRef, board, players, bounds, pendingPlacement])
- return <div className="phoneMini" role="button" tabIndex={0} aria-label="Board minimap. Drag to move the view; tap to show the whole board.">
- <canvas ref={canvasRef} aria-hidden="true" />
- <span className="phoneMiniExpand" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-7 7M10 20H4v-6M4 20l7-7" /></svg></span>
+ return <div className="phoneMini" role="button" tabIndex={0}>
+ <canvas ref={canvasRef} />
+ <span className="phoneMiniExpand"><svg viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-7 7M10 20H4v-6M4 20l7-7" /></svg></span>
 </div>
 }

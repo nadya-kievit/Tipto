@@ -154,7 +154,6 @@ function BackgroundPieces({
 				'--background-piece-size': `${cellSize}px`,
 				'--background-piece-opacity': opacity,
 			}}
-			aria-hidden="true"
 		>
 			{displayPieces.map((piece, pieceIndex) => (
 				<span

@@ -30,7 +30,7 @@ function getCreateErrorMessage(error) {
 
 function PhoneRotateOverlay() {
 	return <div className="phoneRotateOverlay phoneRotatePortrait" role="status">
-		<svg viewBox="0 0 64 64" aria-hidden="true">
+		<svg viewBox="0 0 64 64">
 			<rect x={20} y={10} width={24} height={44} rx="4" />
 			<path d="M11 24A23 23 0 0 1 31 4M11 24l-5-7m5 7 8-3" />
 		</svg>

@@ -90,7 +90,7 @@ function Board({
 	}))
 	return (
 		<div className="boardStage" ref={stageRef}>
-			<section ref={surfaceRef} className="gameBoardSurface" aria-label="Game board" style={{
+			<section ref={surfaceRef} className="gameBoardSurface" style={{
 				'--board-columns': viewWidth, '--board-rows': viewHeight,
 				...boardGeometryStyle(geometry),
 			}}>

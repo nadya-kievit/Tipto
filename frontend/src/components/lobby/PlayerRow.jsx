@@ -1,16 +1,5 @@
 import { getPlayerColorHex } from '../../game/playerColors'
-
-function RobotIcon() {
-	return (
-		<svg viewBox="0 0 24 24">
-			<path d="M12 7V4M10 2h4" />
-			<rect x="4" y="7" width="16" height="13" rx="3" />
-			<path d="M4 11H2v5h2M20 11h2v5h-2M9 17h6" />
-			<circle className="robotEye" cx="9" cy="13" r="1.25" />
-			<circle className="robotEye" cx="15" cy="13" r="1.25" />
-		</svg>
-	)
-}
+import { Bot } from 'lucide-react'
 
 function PlayerRow({
 	player,
@@ -32,7 +21,7 @@ function PlayerRow({
 			'--player-colour': getPlayerColorHex(player.color)
 		}}>
 			<span className={`lobbyPlayerTile${player.isBot ? ' bot' : ''}`}>
-				{player.isBot && <RobotIcon />}
+				{player.isBot && <Bot />}
 			</span>
 			{isYou ? <div className="lobbyOwnProfile">
 				<input
@@ -44,7 +33,6 @@ function PlayerRow({
 				/>
 				<div
 					className="lobbySwatches"
-					role="group"
 				>
 					{colorOptions.map(option => (
 							<button
