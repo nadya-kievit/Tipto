@@ -403,42 +403,16 @@
 }
 
 .gamePage:not(.phoneGame) .pieceAbilityCard {
-	display: flex;
-	gap: calc(14px * var(--ui-scale));
 	margin-top: calc(16px * var(--ui-scale));
 	padding: calc(14px * var(--ui-scale));
 	border: 1px solid var(--border);
 	border-radius: calc(4px * var(--ui-scale));
+	border-color: var(--player-color);
 	background: var(--surface);
 }
 
-.gamePage:not(.phoneGame) .firstMoveCard {
-	border-color: var(--player-color);
-}
 
-.gamePage:not(.phoneGame) .firstMoveSwatch {
-	flex: 0 0 calc(26px * var(--ui-scale));
-	width: calc(26px * var(--ui-scale));
-	height: calc(26px * var(--ui-scale));
-	margin-top: calc(2px * var(--ui-scale));
-	border-radius: calc(3px * var(--ui-scale));
-	background: color-mix(in srgb, var(--start-color) 28%, var(--cell));
-	box-shadow: inset 0 0 0 calc(2px * var(--ui-scale)) var(--start-color);
-}
-
-.gamePage:not(.phoneGame) .firstMoveSwatch i {
-	display: none;
-}
-
-.gamePage:not(.phoneGame) .abilitySwatch {
-	display: grid;
-	grid-template-columns: repeat(2,calc(18px * var(--ui-scale)));
-	grid-template-rows: repeat(2,calc(18px * var(--ui-scale)));
-	gap: calc(1px * var(--ui-scale));
-	flex-shrink: 0;
-}
-
-.gamePage:not(.phoneGame) .abilityTitle {
+.gamePage:not(.phoneGame) .pieceAbilityCard > h2 {
 	font-size: calc(15px * var(--text-scale));
 	font-weight: 700;
 }
@@ -582,7 +556,7 @@
 	}
 
 	.gamePage:not(.phoneGame) .piecePanelHeader {
-		display: flex;
+		width: var(--piece-grid-width);
 		margin: 0 0 16px;
 	}
 
@@ -694,6 +668,8 @@
 	}
 
 	.gamePage:not(.phoneGame) .piecesRight {
+		--piece-grid-width: 546px;
+		--piece-panel-gap: 20px;
 		display: flex;
 		flex-direction: column;
 		gap: 0;
@@ -702,14 +678,10 @@
 		overflow: visible;
 	}
 
-	.gamePage:not(.phoneGame) .pieceCount {
-		display: none;
-	}
-
 	.gamePage:not(.phoneGame) .piecesBody {
 		display: grid;
-		grid-template-columns: 546px minmax(0,1fr);
-		gap: 20px;
+		grid-template-columns: var(--piece-grid-width) minmax(0,1fr);
+		gap: var(--piece-panel-gap);
 		min-height: 0;
 		align-items: start;
 	}
@@ -747,26 +719,13 @@
 	}
 
 	.gamePage:not(.phoneGame) .pieceAbilityCard {
-		display: flex;
+		display: block;
 		margin: 0;
 		padding: 16px;
-		gap: 16px;
 		border-radius: 4px;
 	}
 
-	.gamePage:not(.phoneGame) .firstMoveSwatch,
-	.gamePage:not(.phoneGame) .instructionSwatch {
-		width: 32px;
-		height: 32px;
-		flex: 0 0 32px;
-	}
-
-	.gamePage:not(.phoneGame) .abilitySwatch {
-		grid-template: repeat(2,15.5px) / repeat(2,15.5px);
-		gap: 1px;
-	}
-
-	.gamePage:not(.phoneGame) .abilityTitle {
+	.gamePage:not(.phoneGame) .pieceAbilityCard > h2 {
 		font-size: 18px;
 		font-weight: 700;
 	}
@@ -830,8 +789,8 @@
 }
 
 @media (orientation: portrait) and (min-width: 700px) and (max-width: 1000px) {
-	.gamePage:not(.phoneGame) .piecesBody {
-		grid-template-columns: minmax(0,1.25fr) minmax(0,1fr);
+	.gamePage:not(.phoneGame) .piecesRight {
+		--piece-grid-width: calc((100% - var(--piece-panel-gap)) * 5 / 9);
 	}
 
 	.gamePage:not(.phoneGame) .pieceControlRow {

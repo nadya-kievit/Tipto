@@ -295,7 +295,6 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 		const handleOutsidePointerDown = event => {
 			if (event.button !== 0) return
 			if (event.target.closest('[data-game-board]')) return
-			if (event.target.closest('[data-game-piece]')) return
 
 			clearSelection()
 		}
@@ -569,7 +568,6 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 					selectedPieceName={selectedPieceName}
 					selectedPiece={selectedPiece}
 					pieceCellSize={isPortraitComputer ? 20 : 14.5 * uiScale}
-					portraitComputer={isPortraitComputer}
 				/>
 			</div>
 

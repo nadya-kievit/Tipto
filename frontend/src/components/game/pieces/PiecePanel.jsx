@@ -1,19 +1,16 @@
 import clsx from 'clsx'
 import { X } from 'lucide-react'
 import { getPlayerColorHex } from '../../../game/playerColors'
-import { tileFinish } from '../../../game/piecePresentation'
 import Piece from './Piece'
 
 const ABILITY_INSTRUCTIONS = {
 	scout: {
 		title: 'Scout',
-		portrait: 'Place it without a corner connection, but never along an edge of your own pieces.',
-		landscape: 'Ignores the corner rule. Place it anywhere it fits, even without touching your other pieces.',
+		message: 'Place it without a corner connection, but never along an edge of your own pieces.',
 	},
 	connector: {
 		title: 'Connector',
-		portrait: 'It must touch one of your pieces along an edge or at a corner.',
-		landscape: 'Ignores the edge rule. It can touch your own pieces along an edge as well as at a corner.',
+		message: 'It must touch one of your pieces along an edge or at a corner.',
 	},
 }
 
@@ -28,65 +25,67 @@ function MouseIcon({ action }) {
 	)
 }
 
-function PiecePanel({
-	canMove, onPieceClick, pieces, playablePieceNames,
-	player, selectedPieceName, selectedPiece, pieceCellSize, portraitComputer,
-}) {
+function PiecePanel({canMove, onPieceClick, pieces, playablePieceNames, player, selectedPieceName, selectedPiece, pieceCellSize}) {
 	const playerColor = getPlayerColorHex(player?.color)
 	const left = pieces.filter(piece => !piece.placed).length
 	const ability = selectedPiece?.ability
+
 	let instruction
+
 	if (left === pieces.length) {
 		instruction = {
 			title: 'First move',
 			message: 'Pick any piece and place it so it covers your starting square, outlined in your color on the board.',
-			className: 'firstMoveCard',
-			swatch: <div className="firstMoveSwatch" style={{ '--start-color': playerColor }}><i /></div>,
 		}
 	} else if (ability) {
 		const copy = ability === 'scout' ? ABILITY_INSTRUCTIONS.scout : ABILITY_INSTRUCTIONS.connector
-		const finish = tileFinish(playerColor, ability)
 		instruction = {
 			title: copy.title,
-			message: portraitComputer ? copy.portrait : copy.landscape,
+			message: copy.message,
 			label: 'Special piece',
-			swatch: <div className="abilitySwatch">{Array.from({ length: 4 }, (_, index) => <i key={index} style={finish} />)}</div>,
 		}
-	} else if (portraitComputer) {
+	} else {
 		instruction = {
-			title: selectedPiece ? 'Place your piece' : 'Your turn',
-			message: selectedPiece
-				? 'It must touch one of your pieces at a corner, but never along an edge.'
-				: 'Pick a piece and place it so it touches one of your pieces at a corner.',
-			className: 'portraitPieceHint',
-			swatch: <div className="instructionSwatch" style={tileFinish(playerColor)} />,
+			title: 'Your turn',
+			message: 'Pick a piece and place it so it touches one of your pieces at a corner.',
 		}
 	}
 
 	return (
-		<aside className="piecesRight" style={{ '--player-color': playerColor }}>
+		<div className="piecesRight" style={{ '--player-color': playerColor }}>
 			<div className="piecePanelHeader">
-				<h2 className="gamePanelTitle">Your pieces</h2>
+				<h1 className="gamePanelTitle">Your pieces</h1>
 				<span className="pieceCount">{left}/{pieces.length}</span>
 			</div>
+
 			<div className="piecesBody">
-				<div data-game-piece className="pieceCardGrid">
-					{pieces.map(piece => <Piece key={piece.name} piece={piece}
-						color={playerColor} isSelected={selectedPieceName === piece.name}
-						isPlayable={playablePieceNames.has(piece.name)} disabled={!canMove}
-						onClick={event => onPieceClick(piece, event)} rotation={piece.rotation} flipped={piece.flipped} cellSize={pieceCellSize} />)}
-				</div>
-				<div className="piecePanelAside">
-					{instruction && (
-						<div className={clsx('pieceAbilityCard', instruction.className)} data-game-piece>
-							{instruction.swatch}
-							<div>
-								<div className="abilityTitle">{instruction.title}</div>
-								{instruction.label && <div className="abilityLabel">{instruction.label}</div>}
-								<p>{instruction.message}</p>
-							</div>
-						</div>
+				<div className="pieceCardGrid">
+					{pieces.map(piece => 
+						<Piece 
+							key={piece.name} 
+							piece={piece}
+							color={playerColor} 
+							isSelected={selectedPieceName === piece.name}
+							isPlayable={playablePieceNames.has(piece.name)} 
+							disabled={!canMove}
+							onClick={event => onPieceClick(piece, event)} 
+							rotation={piece.rotation} 
+							flipped={piece.flipped} 
+							cellSize={pieceCellSize} 
+						/>
 					)}
+				</div>
+
+				<div className="piecePanelAside">
+					<div className="pieceAbilityCard">
+						<h2>{instruction.title}</h2>
+						{instruction.label && 
+							<div className="abilityLabel">
+								{instruction.label}
+							</div>
+						}
+						<p>{instruction.message}</p>
+					</div>
 					<div className="pieceControls">
 						<h3>Controls</h3>
 						<div className="pieceControlRow"><span><MouseIcon action="rotate" />Rotate</span><span className="controlKeys"><kbd>Scroll</kbd><span>or</span><kbd>← →</kbd></span></div>
@@ -95,7 +94,7 @@ function PiecePanel({
 					</div>
 				</div>
 			</div>
-		</aside>
+		</div>
 	)
 }
 
