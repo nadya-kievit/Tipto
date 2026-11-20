@@ -8,7 +8,7 @@ import usePhoneZoomDrag from './usePhoneZoomDrag'
 import usePhoneView from './usePhoneView'
 import PhoneMinimap from '../board/PhoneMinimap'
 import { usesZoom, PHONE_ZOOM as Z, boardSize } from '../../../game/phoneZoom'
-import BoardTile from '../board/BoardTile'
+import Tile from '../board/Tile'
 import { readBoardRatios, boardGeometryStyle, observeBoardPixelRatio } from '../../../game/boardGeometry'
 import useBoardPixelAlignment from '../../../hooks/useBoardPixelAlignment'
 import useTurnTimer from '../../../hooks/useTurnTimer'
@@ -137,7 +137,7 @@ export default function PhoneGameLayout({ game, me, board, canMove, pieces,
   <div className="phoneBoard board gameBoardGrid" data-game-board>
    {board.slice(row, row + rows).flatMap((line, dr) => line.slice(col, col + cols).map((value, dc) => {
     const key = `${row + dr},${col + dc}`, start = starts.get(key)
-    return <BoardTile key={key} color={getPlayerColorHex(value.color)} ability={abilities.get(value.pieceId)} occupied={value.occupied}
+    return <Tile key={key} color={getPlayerColorHex(value.color)} ability={abilities.get(value.pieceId)} occupied={value.occupied}
      playable={value.playable !== false} startColor={start ? getPlayerColorHex(start.color) : undefined}
      data-row={row + dr} data-col={col + dc} />
    }))}

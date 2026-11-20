@@ -398,16 +398,7 @@
 	opacity: .2;
 }
 
-.gamePage:not(.phoneGame) .pieceShape {
-	position: relative;
-	display: block;
-	flex-shrink: 0;
-	pointer-events: none;
-}
-
 .gamePage:not(.phoneGame) .pieceFinishTile {
-	position: absolute;
-	display: block;
 	border-radius: calc(1px * var(--ui-scale));
 }
 
@@ -732,6 +723,7 @@
 	}
 
 	.gamePage:not(.phoneGame) .pieceCardGrid .pieceCard {
+		container-type: size;
 		grid-template: minmax(0,1fr) / minmax(0,1fr);
 		height: 100px;
 		min-height: 0;
@@ -740,7 +732,12 @@
 	}
 
 	.gamePage:not(.phoneGame) .pieceCardGrid .pieceShape {
-		transform: scale(var(--piece-preview-scale, 1));
+		/* Leave 6px on each side and reserve the gaps before sizing the cells. */
+		--piece-cell-size: max(0px, min(
+			var(--piece-max-cell-size),
+			(100cqw - 12px - (var(--piece-columns) - 1) * 1px) / var(--piece-columns),
+			(100cqh - 12px - (var(--piece-rows) - 1) * 1px) / var(--piece-rows)
+		));
 	}
 
 	.gamePage:not(.phoneGame) .piecePanelAside {

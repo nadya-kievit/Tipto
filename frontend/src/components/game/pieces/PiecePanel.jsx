@@ -1,7 +1,21 @@
-import { useLayoutEffect, useRef } from 'react'
+import clsx from 'clsx'
+import { X } from 'lucide-react'
 import { getPlayerColorHex } from '../../../game/playerColors'
 import { tileFinish } from '../../../game/piecePresentation'
 import Piece from './Piece'
+
+const ABILITY_INSTRUCTIONS = {
+	scout: {
+		title: 'Scout',
+		portrait: 'Place it without a corner connection, but never along an edge of your own pieces.',
+		landscape: 'Ignores the corner rule. Place it anywhere it fits, even without touching your other pieces.',
+	},
+	connector: {
+		title: 'Connector',
+		portrait: 'It must touch one of your pieces along an edge or at a corner.',
+		landscape: 'Ignores the edge rule. It can touch your own pieces along an edge as well as at a corner.',
+	},
+}
 
 function MouseIcon({ action }) {
 	return (
@@ -16,79 +30,69 @@ function MouseIcon({ action }) {
 
 function PiecePanel({
 	canMove, onPieceClick, pieces, playablePieceNames,
-	player, selectedPieceName, totalPieceCount, selectedPiece, pieceCellSize = 13,
-	fitPiecePreviews = false,
+	player, selectedPieceName, selectedPiece, pieceCellSize, portraitComputer,
 }) {
-	const gridRef = useRef(null)
-	useLayoutEffect(() => {
-		const grid = gridRef.current
-		if (!fitPiecePreviews || !grid) return undefined
-		const fitPreviews = () => {
-			for (const card of grid.children) {
-				const shape = card.querySelector('.pieceShape')
-				if (!shape) continue
-				const scale = Math.max(0, Math.min(1,
-					(card.clientWidth - 12) / shape.offsetWidth,
-					(card.clientHeight - 12) / shape.offsetHeight,
-				))
-				shape.style.setProperty('--piece-preview-scale', scale)
-			}
-		}
-		fitPreviews()
-		const observer = new ResizeObserver(fitPreviews)
-		observer.observe(grid)
-		return () => {
-			observer.disconnect()
-			for (const shape of grid.querySelectorAll('.pieceShape')) shape.style.removeProperty('--piece-preview-scale')
-		}
-	}, [fitPiecePreviews, pieces, pieceCellSize])
+	const playerColor = getPlayerColorHex(player?.color)
 	const left = pieces.filter(piece => !piece.placed).length
 	const ability = selectedPiece?.ability
-	const firstMove = !player?.pieces.some(piece => piece.placed)
+	let instruction
+	if (left === pieces.length) {
+		instruction = {
+			title: 'First move',
+			message: 'Pick any piece and place it so it covers your starting square, outlined in your color on the board.',
+			className: 'firstMoveCard',
+			swatch: <div className="firstMoveSwatch" style={{ '--start-color': playerColor }}><i /></div>,
+		}
+	} else if (ability) {
+		const copy = ability === 'scout' ? ABILITY_INSTRUCTIONS.scout : ABILITY_INSTRUCTIONS.connector
+		const finish = tileFinish(playerColor, ability)
+		instruction = {
+			title: copy.title,
+			message: portraitComputer ? copy.portrait : copy.landscape,
+			label: 'Special piece',
+			swatch: <div className="abilitySwatch">{Array.from({ length: 4 }, (_, index) => <i key={index} style={finish} />)}</div>,
+		}
+	} else if (portraitComputer) {
+		instruction = {
+			title: selectedPiece ? 'Place your piece' : 'Your turn',
+			message: selectedPiece
+				? 'It must touch one of your pieces at a corner, but never along an edge.'
+				: 'Pick a piece and place it so it touches one of your pieces at a corner.',
+			className: 'portraitPieceHint',
+			swatch: <div className="instructionSwatch" style={tileFinish(playerColor)} />,
+		}
+	}
+
 	return (
-		<aside className="piecesRight" style={{ '--player-color': getPlayerColorHex(player?.color) }}>
+		<aside className="piecesRight" style={{ '--player-color': playerColor }}>
 			<div className="piecePanelHeader">
 				<h2 className="gamePanelTitle">Your pieces</h2>
-				<span className="pieceCount">{left}/{totalPieceCount}</span>
+				<span className="pieceCount">{left}/{pieces.length}</span>
 			</div>
 			<div className="piecesBody">
-				<div ref={gridRef} data-game-piece className="pieceCardGrid">
+				<div data-game-piece className="pieceCardGrid">
 					{pieces.map(piece => <Piece key={piece.name} piece={piece}
-						color={player?.color} isSelected={selectedPieceName === piece.name}
+						color={playerColor} isSelected={selectedPieceName === piece.name}
 						isPlayable={playablePieceNames.has(piece.name)} disabled={!canMove}
 						onClick={event => onPieceClick(piece, event)} rotation={piece.rotation} flipped={piece.flipped} cellSize={pieceCellSize} />)}
 				</div>
 				<div className="piecePanelAside">
-			{fitPiecePreviews && !firstMove && !ability && <div className="pieceAbilityCard portraitPieceHint" data-game-piece>
-				<div className="instructionSwatch" style={tileFinish(getPlayerColorHex(player?.color), null, 'tray')} />
-				<div><div className="abilityTitle">{selectedPiece ? 'Place your piece' : 'Your turn'}</div>
-					<p>{selectedPiece ? 'It must touch one of your pieces at a corner, but never along an edge.' : 'Pick a piece and place it so it touches one of your pieces at a corner.'}</p>
-				</div>
-			</div>}
-			{firstMove ? <div className="pieceAbilityCard firstMoveCard" data-game-piece>
-				<div className="firstMoveSwatch" style={{ '--start-color': getPlayerColorHex(player?.color) }}><i /></div>
-				<div><div className="abilityTitle">First move</div><p>Pick any piece and place it so it covers your starting square, outlined in your color on the board.</p></div>
-			</div> : ability && <div className="pieceAbilityCard" data-game-piece>
-				<div className="abilitySwatch">
-					{Array.from({ length: 4 }, (_, index) => <i key={index} style={tileFinish(getPlayerColorHex(player?.color), ability, 'tray')} />)}
-				</div>
-				<div>
-					<div className="abilityTitle">{ability === 'scout' ? 'Scout' : 'Connector'}</div>
-					<div className="abilityLabel">Special piece</div>
-					<p>{fitPiecePreviews ? ability === 'scout'
-						? 'Place it without a corner connection, but never along an edge of your own pieces.'
-						: 'It must touch one of your pieces along an edge or at a corner.'
-						: ability === 'scout'
-						? 'Ignores the corner rule. Place it anywhere it fits, even without touching your other pieces.'
-						: 'Ignores the edge rule. It can touch your own pieces along an edge as well as at a corner.'}</p>
-				</div>
-			</div>}
-			<div className="pieceControls">
-				<h3>Controls</h3>
-				<div className="pieceControlRow"><span><MouseIcon action="rotate" />Rotate</span><span className="controlKeys"><kbd>Scroll</kbd><span>or</span><kbd>← →</kbd></span></div>
-				<div className="pieceControlRow"><span><MouseIcon action="flip" />Flip</span><span className="controlKeys"><kbd>Right-click</kbd><span>or</span><kbd>↑ ↓</kbd></span></div>
-				<div className="pieceControlRow"><span><svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18" /></svg>Put back</span><kbd>Esc</kbd></div>
-			</div>
+					{instruction && (
+						<div className={clsx('pieceAbilityCard', instruction.className)} data-game-piece>
+							{instruction.swatch}
+							<div>
+								<div className="abilityTitle">{instruction.title}</div>
+								{instruction.label && <div className="abilityLabel">{instruction.label}</div>}
+								<p>{instruction.message}</p>
+							</div>
+						</div>
+					)}
+					<div className="pieceControls">
+						<h3>Controls</h3>
+						<div className="pieceControlRow"><span><MouseIcon action="rotate" />Rotate</span><span className="controlKeys"><kbd>Scroll</kbd><span>or</span><kbd>← →</kbd></span></div>
+						<div className="pieceControlRow"><span><MouseIcon action="flip" />Flip</span><span className="controlKeys"><kbd>Right-click</kbd><span>or</span><kbd>↑ ↓</kbd></span></div>
+						<div className="pieceControlRow"><span><X />Put back</span><kbd>Esc</kbd></div>
+					</div>
 				</div>
 			</div>
 		</aside>

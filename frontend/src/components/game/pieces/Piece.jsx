@@ -10,6 +10,7 @@ function Piece({
 	const rows = Math.max(...cells.map(([row]) => row)) + 1
 	const columns = Math.max(...cells.map(([, col]) => col)) + 1
 	const context = staticPreview ? 'list' : 'tray'
+	const finish = tileFinish(getPlayerColorHex(color), piece.ability, context)
 	const tooltip = piece.ability === 'scout'
 		? 'Scout — place without a connection; no shared edges. First move must cover your starting square.'
 		: piece.ability === 'connector'
@@ -17,13 +18,12 @@ function Piece({
 			: piece.name
 	const content = (
 		<span className="pieceShape" style={{
-			width: columns * cellSize + columns - 1,
-			height: rows * cellSize + rows - 1,
+			'--piece-columns': columns,
+			'--piece-rows': rows,
+			'--piece-max-cell-size': `${cellSize}px`,
 		}}>
-			{cells.map(([row, col], index) => <i key={index} className="pieceFinishTile" style={{
-				width: cellSize, height: cellSize,
-				top: row * (cellSize + 1), left: col * (cellSize + 1),
-				...tileFinish(getPlayerColorHex(color), piece.ability, context),
+			{cells.map(([row, col]) => <i key={`${row},${col}`} className="pieceFinishTile" style={{
+				gridRow: row + 1, gridColumn: col + 1, ...finish,
 			}} />)}
 		</span>
 	)

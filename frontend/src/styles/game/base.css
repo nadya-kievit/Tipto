@@ -74,20 +74,45 @@
 	font-weight: 700;
 }
 
-.gamePage .gameHeaderTitle {
-	grid-column: 1;
-	grid-row: 1;
+.gamePage .tiptoLogo {
 	display: flex;
 	align-items: center;
-	gap: 10px;
+	justify-content: center;
+	gap: 14px;
 	margin: 0;
+	color: #EDEFF5;
 	font-family: 'Space Grotesk', sans-serif;
-	font-size: 22px;
+	font-size: 52px;
 	font-weight: 700;
-	line-height: 1.2;
-	letter-spacing: 0;
-	color: var(--text);
+	line-height: 1.1;
+	letter-spacing: -1.5px;
 	text-shadow: none;
+}
+
+.gamePage .tiptoLogoMark {
+	flex: 0 0 auto;
+	display: grid;
+	grid-template-columns: repeat(2, var(--home-logo-tile-size, 18px));
+	grid-template-rows: repeat(2, var(--home-logo-tile-size, 18px));
+	gap: 2px;
+
+	& i {
+		grid-column: 2;
+		grid-row: 2;
+		border-radius: 1px;
+		background: #8B5CF6;
+		box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.22);
+
+		&:nth-child(2) {
+			grid-row: 1;
+			background: #F97316;
+		}
+
+		&:nth-child(3) {
+			grid-column: 1;
+			background: #14B8A6;
+		}
+	}
 }
 
 .gamePage .turnBanner {
@@ -355,15 +380,16 @@
 }
 
 .gamePage .pieceShape {
-	position: relative;
-	display: block;
+	--piece-cell-size: var(--piece-max-cell-size);
+	display: grid;
+	grid-template-columns: repeat(var(--piece-columns), var(--piece-cell-size));
+	grid-template-rows: repeat(var(--piece-rows), var(--piece-cell-size));
+	gap: 1px;
 	flex-shrink: 0;
 	pointer-events: none;
 }
 
 .gamePage .pieceFinishTile {
-	position: absolute;
-	display: block;
 	border-radius: 1px;
 }
 

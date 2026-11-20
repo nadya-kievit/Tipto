@@ -59,7 +59,10 @@ try {
     color: ['Purple', 'Orange', 'Red', 'Blue', 'Green', 'Yellow'][i],
     startPosition: { row: i * 2, col: i * 2 },
     pieces: Array.from({ length: 16 }, (_, p) => ({
-      name: `P${p}`, cells: [[0, 0], [0, 1], [1, 0]], placed: i === 1 && p === 0,
+      name: `P${p}`,
+      cells: p === 2 ? [[0, 0], [0, 1], [0, 2], [0, 3], [0, 4]]
+        : p === 3 ? [[0, 0], [1, 0], [2, 0], [3, 0], [4, 0]] : [[0, 0], [0, 1], [1, 0]],
+      placed: i === 1 && p === 0,
       ability: p === 14 ? 'scout' : p === 15 ? 'connector' : null,
     })),
   }))
@@ -136,17 +139,50 @@ try {
     await evaluate(`document.querySelectorAll('.viewPiecesButton')[1].click()`)
     assert.equal((await geometry()).pop, null, 'The Pieces button also toggles the popover closed')
 
-    await evaluate(`document.querySelector('.pieceCardGrid button').click()`)
+    const cursorCenter = () => evaluate(`(() => {
+      const rect = document.querySelector('[data-held-piece]').getBoundingClientRect();
+      return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+    })()`)
+    await evaluate(`document.querySelector('.pieceCardGrid button').dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 150, clientY: 200 }))`)
+    assert.deepEqual(await cursorCenter(), { x: 150, y: 200 }, 'The held piece starts centered on the selection point')
     const startCell = await evaluate(`(() => {
       const r=document.querySelector('.gameBoardGrid .tile[data-row="0"][data-col="0"]').getBoundingClientRect();
       return {x:r.left+r.width/2,y:r.top+r.height/2};
     })()`)
     await page('Input.dispatchMouseEvent', { type: 'mouseMoved', ...startCell })
     await wait(100)
+    const center = await cursorCenter()
+    assert.ok(Math.abs(center.x - startCell.x) < 1 && Math.abs(center.y - startCell.y) < 1, 'The held piece stays centered on the pointer')
+    const heldGrid = await evaluate(`(() => {
+      const held = document.querySelector('[data-held-piece]');
+      const board = document.querySelector('[data-game-board]');
+      const tileWidth = el => el.querySelector('.gameBoardTile').getBoundingClientRect().width;
+      return {
+        tileCount: held.querySelectorAll('.gameBoardTile').length,
+        sameGap: getComputedStyle(held).gap === getComputedStyle(board).gap,
+        sameTileSize: Math.abs(tileWidth(held) - tileWidth(board)) < 0.05,
+      };
+    })()`)
+    assert.deepEqual(heldGrid, { tileCount: 3, sameGap: true, sameTileSize: true }, 'The held piece uses the board tile size and gap')
     assert.deepEqual(await evaluate(`[...document.querySelectorAll('.gameBoardGrid .tile[data-occupied="true"]')].map(el=>[Number(el.dataset.row),Number(el.dataset.col)])`),
       [[0, 0], [0, 1], [1, 0]], 'Pointer preview uses board row/column coordinates in both layouts')
     await page('Input.dispatchKeyEvent', { type: 'rawKeyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27, nativeVirtualKeyCode: 27 })
     await page('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27, nativeVirtualKeyCode: 27 })
+  }
+  for (const width of [900, 720]) {
+    await page('Emulation.setDeviceMetricsOverride', { width, height: 1200, deviceScaleFactor: 1, mobile: false })
+    for (const pieceName of ['P2', 'P3']) {
+      const fit = await evaluate(`(() => {
+        const card = document.querySelector('.pieceCardGrid [data-piece-name="${pieceName}"]');
+        const shape = card.querySelector('.pieceShape').getBoundingClientRect();
+        const cell = card.querySelector('.pieceFinishTile').getBoundingClientRect();
+        return { width: shape.width, height: shape.height, cellWidth: cell.width, cellHeight: cell.height,
+          cardWidth: card.clientWidth, cardHeight: card.clientHeight };
+      })()`)
+      assert.ok(fit.cellWidth > 0 && fit.cellWidth <= 20 && Math.abs(fit.cellWidth - fit.cellHeight) < 0.05 &&
+        fit.width <= fit.cardWidth - 12 + 0.55 && fit.height <= fit.cardHeight - 12 + 0.55,
+      `Portrait preview for ${pieceName} fits at ${width}px: ${JSON.stringify(fit)}`)
+    }
   }
   assert.deepEqual(errors, [], 'Browser runtime errors')
   console.log('Player pieces browser checks passed: placement, overlay, stable layout, filtering, sizing and dismissal')

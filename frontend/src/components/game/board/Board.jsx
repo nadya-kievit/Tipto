@@ -1,4 +1,6 @@
+import clsx from 'clsx'
 import { readBoardPointer } from '../../../game/boardGeometry'
+import { getPlayerColorHex } from '../../../game/playerColors'
 import '../../../styles/game/board.css'
 import Tile from './Tile'
 
@@ -40,7 +42,9 @@ function Board({board, onTileClick, onBoardPointerMove, onBoardLeave, hoverCells
 				{board.map((boardRow, row) => boardRow.map((value, col) => {
 					const key = `${row},${col}`
 					const startPlayer = startingPlayers.get(key)
-					const lastEdges = lastCells.has(key) ? {
+					const isHovered = hovered.has(key)
+					const isLastMove = Boolean(value.occupied && lastCells.has(key))
+					const lastEdges = isLastMove && !isHovered ? {
 						top: !lastCells.has(`${row - 1},${col}`),
 						right: !lastCells.has(`${row},${col + 1}`),
 						bottom: !lastCells.has(`${row + 1},${col}`),
@@ -49,15 +53,19 @@ function Board({board, onTileClick, onBoardPointerMove, onBoardLeave, hoverCells
 					return (
 						<Tile
 							key={key}
-							value={value}
-							row={row}
-							col={col}
-							isHovered={hovered.has(key)}
-							startPlayer={startPlayer}
-							ability={abilities.get(value.pieceId)}
-							preview={preview}
-							isLastMove={Boolean(value.occupied && lastCells.has(key))}
+							className={clsx('tile', {
+								startingTile: startPlayer && !value.occupied,
+								tilePlacementPreview: isHovered,
+							})}
+							color={getPlayerColorHex(isHovered ? preview?.color : value.color)}
+							ability={isHovered ? preview?.ability : abilities.get(value.pieceId)}
+							occupied={Boolean(isHovered || value.occupied)}
+							playable={value.playable !== false}
+							startColor={startPlayer ? getPlayerColorHex(startPlayer.color) : undefined}
 							lastMoveEdges={lastEdges}
+							data-row={row}
+							data-col={col}
+							data-piece-id={value.pieceId || undefined}
 						/>
 					)
 				}))}

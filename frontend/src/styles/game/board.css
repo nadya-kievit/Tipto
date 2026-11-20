@@ -16,7 +16,7 @@
 	--board-edge-ratio: 0.04;
 }
 
-.gameBoardSurface, .gameBoardPiece {
+.gameBoardSurface, .gameBoardPiece, .gameHeldPiece {
 	--board-gap: var(--board-gap-size, calc(var(--board-cell-size) * var(--board-gap-ratio)));
 	--board-pad: var(--board-pad-size, calc(var(--board-cell-size) * var(--board-pad-ratio)));
 	--board-frame: var(--board-frame-size, calc(var(--board-cell-size) * var(--board-frame-ratio)));
@@ -32,10 +32,13 @@
 	--stripe: var(--board-stripe-color);
 }
 
+.boardStage > .gameBoardSurface, .gameHeldPiece {
+	--board-gap-size: 2px;
+}
+
 /* Desktop uses the stage's content box. Reserve the gaps and frame first,
    then fit square cells and the padding proportional to them. */
 .boardStage > .gameBoardSurface {
-	--board-gap-size: 2px;
 	--board-frame-size: 1px;
 	--board-cell-size: max(0px, min(
 		(100cqw - (var(--board-columns) - 1) * var(--board-gap-size) - 2 * var(--board-frame-size)) / (var(--board-columns) + 2 * var(--board-pad-ratio)),
@@ -76,6 +79,10 @@
 	box-shadow: none;
 }
 
+.gameBoardTile.tilePlacementPreview {
+	opacity: 0.6;
+}
+
 .gameBoardTile {
 	width: var(--board-cell-size);
 	height: var(--board-cell-size);
@@ -90,7 +97,6 @@
 	border: 0;
 	overflow: hidden;
 	user-select: none;
-	transition: opacity 80ms ease;
 }
 
 .gameBoardTile[data-occupied="true"][data-ability="scout"] {
@@ -140,11 +146,7 @@
 		inset calc(var(--tile-edge-left) * var(--board-edge)) 0 0 0 var(--highlight);
 }
 
-.gameBoardTile[data-last-move] {
-	animation: gamePieceDrop 420ms cubic-bezier(.2,.9,.3,1.2) both;
-}
-
-.gameBoardPiece {
+.gameBoardPiece, .gameHeldPiece {
 	position: relative;
 	display: grid;
 	grid-template-columns: repeat(var(--board-columns), var(--board-cell-size));
@@ -155,11 +157,12 @@
 	pointer-events: none;
 }
 
-@keyframes gamePieceDrop {
-	from { transform: scale(1.35); opacity: 0; }
-	to { transform: none; opacity: 1; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-	.gameBoardTile { transition: none; animation: none; }
+.gameHeldPiece {
+	position: fixed;
+	top: 0;
+	left: 0;
+	translate: -50% -50%;
+	z-index: 1000;
+	will-change: transform;
+	opacity: 0.6;
 }

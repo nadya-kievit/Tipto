@@ -29,7 +29,7 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 	const revisionRef = useRef(-1)
 	const lastServerNoticeRef = useRef('')
 	const lastHoverTargetRef = useRef(null)
-	const cursorPositionRef = useRef({ x: 0, y: 0 })
+	const [cursorStart, setCursorStart] = useState({ x: 0, y: 0 })
 	const lastWheelRef = useRef(-Infinity)
 
 	const [credentials] = useState(() => {
@@ -364,10 +364,10 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 			return
 		}
 
-		cursorPositionRef.current = {
+		setCursorStart({
 			x: event.clientX,
 			y: event.clientY,
-		}
+		})
 		lastWheelRef.current = -Infinity
 		setSelectedPieceName(piece.name)
 	}
@@ -443,16 +443,13 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 	if (!game) {
 		return (
 			<div className="gamePage gameLoading" style={uiScaleStyle}>
-				<h1 className="gameHeaderTitle">Tipto</h1>
+				<h1 className="tiptoLogo">
+					<span className="tiptoLogoMark"><i/><i/><i/></span>
+					<span>Tipto</span>
+				</h1>
 
 				<div className="startPanel">
 					<h2>Loading game...</h2>
-
-					{lastMessage && (
-						<div className="statusMessageError">
-							{lastMessage}
-						</div>
-					)}
 				</div>
 			</div>
 		)
@@ -515,11 +512,12 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 
 			{selectedPiece && createPortal(
 				<CursorPiece
+					key={selectedPiece.name}
 					piece={selectedPiece}
 					rotation={selectedPiece.rotation}
 					flipped={selectedPiece.flipped}
 					color={me?.color}
-					positionRef={cursorPositionRef}
+					initialPosition={cursorStart}
 					cellSize={cursorCellSize}
 				/>,
 				document.body
@@ -569,10 +567,9 @@ function GameScreen({ gameId, onLeaveGame, onNeedsColor, onRegisterLeave, isPhon
 					playablePieceNames={playablePieceNames}
 					player={me}
 					selectedPieceName={selectedPieceName}
-					totalPieceCount={pieces.length}
 					selectedPiece={selectedPiece}
 					pieceCellSize={isPortraitComputer ? 20 : 14.5 * uiScale}
-					fitPiecePreviews={isPortraitComputer}
+					portraitComputer={isPortraitComputer}
 				/>
 			</div>
 
