@@ -27,7 +27,23 @@ export function phonePose(drag, stride, gap = 0) {
  const rawX = drag.sx + (drag.x - drag.sx) * 1.7
  const cx = Math.min(drag.rect.right - width / 2, Math.max(drag.rect.left + width / 2, rawX))
  const cy = Math.max(drag.rect.top + height / 2, drag.sy - 56 + (drag.y - drag.sy) * 1.7)
- return { left: cx - width / 2, top: cy - height / 2, width, height, cx, cy, push: (rawX - cx) / 1.7 }
+ return {
+  left: cx - width / 2,
+  rawLeft: rawX - width / 2,
+  top: cy - height / 2,
+  width,
+  height,
+  cx,
+  cy,
+  push: (rawX - cx) / 1.7
+ }
+}
+
+export function phonePortalPose({ rawLeft, width }, { left, right }) {
+ const maxLeft = right - width
+ if (rawLeft <= left) return { left, contact: 'flip' }
+ if (rawLeft >= maxLeft) return { left: maxLeft, contact: 'rot' }
+ return { left: rawLeft, contact: null }
 }
 
 export function phoneTarget({ board, me, players, piece, bounds, rect, pose, stride }) {

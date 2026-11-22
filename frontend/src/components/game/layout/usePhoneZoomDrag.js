@@ -1,10 +1,10 @@
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import { flushSync } from 'react-dom'
-import { displayCells, horizontalFlip, tileFinish } from '../../../game/piecePresentation'
+import { displayCells, horizontalFlip } from '../../../game/piecePresentation'
 import { isValidPlacement } from '../../../game/placementRules'
 import { PHONE_ZOOM as Z, initZoom, blendView, advanceZoom, piecePose, isOverBoard, cameraFollow, nearestVisiblePlacement } from '../../../game/phoneZoom'
 
-// Same .shape / tileFinish('tray') presentation as PhonePieceShape. Only this
+// Same .shape / .pieceFinish presentation as PhonePieceShape. Only this
 // outer float is scaled; page-colour bridges cover adjacent seams, never holes.
 function drawFloat(element, piece, size, color, animation) {
  const cells = displayCells(piece.cells, piece.rotation, piece.flipped)
@@ -12,7 +12,9 @@ function drawFloat(element, piece, size, color, animation) {
  const rows = Math.max(...cells.map(([r]) => r)) + 1,
   cols = Math.max(...cells.map(([, c]) => c)) + 1
  const shape = document.createElement('span')
- shape.className = `shape ${animation || ''}`
+ shape.className = `shape pieceFinish ${animation || ''}`
+ shape.dataset.ability = piece.ability || 'normal'
+ shape.style.setProperty('--piece-color', color)
  shape.style.width = `${cols * size + cols - 1}px`
  shape.style.height = `${rows * size + rows - 1}px`
  const bridge = (left, top, width, height) => {
@@ -36,13 +38,12 @@ function drawFloat(element, piece, size, color, animation) {
   if (down) bridge(x, y + size, size, 1)
   if (right && down && occupied.has(`${r + 1},${c + 1}`)) bridge(x + size, y + size, 1, 1)
   const tile = document.createElement('i')
+  tile.className = 'pieceFinishTile'
   Object.assign(tile.style, {
    left: `${x}px`,
    top: `${y}px`,
    width: `${size}px`,
-   height: `${size}px`,
-   borderRadius: '1px',
-   ...tileFinish(color, piece.ability, 'tray')
+   height: `${size}px`
   })
   shape.append(tile)
  }

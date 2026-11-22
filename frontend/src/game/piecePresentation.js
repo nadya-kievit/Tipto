@@ -1,27 +1,3 @@
-const FINISH_SIZES = {
-	tray: { outline: 2, stripe: 1, repeat: 5 },
-	list: { outline: 1, stripe: 1, repeat: 3 },
-}
-
-// Compact tray/list pieces have their own finish; board tiles use board.css.
-export function tileFinish(color, ability, context = 'tray', isLastMove = false) {
-	const size = FINISH_SIZES[context] || FINISH_SIZES.tray
-	const bevel = size.bevel ?? 2
-	let background = color
-	let boxShadow = `inset 0 ${bevel}px 0 rgba(255,255,255,0.22), inset 0 -${bevel}px 0 rgba(0,0,0,0.2)`
-	if (ability === 'scout') {
-		background = `color-mix(in srgb, ${color} 16%, var(--cell))`
-		boxShadow = `inset 0 0 0 ${size.outline}px ${color}`
-	} else if (ability === 'connector') {
-		background = `repeating-linear-gradient(135deg, var(--stripe) 0 ${size.stripe}px, transparent ${size.stripe}px ${size.repeat}px), ${color}`
-		boxShadow = 'none'
-	}
-	if (isLastMove) {
-		boxShadow = `${boxShadow === 'none' ? '' : `${boxShadow}, `}inset 0 0 0 2px var(--tile-outline)`
-	}
-	return { background, boxShadow }
-}
-
 export function displayCells(cells, rotation = 0, flipped = false) {
 	const transformed = cells.map(([row, col]) => {
 		const flippedCol = flipped ? -col : col

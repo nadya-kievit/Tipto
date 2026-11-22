@@ -2,7 +2,6 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { fitBoardCell, fitBoardGeometry, boardSpacing, pixelOffset, boardPointerCoordinate, readBoardPointer } from '../src/game/boardGeometry.js'
-import { tileFinish } from '../src/game/piecePresentation.js'
 
 const css = readFileSync(new URL('../src/styles/game/board.css', import.meta.url), 'utf8')
 const ratios = Object.fromEntries(['gap', 'pad', 'frame'].map(name =>
@@ -65,11 +64,4 @@ test('empty slots and invalid board dimensions do not produce a cell size', () =
 	for (const dimensions of [[0, 100, 12, 12], [100, 0, 12, 12], [100, 100, 0, 12], [100, 100, 12, -1], [1, 1, 12, 12]]) {
 		assert.equal(fitBoardCell(...dimensions, ratios), null)
 	}
-})
-
-test('compact tray and list finishes retain their existing sizes', () => {
-	assert.match(tileFinish('#8e44ad', null, 'tray').boxShadow, /inset 0 2px/)
-	assert.match(tileFinish('#8e44ad', 'scout', 'tray').boxShadow, /0 2px/)
-	assert.match(tileFinish('#8e44ad', 'connector', 'tray').background, /0 1px, transparent 1px 5px/)
-	assert.match(tileFinish('#8e44ad', 'scout', 'list').boxShadow, /0 1px/)
 })

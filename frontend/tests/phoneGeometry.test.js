@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { phoneFit, phonePose, phoneTarget, playableBounds } from '../src/game/phoneGeometry.js'
+import { phoneFit, phonePortalPose, phonePose, phoneTarget, playableBounds } from '../src/game/phoneGeometry.js'
 import { isValidPlacement } from '../src/game/placementRules.js'
 import { readFileSync } from 'node:fs'
 import { boardSpacing } from '../src/game/boardGeometry.js'
@@ -69,6 +69,22 @@ test('amplified motion clamps sides/top and preserves centre through a turn', ()
  const right = phonePose({ ...drag, x: 375 }, 26)
  assert.equal(right.left + right.width, 369)
  assert.ok(right.push > 12)
+})
+
+test('floating pieces cross the board margin and meet both screen portals', () => {
+ const edges = { left: 3, right: 372 }
+ const drag = { sx: 150, sy: 600, y: 450, piece, rect: { left: 60, right: 315, top: 60, bottom: 450 } }
+
+ const approaching = phonePose({ ...drag, x: 100 }, 26)
+ assert.equal(approaching.left, drag.rect.left)
+ assert.deepEqual(phonePortalPose(approaching, edges), { left: 39, contact: null })
+
+ const left = phonePose({ ...drag, x: 0 }, 26)
+ assert.deepEqual(phonePortalPose(left, edges), { left: edges.left, contact: 'flip' })
+
+ const right = phonePose({ ...drag, x: 375 }, 26)
+ assert.equal(right.left + right.width, drag.rect.right)
+ assert.deepEqual(phonePortalPose(right, edges), { left: edges.right - right.width, contact: 'rot' })
 })
 
 test('phone targets obey real normal, Scout, Connector and reserved-start rules', () => {

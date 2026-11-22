@@ -389,8 +389,31 @@
 	pointer-events: none;
 }
 
+/* Compact tray/list finishes; board tiles use board.css. */
+.gamePage :is(.pieceShape, .pieceFinish) {
+	--piece-outline: 2px;
+	--piece-stripe-repeat: 5px;
+}
+
+.gamePage :is(.pieceShape, .pieceFinish)[data-finish="list"] {
+	--piece-outline: 1px;
+	--piece-stripe-repeat: 3px;
+}
+
 .gamePage .pieceFinishTile {
 	border-radius: 1px;
+	background: var(--piece-color);
+	box-shadow: inset 0 2px 0 rgb(255 255 255 / 22%), inset 0 -2px 0 rgb(0 0 0 / 20%);
+}
+
+.gamePage :is(.pieceShape, .pieceFinish)[data-ability="scout"] > .pieceFinishTile {
+	background: color-mix(in srgb, var(--piece-color) 16%, var(--cell));
+	box-shadow: inset 0 0 0 var(--piece-outline) var(--piece-color);
+}
+
+.gamePage :is(.pieceShape, .pieceFinish)[data-ability="connector"] > .pieceFinishTile {
+	background: repeating-linear-gradient(135deg, var(--stripe) 0 1px, transparent 1px var(--piece-stripe-repeat)), var(--piece-color);
+	box-shadow: none;
 }
 
 .gamePage .pieceAbilityCard {
