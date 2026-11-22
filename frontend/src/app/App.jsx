@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import HomeScreen from '../screens/HomeScreen'
-import LobbyScreen from '../screens/LobbyScreen'
-import GameScreen from '../screens/GameScreen'
-import BackgroundPieces from '../components/background/BackgroundPieces'
+import HomeScreen from '../screens/home/HomeScreen'
+import LobbyScreen from '../screens/lobby/LobbyScreen'
+import GameScreen from '../screens/game/GameScreen'
+import BackgroundPieces from './piece-background/BackgroundPieces'
 import { createGame, wakeGameServer } from '../services/api'
 import { createRoomNavigation } from './roomNavigation'
-import usePhoneLayout from '../hooks/usePhoneLayout'
-import '../styles/phone-layout.css'
+import usePhoneLayout from './usePhoneLayout'
+import './phone-layout.css'
 
 function getRouteFromPath(pathname) {
 	const roomMatch = pathname.match(/^\/(lobby|game)\/([^/]+)$/)

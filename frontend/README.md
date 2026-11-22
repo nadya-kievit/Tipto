@@ -8,20 +8,12 @@
 
 Frontend source lives in `src/`:
 
-- `app/`: the app entry component and browser navigation.
-- `screens/`: the Home, Lobby, and Game screens, which coordinate data and state.
-- `components/background/`: animated backgrounds and their calculation helpers.
-- `components/lobby/`: the board preview, player row, and timer dial.
-- `components/game/`: game UI grouped into `board/`, `pieces/`, `layout/`, `players/`, and `overlays/`.
-- `game/`: placement rules, piece presentation, and player colours.
-- `hooks/`: shared React hooks for viewport detection and sizing.
-- `services/`: backend API access and room sessions.
-- `styles/`: all CSS, with game styles grouped under `styles/game/`.
+- `app/`: the app entry component, browser navigation, and pregame background.
+- `screens/`: Home, Lobby, and Game UI and their styles. The lobby and game share the header.
+- `services/`: backend API access and the clipboard helper.
+- `styles/`: document-wide defaults in `global.css`.
 
-Keep screen-specific components with their feature and place new CSS under `styles/`.
-`styles/legacy.css` is the existing shared stylesheet, preserved during reorganization.
-Its overlapping rules should be audited separately before removing or redistributing them.
-CSS imports remain in their original relative order to preserve the cascade.
+Keep screen-specific CSS beside its screen. Game styles are grouped under `screens/game/styles/`.
 
 Tests stay in `tests/`, static assets in `public/`, and development scripts in `scripts/`.
 
@@ -33,3 +25,26 @@ npm run dev -- --host
 cd backend
 .\venv\Scripts\Activate
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+
+src
+- app
+- components
+- game
+- hooks
+- screens
+- services
+- styles
+
+src/
+├── main.jsx
+├── app/
+├── screens/
+│   ├── home/
+│   ├── lobby/
+│   └── game/
+├── components/
+├── styles/
+├── gameApi.js
+├── clipboard.js
+└── playerColors.js  

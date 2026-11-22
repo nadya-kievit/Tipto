@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { displayCells, horizontalFlip, wheelRotation } from '../src/game/piecePresentation.js'
+import { displayCells, horizontalFlip, wheelRotation } from '../src/screens/game/piecePresentation.js'
 
 const asymmetric = [[0, 0], [0, 1], [0, 2], [1, 2]]
 const sorted = cells => cells.map(cell => cell.join(',')).sort()

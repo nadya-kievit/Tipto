@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { getNewGameNotice, readDismissedGameNotices, saveDismissedGameNotices } from '../src/game/gameNotices.js'
+import { getNewGameNotice, readDismissedGameNotices, saveDismissedGameNotices } from '../src/screens/game/gameNotices.js'
 
 test('new gameplay notices are shown', () => {
 	const notice = 'Alex ran out of time. A piece was placed automatically.'
