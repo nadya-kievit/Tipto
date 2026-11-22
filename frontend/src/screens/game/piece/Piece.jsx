@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import { getPlayerColorHex } from '../playerColors'
+import { getPlayerColorHex } from '../../playerColors'
 import { displayCells } from './piecePresentation'
 
 function Piece({piece, isSelected, isPlayable = true, disabled = false, onClick, rotation = 0, flipped = false, color, cellSize, staticPreview = false}) {

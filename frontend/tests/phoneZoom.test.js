@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { PHONE_ZOOM as Z, usesZoom, boardSize, clampAt, overview, zoomAt, blendFocus, initZoom, blendView, boardRects, piecePose, advanceZoom, cameraFollow, edgeVelocity, nearestVisiblePlacement, minimapFrame } from '../src/screens/game/phone/phoneZoom.js'
-import { isValidPlacement } from '../src/screens/game/placementRules.js'
+import { isValidPlacement } from '../src/screens/game/board/placementRules.js'
 const close = (a, b) => assert.ok(Math.abs(a - b) < 1e-8, `${a} != ${b}`)
 const size = {
   width: 378,

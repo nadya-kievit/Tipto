@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import clsx from 'clsx'
 import { Bot } from 'lucide-react'
 import { getPlayerColorHex } from '../playerColors'
-import Piece from './Piece'
+import Piece from './piece/Piece'
 
 function PlayerRank({ currentUserId, game, portraitComputer }) {
 	const [page, setPage] = useState(0)

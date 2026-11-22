@@ -1,4 +1,4 @@
-import { displayCells } from './piecePresentation.js'
+import { displayCells } from '../piece/piecePresentation.js'
 
 const EDGE_NEIGHBORS = [[-1, 0], [1, 0], [0, -1], [0, 1]]
 const CORNER_NEIGHBORS = [[-1, -1], [-1, 1], [1, -1], [1, 1]]

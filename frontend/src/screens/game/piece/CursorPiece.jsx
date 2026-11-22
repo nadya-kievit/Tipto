@@ -1,9 +1,9 @@
 import { useEffect } from 'react'
 import { motion, useMotionValue } from 'motion/react'
-import { getPlayerColorHex } from '../playerColors'
+import { getPlayerColorHex } from '../../playerColors'
 import { displayCells } from './piecePresentation'
-import Tile from './Tile'
-import './styles/board.css'
+import Tile from '../board/Tile'
+import '../styles/board.css'
 
 function CursorPiece({ piece, rotation, flipped, color, initialPosition, cellSize }) {
 	const x = useMotionValue(initialPosition.x)

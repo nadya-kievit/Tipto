@@ -1,5 +1,5 @@
-import { displayCells } from '../piecePresentation.js'
-import { isValidPlacement } from '../placementRules.js'
+import { displayCells } from '../piece/piecePresentation.js'
+import { isValidPlacement } from '../board/placementRules.js'
 
 // Reference geometry and timings from docs/mockups/game-phone-zoom.html.
 export const PHONE_ZOOM = Object.freeze({

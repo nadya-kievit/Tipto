@@ -1,6 +1,6 @@
 import clsx from 'clsx'
 import { X } from 'lucide-react'
-import { getPlayerColorHex } from '../playerColors'
+import { getPlayerColorHex } from '../../playerColors'
 import Piece from './Piece'
 
 const ABILITY_INSTRUCTIONS = {

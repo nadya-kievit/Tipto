@@ -1,5 +1,5 @@
 import { useLayoutEffect } from 'react'
-import { pixelOffset } from '../boardGeometry'
+import { pixelOffset } from '../board/boardGeometry'
 
 // Keep centering from placing an otherwise pixel-aligned grid between pixels.
 export default function useBoardPixelAlignment(surfaceRef) {

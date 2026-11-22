@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { phoneFit, phonePortalPose, phonePose, phoneTarget, playableBounds } from '../src/screens/game/phone/phoneGeometry.js'
-import { isValidPlacement } from '../src/screens/game/placementRules.js'
+import { isValidPlacement } from '../src/screens/game/board/placementRules.js'
 import { readFileSync } from 'node:fs'
-import { boardSpacing } from '../src/screens/game/boardGeometry.js'
+import { boardSpacing } from '../src/screens/game/board/boardGeometry.js'
 
 const css = readFileSync(new URL('../src/screens/game/styles/board.css', import.meta.url), 'utf8')
 const ratios = Object.fromEntries(['gap', 'pad', 'frame'].map(name =>

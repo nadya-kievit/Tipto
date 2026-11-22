@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import { flushSync } from 'react-dom'
-import { displayCells, horizontalFlip } from '../piecePresentation'
-import { isValidPlacement } from '../placementRules'
+import { displayCells, horizontalFlip } from '../piece/piecePresentation'
+import { isValidPlacement } from '../board/placementRules'
 import { PHONE_ZOOM as Z, initZoom, blendView, advanceZoom, piecePose, isOverBoard, cameraFollow, nearestVisiblePlacement } from './phoneZoom'
 
 // Same .shape / .pieceFinish presentation as PhonePieceShape. Only this

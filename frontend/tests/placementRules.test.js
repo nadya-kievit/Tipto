@@ -6,7 +6,7 @@ import {
 	canPlacePieceInOrientation,
 	closestLegalPlacement,
 	isValidPlacement,
-} from '../src/screens/game/placementRules.js'
+} from '../src/screens/game/board/placementRules.js'
 
 function makeBoard(width = 12, height = 12) {
 	return Array.from({ length: height }, () => Array.from({ length: width }, () => ({

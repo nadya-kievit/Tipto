@@ -1,6 +1,6 @@
-import { displayCells } from '../piecePresentation.js'
-import { isValidPlacement } from '../placementRules.js'
-import { fitBoardGeometry } from '../boardGeometry.js'
+import { displayCells } from '../piece/piecePresentation.js'
+import { isValidPlacement } from '../board/placementRules.js'
+import { fitBoardGeometry } from '../board/boardGeometry.js'
 
 export function playableBounds(board) {
  const cells = board.flatMap((row, r) => row.flatMap((cell, c) => cell.playable === false ? [] : [[r, c]]))

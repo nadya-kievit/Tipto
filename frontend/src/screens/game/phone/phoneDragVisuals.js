@@ -1,4 +1,4 @@
-import { displayCells } from '../piecePresentation'
+import { displayCells } from '../piece/piecePresentation'
 
 function createTile(tag, className, piece, color) {
 	const tile = document.createElement(tag)

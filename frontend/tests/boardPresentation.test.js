@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { fitBoardCell, fitBoardGeometry, boardSpacing, pixelOffset, boardPointerCoordinate, readBoardPointer } from '../src/screens/game/boardGeometry.js'
+import { fitBoardCell, fitBoardGeometry, boardSpacing, pixelOffset, boardPointerCoordinate, readBoardPointer } from '../src/screens/game/board/boardGeometry.js'
 
 const css = readFileSync(new URL('../src/screens/game/styles/board.css', import.meta.url), 'utf8')
 const ratios = Object.fromEntries(['gap', 'pad', 'frame'].map(name =>

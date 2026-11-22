@@ -1,7 +1,7 @@
 import { flushSync } from 'react-dom'
-import { horizontalFlip } from '../piecePresentation'
+import { horizontalFlip } from '../piece/piecePresentation'
 import { phonePortalPose, phonePose, phoneTarget } from './phoneGeometry'
-import { pixelOffset } from '../boardGeometry'
+import { pixelOffset } from '../board/boardGeometry'
 import {
 	clearDragVisuals,
 	drawFloatingPiece,

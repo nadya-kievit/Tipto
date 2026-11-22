@@ -1,7 +1,7 @@
 import clsx from 'clsx'
 import { readBoardPointer } from './boardGeometry'
-import { getPlayerColorHex } from '../playerColors'
-import './styles/board.css'
+import { getPlayerColorHex } from '../../playerColors'
+import '../styles/board.css'
 import Tile from './Tile'
 
 function Board({board, onTileClick, onBoardPointerMove, onBoardLeave, hoverCells, players, preview, lastMove}) {
