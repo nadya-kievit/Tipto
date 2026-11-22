@@ -8,7 +8,7 @@ Choose from three board styles, play with friends or fill empty seats with bots,
 
 ## Tipto in Action
 
-![A Tipto game in progress, showing the board and remaining pieces](public/tipto-mid-game.png)
+![A Tipto game in progress, showing the board and remaining pieces](frontend/public/tipto-mid-game.png)
 
 ## How to play
 
