@@ -1,4 +1,6 @@
 import asyncio
+import os
+from contextlib import asynccontextmanager
 from copy import deepcopy
 import random
 import secrets
@@ -17,9 +19,45 @@ from app.game.board_layouts import (
 )
 from app.game.pieces import ALL_PIECES
 from app.game.rules import validate_move
+from app.game_store import (
+    GameDatabaseUnavailable,
+    GameWriteConflict,
+    PostgresGameStore,
+    matches_digest,
+    saved_token_digest,
+    token_matches,
+)
 
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app):
+    database_url = os.environ.get("DATABASE_URL")
+    app.state.game_store = None
+    if not database_url:
+        yield
+        return
+
+    store = PostgresGameStore(database_url)
+    try:
+        await asyncio.to_thread(store.open)
+        restored = await asyncio.to_thread(store.load_games)
+        games.update(restored)
+        app.state.game_store = store
+        for game_id, game in restored.items():
+            if game["status"] == "playing":
+                schedule_turn(game_id)
+        yield
+    finally:
+        tasks = list(turn_tasks.values())
+        for task in tasks:
+            task.cancel()
+        if tasks:
+            await asyncio.gather(*tasks, return_exceptions=True)
+        app.state.game_store = None
+        await asyncio.to_thread(store.close)
+
+
+app = FastAPI(lifespan=lifespan)
 
 @app.get("/health")
 async def health_check():
@@ -52,8 +90,11 @@ LOBBY_COLOR_ORDER = ["Purple", "Orange", "Red", "Cyan", "Blue", "Yellow", "Pink"
 games = {}
 connections = {}
 turn_tasks = {}
+game_locks = {}
+reserved_game_ids = set()
 
 BOT_MOVE_DELAY_SECONDS = 2
+TURN_SAVE_RETRY_SECONDS = 2
 
 
 class MoveRequest(BaseModel):
@@ -301,6 +342,64 @@ def get_game_or_404(game_id):
     return game
 
 
+def game_store():
+    return getattr(app.state, "game_store", None)
+
+
+async def write_game(operation, *args):
+    write = asyncio.create_task(asyncio.to_thread(operation, *args))
+    try:
+        return await asyncio.shield(write)
+    except asyncio.CancelledError:
+        # Let a transaction already running in a worker finish before shutdown.
+        await asyncio.gather(write, return_exceptions=True)
+        raise
+    except GameWriteConflict:
+        raise HTTPException(status_code=409, detail="This room has changed on another server.") from None
+    except GameDatabaseUnavailable:
+        raise HTTPException(status_code=503, detail="Could not save the room. Try again.") from None
+
+
+def publish_game(game, draft):
+    # WebSocket handlers hold references to the original player dictionaries.
+    original = {player["id"]: player for player in game["players"]}
+    for index, player in enumerate(draft["players"]):
+        existing = original.get(player["id"])
+        if existing is not None:
+            player["connected"] = player["isBot"] or existing["connected"]
+            existing.update(player)
+            draft["players"][index] = existing
+    game.update(draft)
+
+
+@asynccontextmanager
+async def edit_game(game_id, *, delete_if_empty=False):
+    store = game_store()
+    if store is None:
+        game = get_game_or_404(game_id)
+        previous_turn = turn_task_key(game)
+        yield game
+        if turn_task_key(game) != previous_turn:
+            cancel_pending_turn(game_id)
+        return
+
+    async with game_locks.setdefault(game_id, asyncio.Lock()):
+        game = get_game_or_404(game_id)
+        previous_turn = turn_task_key(game)
+        # Keep the live room and its timer unchanged until the transaction succeeds.
+        draft = deepcopy(game)
+        expected_revision = game["revision"]
+        yield draft
+        draft["revision"] = expected_revision + 1
+        if delete_if_empty and all(player["isBot"] for player in draft["players"]):
+            await write_game(store.delete, game_id, expected_revision)
+        else:
+            await write_game(store.save, draft, expected_revision)
+        publish_game(game, draft)
+        if turn_task_key(game) != previous_turn:
+            cancel_pending_turn(game_id)
+
+
 def get_player(game, player_id):
     for player in game["players"]:
         if player["id"] == player_id:
@@ -312,10 +411,10 @@ def get_player(game, player_id):
 def authenticate_player(game, player_id, player_token):
     player = get_player(game, player_id)
 
-    if game.get("removedPlayers", {}).get(player_id) == player_token and player_token is not None:
+    if matches_digest(game.get("removedPlayers", {}).get(player_id), player_token):
         raise HTTPException(status_code=403, detail="You were removed from the room")
 
-    if not player or player.get("isBot") or player["token"] != player_token:
+    if not player or player.get("isBot") or not token_matches(player, "token", player_token):
         raise HTTPException(status_code=403, detail="Invalid player credentials.")
 
     return player
@@ -695,7 +794,9 @@ async def broadcast_game(game_id):
     game = games.get(game_id)
     if game is None:
         return
-    game["revision"] = game.get("revision", 0) + 1
+    # A saved game's revision advances on durable changes. Socket presence is transient.
+    if game_store() is None:
+        game["revision"] = game.get("revision", 0) + 1
     game_connections = connections.get(game_id, set())
     sockets = list(game_connections)
     if not sockets:
@@ -710,7 +811,7 @@ async def broadcast_game(game_id):
             viewer_id = (
                 viewer["id"]
                 if viewer and not viewer.get("isBot")
-                and viewer["token"] == socket.state.player_token
+                and token_matches(viewer, "token", socket.state.player_token)
                 else None
             )
             await socket.send_json({
@@ -732,9 +833,8 @@ async def delete_game_if_no_humans(game):
     if games.get(game_id) is not game:
         return False
     games.pop(game_id)
-    task = turn_tasks.pop(game_id, None)
-    if task and not task.done() and task is not asyncio.current_task():
-        task.cancel()
+    game_locks.pop(game_id, None)
+    cancel_pending_turn(game_id)
     sockets = connections.pop(game_id, set())
     for socket in list(sockets):
         try:
@@ -758,16 +858,21 @@ def advance_turn(game):
             return
 
 
-def start_current_turn(game):
-    existing_task = turn_tasks.pop(game["gameId"], None)
-    if existing_task and not existing_task.done():
-        try:
-            current_task = asyncio.current_task()
-        except RuntimeError:
-            current_task = None
-        if existing_task is not current_task:
-            existing_task.cancel()
+def turn_task_key(game):
+    if game["status"] != "playing" or not game["players"]:
+        return None
+    player = game["players"][game["currentTurnIndex"]]
+    return game["turnNumber"], player["id"], player.get("isBot", False), game["turnEndsAt"]
 
+
+def cancel_pending_turn(game_id):
+    task = turn_tasks.get(game_id)
+    if task is not None and task is not asyncio.current_task():
+        turn_tasks.pop(game_id, None)
+        task.cancel()
+
+
+def start_current_turn(game):
     game["turnNumber"] += 1
     time_limit = game["settings"]["moveTimeLimitSeconds"]
     game["turnEndsAt"] = (
@@ -797,6 +902,33 @@ def apply_move(game, player, piece_name, cells, source="human"):
     advance_turn(game)
 
 
+class StaleTurn(Exception):
+    pass
+
+
+def apply_automatic_turn(game, expected_player_id, expected_turn_number, source):
+    turn = turn_task_key(game)
+    if turn is None:
+        raise StaleTurn
+
+    turn_number, player_id, is_bot, _ = turn
+    if (turn_number, player_id, is_bot) != (expected_turn_number, expected_player_id, source == "bot"):
+        raise StaleTurn
+
+    player = game["players"][game["currentTurnIndex"]]
+    move = choose_automatic_move(game, player)
+    if move is None:
+        player["isOutOfMoves"] = True
+        game["notice"] = f'{player["name"]} ran out of moves.'
+        refresh_out_of_moves(game)
+        advance_turn(game)
+        return
+
+    apply_move(game, player, move["pieceName"], move["cells"], source=source)
+    if source == "timeout" and game["status"] == "playing":
+        game["notice"] = f'{player["name"]} ran out of time. A piece was placed automatically.'
+
+
 async def run_automatic_turn(
     game_id,
     expected_player_id,
@@ -808,37 +940,18 @@ async def run_automatic_turn(
 
     try:
         await asyncio.sleep(delay_seconds)
-        game = games.get(game_id)
-
-        if (
-            not game
-            or game["status"] != "playing"
-            or not game["players"]
-        ):
-            return
-
-        player = game["players"][game["currentTurnIndex"]]
-        if (
-            player["id"] != expected_player_id
-            or game["turnNumber"] != expected_turn_number
-            or (source == "bot" and not player.get("isBot"))
-            or (source == "timeout" and player.get("isBot"))
-        ):
-            return
-
-        move = choose_automatic_move(game, player)
-        if move is None:
-            player["isOutOfMoves"] = True
-            game["notice"] = f'{player["name"]} ran out of moves.'
-            refresh_out_of_moves(game)
-            advance_turn(game)
-        else:
-            apply_move(game, player, move["pieceName"], move["cells"], source=source)
-            if source == "timeout" and game["status"] == "playing":
-                game["notice"] = (
-                    f'{player["name"]} ran out of time. '
-                    "A piece was placed automatically."
-                )
+        while True:
+            try:
+                async with edit_game(game_id) as game:
+                    apply_automatic_turn(game, expected_player_id, expected_turn_number, source)
+                break
+            except StaleTurn:
+                return
+            except HTTPException as error:
+                if error.status_code != 503:
+                    return
+                # Leave the same turn running until its result can be saved.
+                await asyncio.sleep(TURN_SAVE_RETRY_SECONDS)
 
         await broadcast_game(game_id)
     finally:
@@ -902,6 +1015,7 @@ def convert_player_to_bot(game, player):
     player["isBot"] = True
     player["connected"] = True
     player["token"] = None
+    player.pop("tokenHash", None)
 
     remaining_humans = [
         joined_player
@@ -928,21 +1042,27 @@ def convert_player_to_bot(game, player):
 
 
 @app.post("/games")
-def create_game(request: CreateGameRequest | None = None):
-    game_id = f"{secrets.randbelow(1_000_000):06d}"
-    while game_id in games:
-        game_id = f"{secrets.randbelow(1_000_000):06d}"
+async def create_game(request: CreateGameRequest | None = None):
     settings = request.settings if request else GameSettingsRequest()
-    games[game_id] = create_game_state(game_id, settings)
-    connections[game_id] = set()
-    return {
-        **game_snapshot(games[game_id]),
-        "adminToken": games[game_id]["adminToken"],
-    }
+    store = game_store()
+    while True:
+        game_id = f"{secrets.randbelow(1_000_000):06d}"
+        if game_id in games or game_id in reserved_game_ids:
+            continue
+        game = create_game_state(game_id, settings)
+        reserved_game_ids.add(game_id)
+        try:
+            if store is not None and not await write_game(store.create, game):
+                continue
+            games[game_id] = game
+            connections[game_id] = set()
+            return {**game_snapshot(game), "adminToken": game["adminToken"]}
+        finally:
+            reserved_game_ids.discard(game_id)
 
 
 @app.get("/games/{game_id}")
-def get_game_state(
+async def get_game_state(
     game_id: str,
     x_player_id: str | None = Header(default=None),
     x_player_token: str | None = Header(default=None),
@@ -954,10 +1074,7 @@ def get_game_state(
     return game_snapshot(game, viewer_id)
 
 
-@app.post("/games/{game_id}/join")
-async def join_game(game_id: str, request: JoinRequest):
-    game = get_game_or_404(game_id)
-
+def join_player(game, request):
     if game.get("lobbyMode") and len(game["players"]) >= MAX_PLAYERS:
         raise HTTPException(status_code=409, detail="Room is full")
 
@@ -969,7 +1086,7 @@ async def join_game(game_id: str, request: JoinRequest):
         raise HTTPException(status_code=400, detail="Enter a game name.")
 
     if request.adminToken:
-        if request.adminToken != game["adminToken"]:
+        if not token_matches(game, "adminToken", request.adminToken):
             raise HTTPException(status_code=403, detail="Invalid admin credentials.")
         if game["adminPlayerId"] is not None:
             raise HTTPException(status_code=409, detail="This game already has an admin.")
@@ -1042,6 +1159,13 @@ async def join_game(game_id: str, request: JoinRequest):
         game["adminPlayerId"] = player["id"]
 
     start_game_if_ready(game)
+    return player
+
+
+@app.post("/games/{game_id}/join")
+async def join_game(game_id: str, request: JoinRequest):
+    async with edit_game(game_id) as game:
+        player = join_player(game, request)
 
     await broadcast_game(game_id)
     schedule_turn(game_id)
@@ -1111,28 +1235,28 @@ def make_lobby_bot(game):
 
 @app.post("/games/{game_id}/bots")
 async def add_lobby_bot(game_id: str, request: QuitRequest):
-    game = get_game_or_404(game_id)
-    host = authenticate_lobby_host(game, request)
-    if len(game["players"]) >= MAX_PLAYERS:
-        raise HTTPException(status_code=409, detail="Room is full")
-    make_lobby_bot(game)
+    async with edit_game(game_id) as game:
+        host = authenticate_lobby_host(game, request)
+        if len(game["players"]) >= MAX_PLAYERS:
+            raise HTTPException(status_code=409, detail="Room is full")
+        make_lobby_bot(game)
     await broadcast_game(game_id)
     return game_snapshot(game, host["id"])
 
 
 @app.post("/games/{game_id}/remove-player")
 async def remove_lobby_player(game_id: str, request: RemoveLobbyPlayerRequest):
-    game = get_game_or_404(game_id)
-    host = authenticate_lobby_host(game, request)
-    if request.targetPlayerId == host["id"]:
-        raise HTTPException(status_code=409, detail="The host cannot remove their own seat.")
-    player = get_player(game, request.targetPlayerId)
-    if player is None:
-        raise HTTPException(status_code=404, detail="Player not found in this room.")
-    if not player.get("isBot"):
-        game["removedPlayers"][player["id"]] = player["token"]
-    game["players"].remove(player)
-    player["token"] = None
+    async with edit_game(game_id) as game:
+        host = authenticate_lobby_host(game, request)
+        if request.targetPlayerId == host["id"]:
+            raise HTTPException(status_code=409, detail="The host cannot remove their own seat.")
+        player = get_player(game, request.targetPlayerId)
+        if player is None:
+            raise HTTPException(status_code=404, detail="Player not found in this room.")
+        if not player.get("isBot"):
+            game["removedPlayers"][player["id"]] = saved_token_digest(player, "token")
+        game["players"].remove(player)
+        player["token"] = None
     for socket in list(connections.get(game_id, [])):
         if socket.state.player_id != player["id"]:
             continue
@@ -1148,70 +1272,70 @@ async def remove_lobby_player(game_id: str, request: RemoveLobbyPlayerRequest):
 
 @app.patch("/games/{game_id}/profile")
 async def update_lobby_profile(game_id: str, request: LobbyProfileRequest):
-    game = get_game_or_404(game_id)
-    player = authenticate_player(game, request.playerId, request.playerToken)
-    require_waiting_lobby(game)
-    name = request.name.strip() if request.name is not None else player["name"]
-    if not name:
-        raise HTTPException(status_code=422, detail="Enter your name.")
-    color = player["color"]
-    if request.color is not None:
-        option = next((option for option in PLAYER_COLORS if option["color"].lower() == request.color.lower()), None)
-        if not option:
-            raise HTTPException(status_code=422, detail="Choose one of the available colours.")
-        color = option["color"]
-        if any(
-            other["id"] != player["id"] and not other.get("isBot") and other["color"] == color
-            for other in game["players"]
-        ):
-            raise HTTPException(status_code=409, detail="That colour has already been chosen.")
-    player["name"] = name
-    player["color"] = color
-    reassign_bots_for_human_color(game, player)
+    async with edit_game(game_id) as game:
+        player = authenticate_player(game, request.playerId, request.playerToken)
+        require_waiting_lobby(game)
+        name = request.name.strip() if request.name is not None else player["name"]
+        if not name:
+            raise HTTPException(status_code=422, detail="Enter your name.")
+        color = player["color"]
+        if request.color is not None:
+            option = next((option for option in PLAYER_COLORS if option["color"].lower() == request.color.lower()), None)
+            if not option:
+                raise HTTPException(status_code=422, detail="Choose one of the available colours.")
+            color = option["color"]
+            if any(
+                other["id"] != player["id"] and not other.get("isBot") and other["color"] == color
+                for other in game["players"]
+            ):
+                raise HTTPException(status_code=409, detail="That colour has already been chosen.")
+        player["name"] = name
+        player["color"] = color
+        reassign_bots_for_human_color(game, player)
     await broadcast_game(game_id)
     return game_snapshot(game, player["id"])
 
 
 @app.patch("/games/{game_id}/settings")
 async def update_lobby_settings(game_id: str, request: LobbySettingsRequest):
-    game = get_game_or_404(game_id)
-    host = authenticate_lobby_host(game, request)
-    validated = normalize_game_settings(GameSettingsRequest(
-        boardLayout=request.boardLayout,
-        playerCount=max(MIN_PLAYERS, len(game["players"])),
-        moveTimeLimitSeconds=request.moveTimeLimitSeconds,
-        lobbyMode=True,
-    ))
-    game["settings"]["boardLayout"] = validated["boardLayout"]
-    game["settings"]["moveTimeLimitSeconds"] = validated["moveTimeLimitSeconds"]
-    preview_count = max(MIN_PLAYERS, len(game["players"]))
-    config = get_board_config(validated["boardLayout"], preview_count)
-    game["boardConfig"] = config
-    game["board"] = Board(config)
+    async with edit_game(game_id) as game:
+        host = authenticate_lobby_host(game, request)
+        validated = normalize_game_settings(GameSettingsRequest(
+            boardLayout=request.boardLayout,
+            playerCount=max(MIN_PLAYERS, len(game["players"])),
+            moveTimeLimitSeconds=request.moveTimeLimitSeconds,
+            lobbyMode=True,
+        ))
+        game["settings"]["boardLayout"] = validated["boardLayout"]
+        game["settings"]["moveTimeLimitSeconds"] = validated["moveTimeLimitSeconds"]
+        preview_count = max(MIN_PLAYERS, len(game["players"]))
+        config = get_board_config(validated["boardLayout"], preview_count)
+        game["boardConfig"] = config
+        game["board"] = Board(config)
     await broadcast_game(game_id)
     return game_snapshot(game, host["id"])
 
 
 @app.post("/games/{game_id}/start")
 async def start_lobby_game(game_id: str, request: QuitRequest):
-    game = get_game_or_404(game_id)
-    host = authenticate_lobby_host(game, request)
-    player_count = len(game["players"])
-    if player_count not in SUPPORTED_PLAYER_COUNTS:
-        raise HTTPException(status_code=409, detail="At least two players are required to start.")
-    game["settings"]["playerCount"] = player_count
-    game["settings"]["players"] = {}
-    for index, player in enumerate(game["players"], start=1):
-        player_key = f"Player {index}"
-        player["settingsPlayerKey"] = player_key
-        game["settings"]["players"][player_key] = {
-            "color": player["color"],
-            "isBot": player.get("isBot", False),
-        }
-    config = get_board_config(game["settings"]["boardLayout"], player_count)
-    game["boardConfig"] = config
-    game["board"] = Board(config)
-    start_game_if_ready(game, manual=True)
+    async with edit_game(game_id) as game:
+        host = authenticate_lobby_host(game, request)
+        player_count = len(game["players"])
+        if player_count not in SUPPORTED_PLAYER_COUNTS:
+            raise HTTPException(status_code=409, detail="At least two players are required to start.")
+        game["settings"]["playerCount"] = player_count
+        game["settings"]["players"] = {}
+        for index, player in enumerate(game["players"], start=1):
+            player_key = f"Player {index}"
+            player["settingsPlayerKey"] = player_key
+            game["settings"]["players"][player_key] = {
+                "color": player["color"],
+                "isBot": player.get("isBot", False),
+            }
+        config = get_board_config(game["settings"]["boardLayout"], player_count)
+        game["boardConfig"] = config
+        game["board"] = Board(config)
+        start_game_if_ready(game, manual=True)
     await broadcast_game(game_id)
     schedule_turn(game_id)
     return game_snapshot(game, host["id"])
@@ -1219,17 +1343,18 @@ async def start_lobby_game(game_id: str, request: QuitRequest):
 
 @app.post("/games/{game_id}/leave-room")
 async def leave_lobby(game_id: str, request: QuitRequest):
+    async with edit_game(game_id, delete_if_empty=True) as game:
+        player = authenticate_player(game, request.playerId, request.playerToken)
+        require_waiting_lobby(game)
+        game["players"].remove(player)
+        player["token"] = None
+        if game["adminPlayerId"] == player["id"]:
+            remaining_humans = [remaining for remaining in game["players"] if not remaining.get("isBot")]
+            game["adminPlayerId"] = min(remaining_humans, key=lambda player: player["joinedOrder"])["id"] if remaining_humans else None
+            game["adminToken"] = secrets.token_urlsafe(24)
+            if not remaining_humans:
+                game["players"].clear()
     game = get_game_or_404(game_id)
-    player = authenticate_player(game, request.playerId, request.playerToken)
-    require_waiting_lobby(game)
-    game["players"].remove(player)
-    player["token"] = None
-    if game["adminPlayerId"] == player["id"]:
-        remaining_humans = [remaining for remaining in game["players"] if not remaining.get("isBot")]
-        game["adminPlayerId"] = min(remaining_humans, key=lambda player: player["joinedOrder"])["id"] if remaining_humans else None
-        game["adminToken"] = secrets.token_urlsafe(24)
-        if not remaining_humans:
-            game["players"].clear()
     if await delete_game_if_no_humans(game):
         return {"success": True}
     await broadcast_game(game_id)
@@ -1241,8 +1366,9 @@ async def quit_game(game_id: str, request: QuitRequest):
     game = get_game_or_404(game_id)
     if game.get("lobbyMode") and game["status"] == "waiting":
         return await leave_lobby(game_id, request)
-    player = authenticate_player(game, request.playerId, request.playerToken)
-    convert_player_to_bot(game, player)
+    async with edit_game(game_id, delete_if_empty=True) as draft:
+        player = authenticate_player(draft, request.playerId, request.playerToken)
+        convert_player_to_bot(draft, player)
     if await delete_game_if_no_humans(game):
         return {"success": True}
     await broadcast_game(game_id)
@@ -1250,11 +1376,7 @@ async def quit_game(game_id: str, request: QuitRequest):
     return {"success": True}
 
 
-@app.post("/games/{game_id}/restart")
-async def restart_game(game_id: str, request: RestartRequest):
-    game = get_game_or_404(game_id)
-    player = authenticate_player(game, request.playerId, request.playerToken)
-
+def reset_match(game, player):
     if game["status"] != "finished":
         raise HTTPException(status_code=409, detail="Only finished games can be restarted.")
 
@@ -1281,6 +1403,12 @@ async def restart_game(game_id: str, request: RestartRequest):
     game["notice"] = f'New game started. {first_player["name"]} goes first.'
     start_current_turn(game)
 
+
+@app.post("/games/{game_id}/restart")
+async def restart_game(game_id: str, request: RestartRequest):
+    async with edit_game(game_id) as game:
+        player = authenticate_player(game, request.playerId, request.playerToken)
+        reset_match(game, player)
     await broadcast_game(game_id)
     schedule_turn(game_id)
 
@@ -1305,11 +1433,11 @@ async def game_websocket(websocket: WebSocket, game_id: str, playerId: str, toke
 
     player = get_player(game, playerId)
 
-    if game.get("removedPlayers", {}).get(playerId) == token:
+    if matches_digest(game.get("removedPlayers", {}).get(playerId), token):
         await websocket.close(code=1008, reason="You were removed from the room")
         return
 
-    if not player or player.get("isBot") or player["token"] != token:
+    if not player or player.get("isBot") or not token_matches(player, "token", token):
         await websocket.close(code=1008)
         return
 
@@ -1324,7 +1452,10 @@ async def game_websocket(websocket: WebSocket, game_id: str, playerId: str, toke
     try:
         while True:
             message = await websocket.receive_json()
-            if games.get(game_id) is not game or player not in game["players"] or player.get("isBot") or player["token"] != token:
+            if (
+                games.get(game_id) is not game or player not in game["players"] or player.get("isBot")
+                or not token_matches(player, "token", token)
+            ):
                 await websocket.close(code=1008)
                 break
             action = message.get("type")
@@ -1342,16 +1473,20 @@ async def game_websocket(websocket: WebSocket, game_id: str, playerId: str, toke
                     playerId=playerId,
                     playerToken=token,
                 )
-                result = validate_player_move(game, player, move)
-
-                if not result["valid"]:
+                try:
+                    async with edit_game(game_id) as draft:
+                        mover = authenticate_player(draft, playerId, token)
+                        result = validate_player_move(draft, mover, move)
+                        if not result["valid"]:
+                            raise HTTPException(status_code=409, detail=result["reason"])
+                        apply_move(draft, mover, move.pieceName, move.cells)
+                except HTTPException as error:
                     await websocket.send_json({
                         "type": "error",
-                        "reason": result["reason"],
+                        "reason": error.detail,
                     })
                     continue
 
-                apply_move(game, player, move.pieceName, move.cells)
                 await broadcast_game(game_id)
                 schedule_turn(game_id)
 

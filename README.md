@@ -68,6 +68,12 @@ npm run dev -- --host
 
 On the computer running Tipto, open the **Local** URL printed by Vite. It’s usually [http://localhost:5173](http://localhost:5173).
 
+### Save games locally
+
+Run the [database migration](database/001_create_game_tables.sql) in your local PostgreSQL database and set `DATABASE_URL` in `backend/.env`. Add `--env-file .env` to the backend startup command. Waiting lobbies and matches survive backend restarts. Reopen the same room in the same browser to reconnect with your existing seat.
+
+If the current turn expires while the server is down, Tipto resolves it on startup and gives the next player their full turn.
+
 ### Run Locally on the Phone
 
 1. Connect your phone and computer to the same Wi-Fi network.
